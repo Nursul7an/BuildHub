@@ -6,6 +6,7 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { parseJson, prisma } from '../db.js';
 import { notify } from '../notify.js';
+import { resolveObjectFilter } from '../scope.js';
 
 export async function materialRoutes(app: FastifyInstance) {
   app.addHook('preHandler', app.authenticate);
@@ -27,13 +28,16 @@ export async function materialRoutes(app: FastifyInstance) {
       .map(serializeCatalogItem);
   });
 
-  app.get('/api/stock', async (req) => {
+  app.get('/api/stock', async (req, reply) => {
     const query = z.object({ objectId: z.string().optional() }).parse(req.query ?? {});
-    const me = await prisma.user.findUniqueOrThrow({ where: { id: req.currentUser.id } });
-    const objectId = query.objectId ?? me.objectId ?? undefined;
+
+    const scope = await resolveObjectFilter(req.currentUser.id, req.currentUser.role, query.objectId);
+    if (scope.deny) {
+      return reply.code(403).send({ error: 'forbidden', message: 'Объект вне вашей области' });
+    }
 
     const balances = await prisma.stockBalance.findMany({
-      where: objectId ? { objectId } : {},
+      where: scope.where,
       include: { catalogItem: true, object: true },
       orderBy: { catalogItem: { name: 'asc' } },
     });

@@ -77,6 +77,9 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
   dir: ['finance.view', 'finance.approvePayment', 'limits.manage', 'tasks.issue', 'kpi.view'],
   gi: [
     'finance.view',
+    // Проводит платежи в пределах своего лимита автономности; выше — уходит директору.
+    // Без этого права лимит из настроек директора не может сработать ни разу.
+    'finance.approvePayment',
     'tasks.issue',
     'tasks.assign',
     'objects.manage',

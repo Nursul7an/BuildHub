@@ -212,22 +212,43 @@ export async function reportRoutes(app: FastifyInstance) {
     if (report.entries.length === 0) {
       return reply.code(422).send({ error: 'empty', message: 'Заполните хотя бы одну работу' });
     }
+    if (report.status === 'accepted') {
+      return reply
+        .code(409)
+        .send({ error: 'already_accepted', message: 'Отчёт уже подтверждён — изменить его нельзя' });
+    }
+    if (report.status === 'atPto' || report.status === 'atForeman') {
+      return reply
+        .code(409)
+        .send({ error: 'already_submitted', message: 'Отчёт уже отправлен и ждёт проверки' });
+    }
 
     const isMaster = req.currentUser.role === 'master';
     const status = isMaster ? 'atForeman' : 'atPto';
 
-    await prisma.dailyReport.update({
-      where: { id },
-      data: { status, submittedAt: new Date(), fillSeconds: body.fillSeconds },
-    });
-
     // Факт по процессам растёт сразу — данные видны руководству со статусом «не подтверждён».
-    for (const entry of report.entries) {
-      await prisma.processState.update({
-        where: { id: entry.processStateId },
-        data: { doneQty: { increment: entry.volume }, status: 'active' },
-      });
-    }
+    // Прибавляем только то, что ещё не прибавлено: повторная отправка после возврата
+    // должна двигать факт на разницу, а не начислять объём заново.
+    await prisma.$transaction([
+      prisma.dailyReport.update({
+        where: { id },
+        data: { status, submittedAt: new Date(), fillSeconds: body.fillSeconds },
+      }),
+      ...report.entries.flatMap((entry) => {
+        const delta = entry.volume - entry.appliedVolume;
+        if (delta === 0) return [];
+        return [
+          prisma.processState.update({
+            where: { id: entry.processStateId },
+            data: { doneQty: { increment: delta }, status: 'active' },
+          }),
+          prisma.reportEntry.update({
+            where: { id: entry.id },
+            data: { appliedVolume: entry.volume },
+          }),
+        ];
+      }),
+    ]);
 
     await notify(
       isMaster ? 'prorab' : 'pto',
@@ -277,15 +298,19 @@ export async function reportRoutes(app: FastifyInstance) {
       const entry = report.entries.find((e) => e.id === body.adjustment!.entryId);
       if (!entry) return reply.code(404).send({ error: 'not_found', message: 'Запись не найдена' });
 
+      // Корректировка двигает факт на разницу и переписывает «уже учтено»,
+      // иначе следующая отправка вернёт объём, который ПТО только что снял.
       const delta = body.adjustment.to - entry.volume;
-      await prisma.reportEntry.update({
-        where: { id: entry.id },
-        data: { volume: body.adjustment.to },
-      });
-      await prisma.processState.update({
-        where: { id: entry.processStateId },
-        data: { doneQty: { increment: delta } },
-      });
+      await prisma.$transaction([
+        prisma.reportEntry.update({
+          where: { id: entry.id },
+          data: { volume: body.adjustment.to, appliedVolume: body.adjustment.to },
+        }),
+        prisma.processState.update({
+          where: { id: entry.processStateId },
+          data: { doneQty: { increment: delta } },
+        }),
+      ]);
       await prisma.reportCheck.create({
         data: {
           reportId: id,

@@ -12,7 +12,9 @@
     "db:push": "prisma db push",
     "db:reset": "prisma db push --force-reset && npm run seed",
     "seed": "tsx prisma/seed.ts",
-    "generate": "prisma generate"
+    "generate": "prisma generate",
+    "test": "./scripts/test.sh",
+    "smoke": "node scripts/smoke.mjs"
   },
   "dependencies": {
     "@build-hub/shared": "*",

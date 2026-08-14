@@ -97,7 +97,7 @@ async function reset() {
   ]);
 }
 
-async function main() {
+export async function seedDatabase(options: { quiet?: boolean } = {}) {
   await reset();
 
   const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 10);
@@ -688,13 +688,22 @@ async function main() {
     заявок: await prisma.zayavka.count(),
     подрядчиков: await prisma.contractor.count(),
   };
-  console.log('Сев завершён:', counts);
-  console.log(`Пароль всех демо-учёток: ${DEMO_PASSWORD}`);
+  if (!options.quiet) {
+    console.log('Сев завершён:', counts);
+    console.log(`Пароль всех демо-учёток: ${DEMO_PASSWORD}`);
+  }
+  return counts;
 }
 
-main()
-  .catch((e) => {
-    console.error(e);
-    process.exit(1);
-  })
-  .finally(() => prisma.$disconnect());
+export { DEMO_PASSWORD };
+
+// Запуск из CLI: `npm run seed`. При импорте из тестов ничего не выполняется.
+const isCli = process.argv[1]?.endsWith('seed.ts') || process.argv[1]?.endsWith('seed.js');
+if (isCli) {
+  seedDatabase()
+    .catch((e) => {
+      console.error(e);
+      process.exit(1);
+    })
+    .finally(() => prisma.$disconnect());
+}

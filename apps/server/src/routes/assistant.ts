@@ -31,8 +31,16 @@ interface Template {
   key: string;
   question: string;
   roles: Role[];
+  /**
+   * Различающие основы слов для распознавания свободного вопроса.
+   * Намеренно без «сколько», «какой», «где» — они не различают ничего.
+   */
+  keywords: string[];
   run: Handler;
 }
+
+/** Меньше двух совпадений — отказ, а не догадка. */
+const MIN_KEYWORD_MATCHES = 2;
 
 const nf = new Intl.NumberFormat('ru-RU');
 const df = new Intl.DateTimeFormat('ru-RU', { day: '2-digit', month: '2-digit' });
@@ -42,6 +50,7 @@ const TEMPLATES: Template[] = [
     key: 'arrivals',
     question: 'Какой материал пришёл на прошлой неделе?',
     roles: ['prorab', 'master', 'sklad', 'snab'],
+    keywords: ['пришёл', 'пришло', 'поступил', 'привезл', 'приёмк', 'приемк', 'материал', 'недел'],
     run: async ({ objectId }) => {
       const since = new Date(Date.now() - 7 * 86_400_000);
       const acceptances = await prisma.materialAcceptance.findMany({
@@ -75,6 +84,7 @@ const TEMPLATES: Template[] = [
     key: 'stock-left',
     question: 'Сколько осталось арматуры?',
     roles: ['prorab', 'master', 'sklad'],
+    keywords: ['остат', 'осталось', 'склад', 'армат', 'запас'],
     run: async ({ objectId }) => {
       const balances = await prisma.stockBalance.findMany({
         where: { ...(objectId ? { objectId } : {}), catalogItem: { name: { contains: 'рматур' } } },
@@ -107,6 +117,7 @@ const TEMPLATES: Template[] = [
     key: 'delivery-eta',
     question: 'Когда придёт материал по моим заявкам?',
     roles: ['prorab', 'master', 'snab'],
+    keywords: ['придёт', 'придет', 'постав', 'привезут', 'срок', 'заявк', 'достав'],
     run: async ({ userId }) => {
       const zayavki = await prisma.zayavka.findMany({
         where: { authorId: userId, status: { in: ['ordered', 'inTransit', 'purchasing', 'approved'] } },
@@ -133,6 +144,7 @@ const TEMPLATES: Template[] = [
     key: 'unsigned-acts',
     question: 'Какие акты не подписаны по моему блоку?',
     roles: ['prorab', 'master', 'pto'],
+    keywords: ['акт', 'подпис', 'аоср', 'освидетельств', 'блок'],
     run: async ({ objectId }) => {
       const docs = await prisma.siteDocument.findMany({
         where: { kind: 'aosr', status: { not: 'signed' }, ...(objectId ? { objectId } : {}) },
@@ -164,6 +176,7 @@ const TEMPLATES: Template[] = [
     key: 'overdue-acts',
     question: 'Какие акты просрочены?',
     roles: ['pto', 'gi'],
+    keywords: ['акт', 'просроч', 'аоср', 'освидетельств'],
     run: async () => {
       const presented = await prisma.processState.findMany({
         where: { status: 'presented' },
@@ -194,6 +207,7 @@ const TEMPLATES: Template[] = [
     key: 'stale-zayavki',
     question: 'Какие заявки висят больше 2 дней?',
     roles: ['snab', 'gi', 'dir'],
+    keywords: ['заявк', 'вис', 'дня', 'дней', 'задержив', 'зависл'],
     run: async () => {
       const cutoff = new Date(Date.now() - 2 * 86_400_000);
       const zayavki = await prisma.zayavka.findMany({
@@ -221,6 +235,7 @@ const TEMPLATES: Template[] = [
     key: 'overspend',
     question: 'Где перерасход за месяц?',
     roles: ['sklad', 'gi', 'dir'],
+    keywords: ['перерасход', 'вор', 'норматив', 'выдач', 'спецификац', 'месяц'],
     run: async () => {
       const balances = await prisma.stockBalance.findMany({
         where: { specRemainder: { not: null } },
@@ -249,6 +264,7 @@ const TEMPLATES: Template[] = [
     key: 'tech-idle',
     question: 'Какая техника простаивала и почему?',
     roles: ['tech', 'gi', 'dir'],
+    keywords: ['техник', 'простаив', 'простой', 'машин', 'моточас', 'кран', 'экскаватор'],
     run: async () => {
       const reports = await prisma.techReport.findMany({
         where: { idleHours: { gt: 0 } },
@@ -275,6 +291,7 @@ const TEMPLATES: Template[] = [
     key: 'money-loss',
     question: 'Где мы теряем деньги?',
     roles: ['dir', 'gi'],
+    keywords: ['деньг', 'теря', 'убыт', 'перерасход', 'маржа', 'cpi', 'финанс'],
     run: async () => {
       const [incidents, finance] = await Promise.all([
         prisma.incident.findMany({ where: { status: 'open', cost: { gt: 0 } }, include: { object: true }, orderBy: { cost: 'desc' } }),
@@ -306,6 +323,7 @@ const TEMPLATES: Template[] = [
     key: 'overdue-prescriptions',
     question: 'Какие предписания просрочены?',
     roles: ['gi', 'prorab'],
+    keywords: ['предписан', 'просроч', 'нарушен', 'тб'],
     run: async () => {
       const list = await prisma.prescription.findMany({
         where: { resolvedAt: null },
@@ -348,15 +366,25 @@ export async function assistantRoutes(app: FastifyInstance) {
     let template = body.key ? allowed.find((t) => t.key === body.key) : undefined;
 
     if (!template && body.text) {
-      // Сопоставление по ключевым словам — в пределах разрешённых роли шаблонов.
+      // Сопоставление только по различающим словам и только среди разрешённых роли шаблонов.
+      //
+      // Одного совпадения мало: вопросительные слова («сколько», «какие») есть почти
+      // в каждом шаблоне, и по ним «сколько зарабатывает директор» уезжало в ответ
+      // про остаток арматуры. Уверенный ответ не на тот вопрос хуже отказа,
+      // поэтому нужно не меньше двух различающих совпадений.
       const needle = body.text.toLowerCase();
-      template = allowed.find((t) =>
-        t.question
-          .toLowerCase()
-          .split(/[\s?.,]+/)
-          .filter((w) => w.length > 4)
-          .some((w) => needle.includes(w.slice(0, 5))),
-      );
+      const scored = allowed
+        .map((t) => ({
+          template: t,
+          score: t.keywords.filter((stem) => needle.includes(stem)).length,
+        }))
+        .filter((x) => x.score >= MIN_KEYWORD_MATCHES)
+        .sort((a, b) => b.score - a.score);
+
+      // Ничья между шаблонами — тоже повод отказаться, а не гадать.
+      if (scored.length > 0 && (scored.length === 1 || scored[0]!.score > scored[1]!.score)) {
+        template = scored[0]!.template;
+      }
     }
 
     if (!template) {

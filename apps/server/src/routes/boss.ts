@@ -15,8 +15,12 @@ import { KPI } from '../../prisma/fixtures.js';
 export async function bossRoutes(app: FastifyInstance) {
   app.addHook('preHandler', app.authenticate);
 
-  /** Сводка: объекты с отклонением, проблемы с ценой, задачи. */
-  app.get('/api/boss/digest', async (req) => {
+  /**
+   * Сводка: объекты с отклонением, проблемы с ценой, задачи.
+   * Отдаёт бюджеты и CPI по всем объектам — поэтому закрыта правом на финансы,
+   * иначе любой авторизованный видит маржу компании обычным GET-запросом.
+   */
+  app.get('/api/boss/digest', { preHandler: [app.requirePermission('finance.view')] }, async (req) => {
     const [objects, incidents, tasks, finance] = await Promise.all([
       prisma.constructionObject.findMany({
         include: { finance: true, responsible: true, processes: true },

@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { parseJson, prisma } from '../db.js';
 import { checkCanPresent, checkStrengthGate, isValidPresentationDate, recomputeChainBlocks } from '../rules.js';
 import { notify } from '../notify.js';
+import { resolveObjectFilter } from '../scope.js';
 
 export async function worksRoutes(app: FastifyInstance) {
   app.addHook('preHandler', app.authenticate);
@@ -58,17 +59,19 @@ export async function worksRoutes(app: FastifyInstance) {
   });
 
   /** Мои работы: процессы, назначенные текущему пользователю (или все на объекте). */
-  app.get('/api/works', async (req) => {
+  app.get('/api/works', async (req, reply) => {
     const query = z
       .object({ objectId: z.string().optional(), mine: z.enum(['0', '1']).optional() })
       .parse(req.query ?? {});
 
-    const me = await prisma.user.findUniqueOrThrow({ where: { id: req.currentUser.id } });
-    const objectId = query.objectId ?? me.objectId ?? undefined;
+    const scope = await resolveObjectFilter(req.currentUser.id, req.currentUser.role, query.objectId);
+    if (scope.deny) {
+      return reply.code(403).send({ error: 'forbidden', message: 'Объект вне вашей области' });
+    }
 
     const states = await prisma.processState.findMany({
       where: {
-        objectId,
+        ...scope.where,
         ...(query.mine === '1' ? { assigneeUserId: req.currentUser.id } : {}),
       },
       include: { processDef: { include: { section: true } }, block: true },
