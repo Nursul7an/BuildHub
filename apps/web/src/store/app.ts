@@ -61,7 +61,6 @@ export type Screen =
   | 'pto-chain-setup'
   | 'pto-users'
   | 'pto-user-new'
-  | 'pto-user-password'
   | 'pto-more'
   | 'pto-lab'
   // руководство

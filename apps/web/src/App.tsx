@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { color } from './design/tokens';
 import { PhoneFrame, ScreenBody } from './shell/PhoneFrame';
-import { BottomNav, tabsFor } from './shell/navigation';
+import { BottomNav, showsNav, tabsFor } from './shell/navigation';
 import { DemoPanel } from './shell/DemoPanel';
 import { useApp, roleGroup } from './store/app';
 import { onAuthEvent } from './api/client';
@@ -31,7 +31,7 @@ export default function App() {
 
   const authScreen = screen === 'login' || screen === 'password';
   const tabs = me && !authScreen ? tabsFor(me.role, roleGroup(me.role)) : [];
-  const showNav = tabs.some((t) => t.owns.includes(screen));
+  const showNav = showsNav(screen);
 
   const clock = new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
 

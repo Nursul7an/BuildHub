@@ -79,6 +79,13 @@ import {
   PlanerkaScreen,
 } from './boss/BossScreens';
 
+import { BossTasksScreen } from './boss/BossTasksScreen';
+import {
+  AssignedWorksScreen,
+  OnboardingBlocksScreen,
+  OnboardingSectionsScreen,
+} from './onboarding/OnboardingScreens';
+
 import {
   DepartmentMoreScreen,
   IssueScreen,
@@ -93,6 +100,11 @@ const SCREENS: Partial<Record<Screen, () => ReactNode>> = {
   // вход
   login: LoginScreen,
   password: PasswordScreen,
+
+  // онбординг
+  'assigned-works': AssignedWorksScreen,
+  'onboarding-blocks': OnboardingBlocksScreen,
+  'onboarding-sections': OnboardingSectionsScreen,
 
   // площадка
   today: TodayScreen,
@@ -150,6 +162,7 @@ const SCREENS: Partial<Record<Screen, () => ReactNode>> = {
   // руководство
   'boss-digest': BossDigestScreen,
   'boss-inbox': BossInboxScreen,
+  'boss-tasks': BossTasksScreen,
   'boss-objects': BossObjectsScreen,
   'boss-object': BossObjectScreen,
   'boss-finance': BossFinanceScreen,

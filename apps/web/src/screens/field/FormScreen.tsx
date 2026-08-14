@@ -469,7 +469,7 @@ export function FormScreen() {
               boxShadow: blocker ? 'none' : shadow.primary,
             }}
           >
-            Сохранить и проверить
+            Сохранить и далее
           </div>
         </div>
       </div>

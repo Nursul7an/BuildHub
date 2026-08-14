@@ -4,4 +4,4 @@ dist/
 apps/server/.env
 apps/server/prisma/dev.db
 apps/server/prisma/dev.db-journal
-shots.mjs
+.verify/

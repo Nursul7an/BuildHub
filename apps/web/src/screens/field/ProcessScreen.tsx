@@ -84,12 +84,14 @@ export function ProcessScreen() {
           boxShadow: '0 2px 8px rgba(20,22,31,0.06)',
         }}
       >
-        <div style={{ fontSize: 15, fontWeight: 800, ...dueStyle(process.dueDate) }}>
-          {dueText(process.dueDate)}
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontSize: 15, fontWeight: 800, ...dueStyle(process.dueDate) }}>
+            {dueText(process.dueDate)}
+          </div>
           {process.dueDate ? (
-            <span style={{ fontSize: 12.5, fontWeight: 600, color: color.muted, marginLeft: 6 }}>
-              срок {new Date(process.dueDate).toLocaleDateString('ru-RU')}
-            </span>
+            <div style={{ fontSize: 12.5, fontWeight: 600, color: color.muted, marginTop: 2 }}>
+              срок был {new Date(process.dueDate).toLocaleDateString('ru-RU')}
+            </div>
           ) : null}
         </div>
         <div style={{ fontSize: 12.5, fontWeight: 700, color: color.primary, whiteSpace: 'nowrap' }}>

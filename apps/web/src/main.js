@@ -1,8 +1,8 @@
+import { jsx as _jsx } from "react/jsx-runtime";
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
 import { useApp } from './store/app';
-
 const style = document.createElement('style');
 style.textContent = `
   * { box-sizing: border-box; }
@@ -14,15 +14,9 @@ style.textContent = `
   ::-webkit-scrollbar-thumb { background: #D8DAE3; border-radius: 3px; }
 `;
 document.head.appendChild(style);
-
 // В разработке хранилище доступно из консоли: удобно открыть любой экран
 // напрямую и проверить его без прохода по всему сценарию.
 if (import.meta.env.DEV) {
-  (window as unknown as { buildHub: typeof useApp }).buildHub = useApp;
+    window.buildHub = useApp;
 }
-
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-);
+createRoot(document.getElementById('root')).render(_jsx(StrictMode, { children: _jsx(App, {}) }));

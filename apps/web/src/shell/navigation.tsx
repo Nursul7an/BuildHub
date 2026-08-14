@@ -106,7 +106,7 @@ const PTO_TABS: Tab[] = [
     label: 'Ещё',
     screen: 'pto-more',
     icon: IconMore,
-    owns: ['pto-more', 'pto-users', 'pto-user-new', 'pto-user-password', 'pto-lab', 'profile', 'documents', 'project', 'rfi'],
+    owns: ['pto-more', 'pto-users', 'pto-user-new', 'pto-lab', 'profile', 'documents', 'project', 'rfi'],
   },
 ];
 
@@ -173,6 +173,46 @@ const TECH_TABS: Tab[] = [
   { key: 'fleet', label: 'Парк', screen: 'tech-fleet', icon: IconMachine, owns: ['tech-fleet'] },
   { key: 'more', label: 'Ещё', screen: 'tech-more', icon: IconMore, owns: ['tech-more', 'profile'] },
 ];
+
+/**
+ * Экраны, на которых нижняя навигация видна: корни табов и списки, до которых
+ * доходят одним тапом. На сфокусированных экранах — форме ввода, карточке,
+ * предъявлении — её нет: там одно действие, и уводить с него нечем.
+ */
+const NAV_SCREENS = new Set<Screen>([
+  'today',
+  'works',
+  'zayavki',
+  'more',
+  'profile',
+  'notifications',
+  'contractors',
+  'project',
+  'documents',
+  'pto-today',
+  'pto-queue',
+  'pto-objects',
+  'pto-more',
+  'pto-users',
+  'boss-digest',
+  'boss-inbox',
+  'boss-tasks',
+  'boss-objects',
+  'boss-finance',
+  'boss-quality',
+  'mat-today',
+  'mat-zayavki',
+  'mat-stock',
+  'mat-more',
+  'tech-today',
+  'tech-queue',
+  'tech-fleet',
+  'tech-more',
+]);
+
+export function showsNav(screen: Screen): boolean {
+  return NAV_SCREENS.has(screen);
+}
 
 export function tabsFor(role: Role, group: RoleGroup): Tab[] {
   switch (group) {
