@@ -4,9 +4,11 @@
  */
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import bcrypt from 'bcryptjs';
+import { generatePassword, hashPassword } from '../password.js';
+import { revokeAllSessions } from '../sessions.js';
+import { sendTemporaryPassword } from '../sms.js';
 import { prisma } from '../db.js';
-import { generatePassword, publicUser } from '../auth.js';
+import { publicUser } from '../auth.js';
 import { ROLES } from '@build-hub/shared';
 import { notify } from '../notify.js';
 
@@ -62,10 +64,13 @@ export async function adminRoutes(app: FastifyInstance) {
         objectId: body.objectId,
         blockId: body.blockId,
         scopeLabel: body.scopeLabel,
-        passwordHash: await bcrypt.hash(temporaryPassword, 10),
+        passwordHash: await hashPassword(temporaryPassword),
         mustChangePassword: true,
       },
     });
+
+    // Пароль уходит человеку в SMS (§10) и один раз показывается заводящему.
+    await sendTemporaryPassword(user.phone, user.login, temporaryPassword);
 
     return reply.code(201).send({
       user: publicUser(user),
@@ -77,10 +82,16 @@ export async function adminRoutes(app: FastifyInstance) {
   app.post('/api/users/:id/reset-password', { preHandler: [app.requirePermission('users.manage')] }, async (req) => {
     const { id } = z.object({ id: z.string() }).parse(req.params);
     const temporaryPassword = generatePassword();
-    await prisma.user.update({
+    const user = await prisma.user.update({
       where: { id },
-      data: { passwordHash: await bcrypt.hash(temporaryPassword, 10), mustChangePassword: true },
+      data: { passwordHash: await hashPassword(temporaryPassword), mustChangePassword: true },
     });
+
+    // Сброс немедленно закрывает прежние сессии: иначе украденное устройство
+    // остаётся в системе, хотя пароль уже другой (§12).
+    await revokeAllSessions(id, 'admin_reset');
+    await sendTemporaryPassword(user.phone, user.login, temporaryPassword);
+
     return { temporaryPassword };
   });
 
@@ -99,6 +110,12 @@ export async function adminRoutes(app: FastifyInstance) {
       .parse(req.body);
 
     const user = await prisma.user.update({ where: { id }, data: body });
+
+    // Блокировка закрывает доступ, но история действий остаётся (§12).
+    if (body.active === false) {
+      await revokeAllSessions(id, 'blocked');
+    }
+
     return publicUser(user);
   });
 

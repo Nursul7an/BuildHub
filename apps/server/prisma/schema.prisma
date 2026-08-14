@@ -58,6 +58,7 @@ model User {
   syncOperations     SyncOperation[]
   notificationSettings NotificationSetting[]
   sheetViews           SheetView[]
+  sessions             Session[]
 
   @@index([role])
 }
@@ -987,4 +988,37 @@ model SheetView {
   viewedAt DateTime @default(now())
 
   @@unique([sheetId, userId])
+}
+
+// ─────────────────────────── Сессии устройств ───────────────────────────
+// ТЗ §3.1: access 15 минут, refresh 30 дней, сессии устройств.
+
+/// Сессия устройства. Refresh-токен хранится только хешем: база, попавшая
+/// в чужие руки, не должна давать вход. Смена пароля закрывает все сессии (§6).
+model Session {
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// Хеш refresh-токена (sha256). Сам токен есть только у клиента.
+  refreshHash String @unique
+
+  /// Чтобы человек узнал своё устройство в списке сессий.
+  deviceName String?
+  deviceId   String?
+  ip         String?
+  userAgent  String?
+
+  createdAt  DateTime  @default(now())
+  lastSeenAt DateTime  @default(now())
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  /// Причина отзыва: logout | password_change | admin_reset | reuse_detected | manual
+  revokedReason String?
+
+  /// Цепочка ротации: повторное предъявление старого токена — признак кражи.
+  rotatedFromId String?
+
+  @@index([userId, revokedAt])
+  @@index([expiresAt])
 }

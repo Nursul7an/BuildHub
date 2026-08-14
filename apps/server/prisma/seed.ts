@@ -7,7 +7,7 @@
  * проблем руководства с ценой. Все звенья должны существовать в базе, а не рисоваться.
  */
 import { PrismaClient } from '@prisma/client';
-import bcrypt from 'bcryptjs';
+import { hashPassword } from '../src/password.js';
 import {
   ACTIVE_WORK,
   AUTONOMY_LIMITS,
@@ -91,6 +91,9 @@ async function reset() {
     prisma.processState.deleteMany(),
     prisma.processDef.deleteMany(),
     prisma.sectionDef.deleteMany(),
+    prisma.session.deleteMany(),
+    prisma.notificationSetting.deleteMany(),
+    prisma.sheetView.deleteMany(),
     prisma.syncOperation.deleteMany(),
     prisma.fileObject.deleteMany(),
     prisma.gate.deleteMany(),
@@ -107,7 +110,7 @@ async function reset() {
 export async function seedDatabase(options: { quiet?: boolean } = {}) {
   await reset();
 
-  const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 10);
+  const passwordHash = await hashPassword(DEMO_PASSWORD);
 
   /* ── Объекты и блоки ── */
   const objectIds = new Map<string, string>();
