@@ -11,8 +11,8 @@ import { prisma } from '../db.js';
 import { notify } from '../notify.js';
 import { emit } from '../audit.js';
 import { needsEscalation } from '../rules.js';
-import { KPI } from '../../prisma/fixtures.js';
 import { econSummary } from '../services/econ.js';
+import { computeKpi } from '../services/kpi.js';
 
 export async function bossRoutes(app: FastifyInstance) {
   app.addHook('preHandler', app.authenticate);
@@ -350,31 +350,12 @@ export async function bossRoutes(app: FastifyInstance) {
     return { ok: true };
   });
 
-  /** KPI сотрудников — пороги объявлены заранее, цвет считается из них. */
+  /**
+   * KPI сотрудников. Считает тот же модуль, что и /api/v1/kpi:
+   * два разных расчёта одного показателя — гарантированный спор на планёрке.
+   */
   app.get('/api/boss/kpi', { preHandler: [app.requirePermission('kpi.view')] }, async () => {
-    return {
-      departments: KPI.map((d) => ({
-        key: d.key,
-        label: d.label,
-        metrics: d.metrics.map((m) => ({
-          ...m,
-          state:
-            'goodAbove' in m && m.goodAbove !== undefined
-              ? m.value >= m.goodAbove
-                ? 'good'
-                : m.value >= m.goodAbove * 0.9
-                  ? 'warn'
-                  : 'bad'
-              : 'goodBelow' in m && m.goodBelow !== undefined
-                ? m.value <= m.goodBelow
-                  ? 'good'
-                  : m.value <= m.goodBelow * 1.5
-                    ? 'warn'
-                    : 'bad'
-                : 'neutral',
-        })),
-      })),
-    };
+    return computeKpi();
   });
 
   /** Объекты компании: создание и изменение — у главного инженера. */

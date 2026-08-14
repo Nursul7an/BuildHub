@@ -9,6 +9,7 @@
 import { PrismaClient } from '@prisma/client';
 import { hashPassword } from '../src/password.js';
 import { DEFAULT_ROUTING } from '../src/services/issue-routing.js';
+import { DEFAULT_TARGETS } from '../src/services/kpi.js';
 import {
   ACTIVE_WORK,
   AUTONOMY_LIMITS,
@@ -94,6 +95,7 @@ async function reset() {
     prisma.sectionDef.deleteMany(),
     prisma.session.deleteMany(),
     prisma.notificationSetting.deleteMany(),
+    prisma.kpiTarget.deleteMany(),
     prisma.issueRouting.deleteMany(),
     prisma.contractAct.deleteMany(),
     prisma.costFact.deleteMany(),
@@ -917,6 +919,27 @@ export async function seedDatabase(options: { quiet?: boolean } = {}) {
     },
   });
 
+  /* ── Пороги KPI (ТЗ §6, §9) ──
+     Первый квартал — только измерение: показатели уже считаются, но
+     вердикт по ним не выносится, пока пороги не проверены на своих данных. */
+  const measuringUntil = d('2026-11-01');
+  for (const target of DEFAULT_TARGETS) {
+    await prisma.kpiTarget.create({
+      data: {
+        key: target.key,
+        department: target.department,
+        label: target.label,
+        unit: target.unit,
+        goodAbove: target.goodAbove ?? null,
+        goodBelow: target.goodBelow ?? null,
+        // Отчётная дисциплина измеряется давно и вердикт уже выносит;
+        // остальное пока копит наблюдения.
+        measuringUntil: ['reportsOnTime', 'reportReturns'].includes(target.key) ? null : measuringUntil,
+        source: target.source,
+      },
+    });
+  }
+
   const counts = {
     объектов: await prisma.constructionObject.count(),
     пользователей: await prisma.user.count(),
@@ -931,6 +954,7 @@ export async function seedDatabase(options: { quiet?: boolean } = {}) {
     'строк затрат': await prisma.costFact.count(),
     актов: await prisma.contractAct.count(),
     'правил маршрутизации': await prisma.issueRouting.count(),
+    'порогов KPI': await prisma.kpiTarget.count(),
   };
   if (!options.quiet) {
     console.log('Сев завершён:', counts);

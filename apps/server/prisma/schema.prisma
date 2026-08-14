@@ -1225,3 +1225,41 @@ model IssueRouting {
 
   @@unique([issueKind, scopeType, scopeId])
 }
+
+// ─────────────────────────── KPI ───────────────────────────
+// ТЗ §6 и §9. Пороги цвета ведёт руководитель, область — компания.
+// Отдельно из §9: «первый квартал — только измерение». Пока идёт этот
+// период, показатель считается и показывается, но цветного вердикта
+// не выносит: судить людей по метрике, которую ещё не проверили
+// на своих данных, — быстрый способ похоронить доверие к системе.
+
+model KpiTarget {
+  id  String @id @default(uuid())
+  /// Ключ показателя: reportsOnTime, leadTime, …
+  key String
+
+  /// field | pto | mat | tech
+  department String
+  label      String
+  unit       String
+
+  /// Область: company (по умолчанию) или facility.
+  scopeType String @default("company")
+  /// Для company — пустая строка: в Postgres уникальность по NULL не соблюдается.
+  scopeId   String @default("")
+
+  /// Хорошо, когда выше этого значения — или ниже, смотря какой показатель.
+  goodAbove Decimal? @db.Decimal(12, 3)
+  goodBelow Decimal? @db.Decimal(12, 3)
+
+  /// До этой даты показатель только измеряется, вердикт не выносится.
+  measuringUntil DateTime?
+
+  /// Чем обоснованы пороги: приказ, регламент, отраслевая практика.
+  source String?
+
+  createdAt DateTime @default(now())
+
+  @@unique([key, scopeType, scopeId])
+  @@index([department])
+}
