@@ -12,6 +12,7 @@ import { notify } from '../notify.js';
 import { emit } from '../audit.js';
 import { needsEscalation } from '../rules.js';
 import { KPI } from '../../prisma/fixtures.js';
+import { econSummary } from '../services/econ.js';
 
 export async function bossRoutes(app: FastifyInstance) {
   app.addHook('preHandler', app.authenticate);
@@ -36,6 +37,9 @@ export async function bossRoutes(app: FastifyInstance) {
       prisma.objectFinance.findMany({ include: { object: true } }),
     ]);
 
+    const econ = await Promise.all(objects.map((o) => econSummary(o.id)));
+    const econById = new Map(econ.map((e) => [e.objectId, e]));
+
     const now = Date.now();
 
     return {
@@ -51,9 +55,10 @@ export async function bossRoutes(app: FastifyInstance) {
           pctFact: o.pctFact,
           deltaDays: o.deltaDays,
           /** CPI = освоено / потрачено. Ниже 1 — тратим быстрее, чем зарабатываем. */
-          cpi: f && f.ac > 0 ? Number((f.ev / f.ac).toFixed(2)) : null,
-          budget: f?.budget ?? null,
-          eac: f && f.ev > 0 ? Number((f.budget / (f.ev / f.ac)).toFixed(0)) : null,
+          cpi: econById.get(o.id)?.cpi ?? null,
+          budget: econById.get(o.id)?.bac ?? f?.budget ?? null,
+          eac: econById.get(o.id)?.eac ?? null,
+          costsAsOf: econById.get(o.id)?.costsAsOf ?? null,
         };
       }),
       /** Лента «Требует решения»: каждая проблема с ценой. */
@@ -78,29 +83,66 @@ export async function bossRoutes(app: FastifyInstance) {
         overdue: t.dueDate.getTime() < now,
         origin: t.origin,
       })),
-      finance: finance.map(serializeFinance),
+      finance: econ.filter((e) => e.bac > 0 || e.ac > 0),
     };
   });
 
-  /** Финансы: закрытие актами, а не только освоение. */
+  /**
+   * Финансы: закрытие актами, а не только освоение.
+   *
+   * Считает тот же модуль econ, что и карточку объекта. Два источника
+   * финансовой правды — прямой путь к тому, что на планёрке сверяют
+   * экраны вместо работы.
+   */
   app.get('/api/boss/finance', { preHandler: [app.requirePermission('finance.view')] }, async () => {
-    const [finance, articles, payments, limits] = await Promise.all([
-      prisma.objectFinance.findMany({ include: { object: true } }),
-      prisma.costArticle.findMany({ include: { object: true } }),
+    const [objects, payments, limits] = await Promise.all([
+      prisma.constructionObject.findMany({ orderBy: { name: 'asc' } }),
       prisma.payment.findMany({ include: { object: true }, orderBy: { dueDate: 'asc' } }),
       prisma.autonomyLimit.findMany(),
     ]);
 
-    const total = articles.reduce((a, x) => a + x.amount, 0);
+    const summaries = await Promise.all(objects.map((o) => econSummary(o.id)));
+    const withEconomy = summaries.filter((s) => s.bac > 0 || s.ac > 0);
+
+    // Статьи затрат складываются по всем объектам компании.
+    const byArticle = new Map<string, number>();
+    for (const summary of withEconomy) {
+      for (const article of summary.articles) {
+        byArticle.set(article.article, (byArticle.get(article.article) ?? 0) + article.amount);
+      }
+    }
+    const total = [...byArticle.values()].reduce((a, b) => a + b, 0);
 
     return {
-      objects: finance.map(serializeFinance),
-      articles: articles.map((a) => ({
-        name: a.name,
-        amount: a.amount,
-        pct: total > 0 ? Number(((a.amount / total) * 100).toFixed(1)) : 0,
-        note: a.note,
+      objects: withEconomy.map((s) => ({
+        objectId: s.objectId,
+        objectName: s.objectName,
+        budget: s.bac,
+        ev: s.ev,
+        ac: s.ac,
+        cpi: s.cpi,
+        eac: s.eac,
+        vac: s.vac,
+        closedByActs: s.closure.signed,
+        notClosed: s.closure.gapEarnedToSigned,
+        receivable: s.closure.receivable,
+        /** Дата актуальности идёт вместе с цифрой, а не отдельной подписью. */
+        costsAsOf: s.costsAsOf,
+        costsStale: s.costsStale,
       })),
+      articles: [...byArticle.entries()]
+        .map(([name, amount]) => ({
+          name,
+          amount,
+          pct: total > 0 ? Number(((amount / total) * 100).toFixed(1)) : 0,
+          note: null as string | null,
+        }))
+        .sort((a, b) => b.amount - a.amount),
+      /** Общая дата актуальности: самая старая из объектов — по ней и судят. */
+      costsAsOf: withEconomy.reduce<string | null>(
+        (oldest, s) => (s.costsAsOf && (oldest === null || s.costsAsOf < oldest) ? s.costsAsOf : oldest),
+        null,
+      ),
       /** Деньги на неделю — платежи с их статусом. */
       payments: payments.map((p) => ({
         id: p.id,
@@ -387,32 +429,4 @@ export async function bossRoutes(app: FastifyInstance) {
     });
     return { ok: true };
   });
-}
-
-function serializeFinance(f: {
-  objectId: string;
-  budget: number;
-  ev: number;
-  ac: number;
-  closedByActs: number;
-  receivable: number;
-  object?: { name: string };
-}) {
-  const cpi = f.ac > 0 ? f.ev / f.ac : 1;
-  const eac = cpi > 0 ? f.budget / cpi : f.budget;
-  return {
-    objectId: f.objectId,
-    objectName: f.object?.name,
-    budget: f.budget,
-    ev: f.ev,
-    ac: f.ac,
-    cpi: Number(cpi.toFixed(2)),
-    eac: Number(eac.toFixed(0)),
-    /** Отклонение по завершении: плюс — экономия, минус — перерасход. */
-    vac: Number((f.budget - eac).toFixed(0)),
-    closedByActs: f.closedByActs,
-    /** Освоено, но не закрыто актами — деньги, которые нельзя предъявить. */
-    notClosed: Number((f.ev - f.closedByActs).toFixed(0)),
-    receivable: f.receivable,
-  };
 }

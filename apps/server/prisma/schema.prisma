@@ -103,6 +103,9 @@ model ConstructionObject {
   protocols     ConcreteStrengthProtocol[]
   issues        MaterialIssue[]
   costArticles  CostArticle[]
+  boqItems      BoqItem[]
+  costFacts     CostFact[]
+  contractActs  ContractAct[]
 }
 
 model Block {
@@ -133,6 +136,7 @@ model SectionDef {
 
   processes ProcessDef[]
   tasks     Task[]
+  boqItems  BoqItem[]
 }
 
 model ProcessDef {
@@ -150,7 +154,8 @@ model ProcessDef {
   /// ⚠️ в названии: отступление несёт риск.
   critical     Boolean @default(false)
 
-  states ProcessState[]
+  states   ProcessState[]
+  boqItems BoqItem[]
 
   @@unique([sectionId, order])
 }
@@ -1059,4 +1064,127 @@ model Session {
 
   @@index([userId, revokedAt])
   @@index([expiresAt])
+}
+
+// ─────────────────────────── Экономика ───────────────────────────
+// ТЗ §3.2 (модуль econ), §4, §6, §10. Критерий приёмки 9: показатели
+// сходятся арифметически и несут дату актуальности затрат.
+//
+// Деньги — Decimal(18,2), объёмы — Decimal(18,3). Float здесь недопустим:
+// на сотне позиций копеечная погрешность превращается в расхождение,
+// которое потом ищут вручную.
+
+/// Ведомость объёмов работ. База для освоенного объёма: без расценки
+/// «сколько сделано» нельзя перевести в «на сколько сделано».
+model BoqItem {
+  id       String             @id @default(uuid())
+  objectId String
+  object   ConstructionObject @relation(fields: [objectId], references: [id], onDelete: Cascade)
+
+  /// Позиция ВОР: шифр и наименование как в смете.
+  code String
+  name String
+
+  sectionId String?
+  section   SectionDef? @relation(fields: [sectionId], references: [id])
+  /// Привязка к процессу цепочки — по ней освоение считается от факта,
+  /// а не от процента «на глаз».
+  processDefId String?
+  processDef   ProcessDef? @relation(fields: [processDefId], references: [id])
+
+  unit String
+  qty  Decimal @db.Decimal(18, 3)
+  /// Расценка за единицу.
+  rate Decimal @db.Decimal(18, 2)
+
+  /// Откуда позиция: смета, договор, допсоглашение.
+  source String?
+
+  createdAt DateTime @default(now())
+
+  @@unique([objectId, code])
+  @@index([objectId, sectionId])
+}
+
+/// Фактические затраты из 1С. ТЗ §10: импорт раз в сутки,
+/// дата актуальности показывается на каждом финансовом экране.
+model CostFact {
+  id       String             @id @default(uuid())
+  objectId String
+  object   ConstructionObject @relation(fields: [objectId], references: [id], onDelete: Cascade)
+
+  /// Статья затрат: материалы, ФОТ, субподряд, техника, накладные.
+  article String
+  amount  Decimal @db.Decimal(18, 2)
+
+  periodStart DateTime
+  periodEnd   DateTime
+
+  /// На какое число актуальны данные. Без неё цифра бессмысленна:
+  /// «перерасход» вчерашних данных и позавчерашних — разные разговоры.
+  actualAsOf DateTime
+
+  source   String  @default("1C")
+  importId String?
+  import   CostImport? @relation(fields: [importId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@unique([objectId, article, periodStart, periodEnd, source])
+  @@index([objectId, actualAsOf])
+}
+
+/// Прогон импорта из 1С. Хранится, чтобы было видно, когда данные
+/// приходили в последний раз и не сломался ли обмен.
+model CostImport {
+  id     String @id @default(uuid())
+  source String @default("1C")
+  /// running | done | failed
+  status String @default("running")
+
+  startedAt  DateTime  @default(now())
+  finishedAt DateTime?
+  /// Дата актуальности выгрузки — приходит из 1С, а не берётся от времени загрузки.
+  actualAsOf DateTime
+
+  rowsTotal    Int    @default(0)
+  rowsImported Int    @default(0)
+  error        String?
+
+  facts CostFact[]
+}
+
+/// Закрытие актами. Разрыв «выполнено — подписано» — то, из-за чего
+/// объект показывает освоение, а денег не приносит.
+model ContractAct {
+  id       String             @id @default(uuid())
+  objectId String
+  object   ConstructionObject @relation(fields: [objectId], references: [id], onDelete: Cascade)
+
+  number      String
+  periodStart DateTime
+  periodEnd   DateTime
+
+  /// Выполнено по факту, предъявлено заказчику, подписано, оплачено.
+  /// Четыре разные суммы: между ними и живут кассовые разрывы.
+  amountCompleted Decimal  @db.Decimal(18, 2)
+  amountSubmitted Decimal? @db.Decimal(18, 2)
+  amountSigned    Decimal? @db.Decimal(18, 2)
+  amountPaid      Decimal? @db.Decimal(18, 2)
+
+  /// Допработы, выполненные без оформления. ТЗ §4 требует их видеть отдельно:
+  /// это деньги, которые уже потрачены, а предъявить их нечем.
+  extraWorkUnformalized Decimal @default(0) @db.Decimal(18, 2)
+
+  /// draft | submitted | signed | paid | rejected
+  status String @default("draft")
+
+  submittedAt DateTime?
+  signedAt    DateTime?
+  paidAt      DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@unique([objectId, number])
+  @@index([objectId, status])
 }

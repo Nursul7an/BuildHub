@@ -93,6 +93,10 @@ async function reset() {
     prisma.sectionDef.deleteMany(),
     prisma.session.deleteMany(),
     prisma.notificationSetting.deleteMany(),
+    prisma.contractAct.deleteMany(),
+    prisma.costFact.deleteMany(),
+    prisma.costImport.deleteMany(),
+    prisma.boqItem.deleteMany(),
     prisma.sheetView.deleteMany(),
     prisma.sheetVersion.deleteMany(),
     prisma.syncOperation.deleteMany(),
@@ -745,6 +749,144 @@ export async function seedDatabase(options: { quiet?: boolean } = {}) {
     });
   }
 
+  /* ── Экономика: ВОР, затраты из 1С, закрытие актами (ТЗ §4, §10) ──
+     Позиции привязаны к процессам цепочки: освоение считается от факта
+     выполнения, а не от процента «на глаз». */
+  const monoDefs = await prisma.processDef.findMany({ where: { sectionId: 'mono' } });
+  const kladDefs = await prisma.processDef.findMany({ where: { sectionId: 'klad' } });
+  const defByName = (defs: { id: string; name: string }[], name: string) =>
+    defs.find((d) => d.name === name)?.id;
+
+  const BOQ = [
+    {
+      code: 'КЖ-01',
+      name: 'Армирование колонн и стен',
+      sectionId: 'mono',
+      processDefId: defByName(monoDefs, 'Армирование колонн и стен'),
+      unit: 'т',
+      qty: 7.1,
+      rate: 78_000,
+    },
+    {
+      code: 'КЖ-02',
+      name: 'Монтаж опалубки перекрытия',
+      sectionId: 'mono',
+      processDefId: defByName(monoDefs, 'Монтаж опалубки перекрытия'),
+      unit: 'м²',
+      qty: 480,
+      rate: 1_250,
+    },
+    {
+      code: 'КЖ-03',
+      name: 'Бетонирование колонн и стен',
+      sectionId: 'mono',
+      processDefId: defByName(monoDefs, 'Бетонирование колонн и стен'),
+      unit: 'м³',
+      qty: 96,
+      rate: 9_400,
+    },
+    {
+      code: 'КЛ-01',
+      name: 'Кладка яруса 2',
+      sectionId: 'klad',
+      processDefId: defByName(kladDefs, 'Кладка яруса 2'),
+      unit: 'шт',
+      qty: 24_000,
+      rate: 42,
+    },
+  ];
+
+  for (const item of BOQ) {
+    await prisma.boqItem.create({
+      data: {
+        objectId: ak,
+        code: item.code,
+        name: item.name,
+        sectionId: item.sectionId,
+        processDefId: item.processDefId ?? null,
+        unit: item.unit,
+        qty: item.qty,
+        rate: item.rate,
+        source: 'смета, разд. КЖ',
+      },
+    });
+  }
+
+  // Выгрузка 1С: данные актуальны на утро 4 августа — как и бывает,
+  // отчётный день на сутки отстаёт от площадки.
+  const costsAsOf = d('2026-08-04T07:00:00');
+  const costImport = await prisma.costImport.create({
+    data: { actualAsOf: costsAsOf, status: 'done', finishedAt: costsAsOf, rowsTotal: 10, rowsImported: 10 },
+  });
+
+  // Два периода: так видно и накопленный итог, и что выгрузка идёт помесячно.
+  // Суммы подобраны так, что тратим быстрее, чем осваиваем, — CPI ниже единицы
+  // и прогноз показывает перерасход. Ради этого разговора модуль и нужен.
+  const COSTS = [
+    ['Материалы', 402_000, 278_000],
+    ['ФОТ', 214_000, 152_000],
+    ['Субподряд', 118_000, 72_000],
+    ['Техника', 61_000, 39_000],
+    ['Накладные', 32_000, 22_000],
+  ] as const;
+
+  for (const [article, july, august] of COSTS) {
+    await prisma.costFact.create({
+      data: {
+        objectId: ak,
+        article,
+        amount: july,
+        periodStart: d('2026-07-01'),
+        periodEnd: d('2026-07-31'),
+        actualAsOf: costsAsOf,
+        importId: costImport.id,
+      },
+    });
+    await prisma.costFact.create({
+      data: {
+        objectId: ak,
+        article,
+        amount: august,
+        periodStart: d('2026-08-01'),
+        periodEnd: d('2026-08-31'),
+        actualAsOf: costsAsOf,
+        importId: costImport.id,
+      },
+    });
+  }
+
+  // Закрытие: выполнено больше, чем подписано, — тот самый разрыв,
+  // из-за которого объект «идёт по графику», а денег не приносит.
+  await prisma.contractAct.create({
+    data: {
+      objectId: ak,
+      number: 'КС-2 №7',
+      periodStart: d('2026-07-01'),
+      periodEnd: d('2026-07-31'),
+      amountCompleted: 640_000,
+      amountSubmitted: 610_000,
+      amountSigned: 585_000,
+      amountPaid: 500_000,
+      extraWorkUnformalized: 45_000,
+      status: 'paid',
+      submittedAt: d('2026-08-01'),
+      signedAt: d('2026-08-03'),
+      paidAt: d('2026-08-04'),
+    },
+  });
+
+  await prisma.contractAct.create({
+    data: {
+      objectId: ak,
+      number: 'КС-2 №8',
+      periodStart: d('2026-08-01'),
+      periodEnd: d('2026-08-31'),
+      amountCompleted: 210_000,
+      extraWorkUnformalized: 18_000,
+      status: 'draft',
+    },
+  });
+
   const counts = {
     объектов: await prisma.constructionObject.count(),
     пользователей: await prisma.user.count(),
@@ -755,6 +897,9 @@ export async function seedDatabase(options: { quiet?: boolean } = {}) {
     подрядчиков: await prisma.contractor.count(),
     порогов: await prisma.threshold.count(),
     шлюзов: await prisma.gate.count(),
+    'позиций ВОР': await prisma.boqItem.count(),
+    'строк затрат': await prisma.costFact.count(),
+    актов: await prisma.contractAct.count(),
   };
   if (!options.quiet) {
     console.log('Сев завершён:', counts);
