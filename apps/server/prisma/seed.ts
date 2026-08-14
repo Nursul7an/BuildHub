@@ -657,10 +657,10 @@ async function main() {
       {
         toRole: 'prorab',
         toUserId: azamat,
-        kind: 'report',
-        title: '↩ Отчёт за 3 авг возвращён ПТО',
-        subtitle: '«Проверьте объём кладки»',
-        at: d('2026-08-03T21:14:00'),
+        kind: 'zayavka',
+        title: '📦 Заявка ЗВ-АКО-26-0175 в пути',
+        subtitle: 'Электроды · 40 кг · придёт 07.08 · примите на объекте',
+        at: d('2026-08-04T08:30:00'),
       },
       {
         toRole: 'pto',
