@@ -330,9 +330,8 @@ export async function zayavkaRoutes(app: FastifyInstance) {
         passportOk: z.boolean(),
         passportNumber: z.string().optional(),
         discrepancy: z.string().optional(),
-        photos: z
-          .array(z.object({ url: z.string(), takenAt: z.string(), lat: z.number().optional(), lon: z.number().optional() }))
-          .default([]),
+        /** Фото приёмки — ссылки на уже загруженные файлы (ТЗ §6, §12). */
+        photos: z.array(z.object({ fileId: z.string() })).default([]),
       })
       .parse(req.body);
 
@@ -350,6 +349,15 @@ export async function zayavkaRoutes(app: FastifyInstance) {
     if (body.photos.length === 0) {
       return reply.code(422).send({ code: 'no_photo', message: 'Фото приёмки обязательно' });
     }
+    // Незагруженное фото не считается: приёмка подтверждается снимком, а не намерением.
+    const files = await prisma.fileObject.findMany({
+      where: { id: { in: body.photos.map((p) => p.fileId) }, status: 'uploaded' },
+    });
+    if (files.length !== body.photos.length) {
+      return reply
+        .code(409)
+        .send({ code: 'photo_not_uploaded', message: 'Фото ещё не догрузилось' });
+    }
 
     await prisma.materialAcceptance.create({
       data: {
@@ -359,7 +367,15 @@ export async function zayavkaRoutes(app: FastifyInstance) {
         passportOk: body.passportOk,
         passportNumber: body.passportNumber,
         discrepancy: body.discrepancy,
-        photos: JSON.stringify(body.photos),
+        photos: JSON.stringify(
+          files.map((f) => ({
+            fileId: f.id,
+            key: f.key,
+            takenAt: f.takenAt,
+            lat: f.lat,
+            lon: f.lon,
+          })),
+        ),
       },
     });
 

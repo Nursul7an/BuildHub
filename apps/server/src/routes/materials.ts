@@ -8,15 +8,16 @@ import { parseJson, prisma } from '../db.js';
 import { notify } from '../notify.js';
 import { resolveObjectFilter } from '../scope.js';
 import { actorOf, auditChanges, emit } from '../audit.js';
+import { withETag } from '../http.js';
 
 export async function materialRoutes(app: FastifyInstance) {
   app.addHook('preHandler', app.authenticate);
 
-  app.get('/api/catalog', async (req) => {
+  app.get('/api/catalog', async (req, reply) => {
     const query = z.object({ q: z.string().optional() }).parse(req.query ?? {});
     const items = await prisma.catalogItem.findMany({ orderBy: { name: 'asc' } });
     if (!query.q) {
-      return items.map(serializeCatalogItem);
+      return withETag(reply, req, items.map(serializeCatalogItem));
     }
     // Поиск идёт и по названию, и по накопленным формулировкам прорабов.
     const needle = query.q.trim().toLowerCase();

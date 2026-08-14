@@ -134,5 +134,21 @@ export function paginate<T extends { id: string }>(rows: T[], limit: number): Cu
   return { items, nextCursor: hasMore ? (items[items.length - 1]?.id ?? null) : null };
 }
 
+/**
+ * Кеширование справочников по ETag. ТЗ §8: клиент держит цепочки, номенклатуру
+ * и пороги локально и перечитывает их, только когда версия изменилась —
+ * на объекте трафик дорог, а справочники меняются редко.
+ */
+export function withETag(reply: FastifyReply, req: FastifyRequest, payload: unknown): unknown | null {
+  const etag = `W/"${createHash('sha1').update(JSON.stringify(payload)).digest('hex')}"`;
+  reply.header('ETag', etag);
+  reply.header('Cache-Control', 'private, must-revalidate');
+  if (req.headers['if-none-match'] === etag) {
+    reply.code(304);
+    return null;
+  }
+  return payload;
+}
+
 export const DEFAULT_PAGE_SIZE = 50;
 export const MAX_PAGE_SIZE = 200;

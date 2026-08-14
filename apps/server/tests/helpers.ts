@@ -75,8 +75,41 @@ export const ACCOUNTS = {
   tech: 'k.turgunov',
 } as const;
 
-export const photo = () => [
-  { url: 'photo://test.jpg', takenAt: new Date().toISOString(), lat: 42.87, lon: 74.6 },
-];
+/**
+ * Настоящий цикл загрузки: ссылка → PUT содержимого → ссылка на файл.
+ * Запись выполнения не примет фото, которое не догрузилось, поэтому в тестах
+ * идём тем же путём, что и клиент.
+ */
+export async function uploadPhoto(token: string, overrides: Record<string, unknown> = {}) {
+  const instance = await getApp();
+  const presigned = await api(token, 'POST', '/api/v1/files/presign', {
+    filename: 'work.jpg',
+    mime: 'image/jpeg',
+    purpose: 'entry',
+    takenAt: new Date().toISOString(),
+    lat: 42.87,
+    lon: 74.6,
+    ...overrides,
+  });
+  if (presigned.status !== 200) {
+    throw new Error(`Ссылка не выдана: ${presigned.status} ${JSON.stringify(presigned.body)}`);
+  }
+  const put = await instance.inject({
+    method: 'PUT',
+    url: presigned.body.uploadUrl,
+    headers: { 'content-type': 'image/jpeg' },
+    payload: Buffer.from('фото с объекта'),
+  });
+  if (put.statusCode !== 200) {
+    throw new Error(`Загрузка не прошла: ${put.statusCode} ${put.body}`);
+  }
+  return { fileId: presigned.body.fileId as string, key: presigned.body.key as string };
+}
+
+/** Одно загруженное фото — самый частый случай в тестах. */
+export async function photos(token: string) {
+  const file = await uploadPhoto(token);
+  return [{ fileId: file.fileId }];
+}
 
 export { DEMO_PASSWORD };

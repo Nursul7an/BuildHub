@@ -11,14 +11,14 @@ import { actorOf, audit, auditChanges, emit } from '../audit.js';
 import { getThreshold } from '../thresholds.js';
 import { checkTransition } from '../transitions.js';
 import { fail, failTransition } from '../http.js';
+import { applyReportEntry } from '../services/report-entry.js';
 import { serializeState } from './works.js';
 
-const photoSchema = z.object({
-  url: z.string(),
-  takenAt: z.string(),
-  lat: z.number().optional(),
-  lon: z.number().optional(),
-});
+/**
+ * Фото — ссылка на файл, уже загруженный в хранилище. Время съёмки и геометку
+ * несёт сам файл: их нельзя дописать задним числом вместе с объёмом.
+ */
+const photoSchema = z.object({ fileId: z.string() });
 
 const entrySchema = z.object({
   processStateId: z.string(),
@@ -140,70 +140,13 @@ export async function reportRoutes(app: FastifyInstance) {
   /** Сохранение одной записи — форма сохраняется по работе, а не целиком. */
   app.post('/api/report/entry', async (req, reply) => {
     const body = z.object({ date: z.string(), entry: entrySchema }).parse(req.body);
-    const date = dayStart(body.date);
 
-    const state = await prisma.processState.findUnique({
-      where: { id: body.entry.processStateId },
-      include: { processDef: true },
-    });
-    if (!state) return fail(reply, 404, 'not_found', 'Процесс не найден');
-    if (state.status === 'blocked') {
-      return failTransition(reply, 'blocked', state.blockedReason ?? 'Процесс заблокирован');
+    // Те же правила, что и в офлайн-очереди: логика одна на оба пути.
+    const result = await applyReportEntry(req.currentUser.id, body.date, body.entry);
+    if (!result.ok) {
+      return fail(reply, result.status, result.failure.code, result.failure.message);
     }
-
-    // Температурный порог берётся по объекту: на разных ППР он разный. ТЗ §9.
-    const winterTempC = await getThreshold({
-      key: 'winterTempC',
-      facilityId: state.objectId,
-      processId: state.processDefId,
-    });
-    const failure = checkReportEntry(body.entry, winterTempC);
-    if (failure) return fail(reply, 422, failure.code, failure.message);
-
-    const report = await prisma.dailyReport.upsert({
-      where: { date_authorId: { date, authorId: req.currentUser.id } },
-      create: {
-        date,
-        authorId: req.currentUser.id,
-        objectId: state.objectId,
-        status: 'draft',
-      },
-      update: {},
-    });
-
-    const existing = await prisma.reportEntry.findFirst({
-      where: { reportId: report.id, processStateId: body.entry.processStateId },
-    });
-
-    const data = {
-      reportId: report.id,
-      processStateId: body.entry.processStateId,
-      volume: body.entry.volume,
-      unit: body.entry.unit,
-      workers: body.entry.workers,
-      problems: JSON.stringify(body.entry.problems),
-      tempAir: body.entry.tempAir,
-      tempMix: body.entry.tempMix,
-      winterMethod: body.entry.winterMethod,
-      comment: body.entry.comment,
-    };
-
-    const entry = existing
-      ? await prisma.reportEntry.update({ where: { id: existing.id }, data })
-      : await prisma.reportEntry.create({ data });
-
-    await prisma.reportPhoto.deleteMany({ where: { entryId: entry.id } });
-    await prisma.reportPhoto.createMany({
-      data: body.entry.photos.map((p) => ({
-        entryId: entry.id,
-        url: p.url,
-        takenAt: new Date(p.takenAt),
-        lat: p.lat,
-        lon: p.lon,
-      })),
-    });
-
-    return { reportId: report.id, entryId: entry.id };
+    return { reportId: result.reportId, entryId: result.entryId };
   });
 
   /** Отправка отчёта. Мастер отправляет прорабу, прораб — в ПТО. */
@@ -480,7 +423,7 @@ type ReportWithEntries = {
     tempMix: number | null;
     winterMethod: string | null;
     comment: string | null;
-    photos: { id: string; url: string; takenAt: Date; lat: number | null; lon: number | null }[];
+    photos: { id: string; fileId: string | null; takenAt: Date; lat: number | null; lon: number | null }[];
     processState?: { processDef: { name: string }; block: { name: string }; floor: number };
   }[];
   checks?: { id: string; decision: string; comment: string | null; adjustFrom: number | null; adjustTo: number | null; createdAt: Date }[];
@@ -515,7 +458,7 @@ function serializeReport(report: ReportWithEntries) {
       comment: e.comment,
       photos: e.photos.map((p) => ({
         id: p.id,
-        url: p.url,
+        fileId: p.fileId,
         takenAt: p.takenAt.toISOString(),
         lat: p.lat,
         lon: p.lon,

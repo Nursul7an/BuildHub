@@ -4,7 +4,7 @@
  */
 import { after, before, beforeEach, describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { ACCOUNTS, api, closeAll, login, photo, resetDatabase } from './helpers.js';
+import { ACCOUNTS, api, closeAll, login, photos, resetDatabase } from './helpers.js';
 import { checkTransition } from '../src/transitions.js';
 import { getThreshold } from '../src/thresholds.js';
 
@@ -48,7 +48,7 @@ describe('Критерий 3 · запрещённый переход не вы�
 
       const saved = await api(prorab, 'POST', '/api/report/entry', {
         date: new Date().toISOString(),
-        entry: { processStateId: active.id, volume: 1, unit: 'т', workers: 10, photos: photo() },
+        entry: { processStateId: active.id, volume: 1, unit: 'т', workers: 10, photos: await photos(prorab) },
       });
       const reportId = saved.body.reportId as string;
 
@@ -79,7 +79,7 @@ describe('Критерий 11 · журнал аудита', () => {
 
     const saved = await api(prorab, 'POST', '/api/report/entry', {
       date: new Date().toISOString(),
-      entry: { processStateId: active.id, volume: 10, unit: 'т', workers: 12, photos: photo() },
+      entry: { processStateId: active.id, volume: 10, unit: 'т', workers: 12, photos: await photos(prorab) },
     });
     const reportId = saved.body.reportId as string;
     await api(prorab, 'POST', `/api/report/${reportId}/submit`, { fillSeconds: 90 });
@@ -117,7 +117,7 @@ describe('Критерий 11 · журнал аудита', () => {
     const active = (today.body.processes as any[]).find((p) => p.status === 'active');
     const saved = await api(prorab, 'POST', '/api/report/entry', {
       date: new Date(Date.now() - 86_400_000).toISOString(),
-      entry: { processStateId: active.id, volume: 2, unit: 'т', workers: 8, photos: photo() },
+      entry: { processStateId: active.id, volume: 2, unit: 'т', workers: 8, photos: await photos(prorab) },
     });
     const reportId = saved.body.reportId as string;
     await api(prorab, 'POST', `/api/report/${reportId}/submit`, { fillSeconds: 45 });
@@ -160,7 +160,7 @@ describe('Критерий 12 · пороги меняются без депло
     const active = (today.body.processes as any[]).find((p) => p.status === 'active');
     const before = await api(prorab, 'POST', '/api/report/entry', {
       date: new Date().toISOString(),
-      entry: { processStateId: active.id, volume: 1, unit: 'т', workers: 5, photos: photo(), tempAir: -3 },
+      entry: { processStateId: active.id, volume: 1, unit: 'т', workers: 5, photos: await photos(prorab), tempAir: -3 },
     });
     assert.equal(before.status, 422);
     assert.equal(before.body.code, 'no_winter_method');
@@ -179,7 +179,7 @@ describe('Критерий 12 · пороги меняются без депло
     // Та же запись теперь проходит — без перезапуска и без правки кода.
     const after = await api(prorab, 'POST', '/api/report/entry', {
       date: new Date().toISOString(),
-      entry: { processStateId: active.id, volume: 1, unit: 'т', workers: 5, photos: photo(), tempAir: -3 },
+      entry: { processStateId: active.id, volume: 1, unit: 'т', workers: 5, photos: await photos(prorab), tempAir: -3 },
     });
     assert.equal(after.status, 200);
   });

@@ -4,7 +4,7 @@
  */
 import { after, before, beforeEach, describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { ACCOUNTS, api, closeAll, login, photo, resetDatabase } from './helpers.js';
+import { ACCOUNTS, api, closeAll, login, photos, resetDatabase } from './helpers.js';
 
 let prorab: string;
 let pto: string;
@@ -22,12 +22,13 @@ async function loadContext() {
 
 const date = () => new Date().toISOString();
 
-const entry = (overrides: Record<string, unknown> = {}) => ({
+/** Фото загружается по-настоящему, поэтому фабрика асинхронная. */
+const entry = async (overrides: Record<string, unknown> = {}) => ({
   processStateId: activeProcessId,
   volume: 1,
   unit: 'т',
   workers: 12,
-  photos: photo(),
+  photos: await photos(prorab),
   ...overrides,
 });
 
@@ -47,7 +48,7 @@ describe('Дневной отчёт', () => {
     it('требует объём', async () => {
       const res = await api(prorab, 'POST', '/api/report/entry', {
         date: date(),
-        entry: entry({ volume: 0 }),
+        entry: await entry({ volume: 0 }),
       });
       assert.equal(res.status, 422);
       assert.equal(res.body.code, 'no_volume');
@@ -56,7 +57,7 @@ describe('Дневной отчёт', () => {
     it('требует хотя бы одно фото', async () => {
       const res = await api(prorab, 'POST', '/api/report/entry', {
         date: date(),
-        entry: entry({ photos: [] }),
+        entry: await entry({ photos: [] }),
       });
       assert.equal(res.status, 422);
       assert.equal(res.body.code, 'no_photo');
@@ -65,14 +66,14 @@ describe('Дневной отчёт', () => {
     it('ниже +5 °C требует зимний метод', async () => {
       const without = await api(prorab, 'POST', '/api/report/entry', {
         date: date(),
-        entry: entry({ tempAir: -3 }),
+        entry: await entry({ tempAir: -3 }),
       });
       assert.equal(without.status, 422);
       assert.equal(without.body.code, 'no_winter_method');
 
       const withMethod = await api(prorab, 'POST', '/api/report/entry', {
         date: date(),
-        entry: entry({ tempAir: -3, winterMethod: 'противоморозные добавки' }),
+        entry: await entry({ tempAir: -3, winterMethod: 'противоморозные добавки' }),
       });
       assert.equal(withMethod.status, 200);
     });
@@ -80,7 +81,7 @@ describe('Дневной отчёт', () => {
     it('не принимает объём в заблокированный процесс', async () => {
       const res = await api(prorab, 'POST', '/api/report/entry', {
         date: date(),
-        entry: entry({ processStateId: blockedProcessId }),
+        entry: await entry({ processStateId: blockedProcessId }),
       });
       assert.equal(res.status, 409);
       assert.equal(res.body.code, 'blocked');
@@ -97,7 +98,7 @@ describe('Дневной отчёт', () => {
       const before = await api(prorab, 'GET', `/api/process/${activeProcessId}`);
       const saved = await api(prorab, 'POST', '/api/report/entry', {
         date: date(),
-        entry: entry({ volume: 2 }),
+        entry: await entry({ volume: 2 }),
       });
       const reportId = saved.body.reportId as string;
 
@@ -120,7 +121,7 @@ describe('Дневной отчёт', () => {
       const before = await api(prorab, 'GET', `/api/process/${activeProcessId}`);
       const saved = await api(prorab, 'POST', '/api/report/entry', {
         date: date(),
-        entry: entry({ volume: 5 }),
+        entry: await entry({ volume: 5 }),
       });
       const reportId = saved.body.reportId as string;
       await api(prorab, 'POST', `/api/report/${reportId}/submit`, { fillSeconds: 100 });
@@ -134,7 +135,7 @@ describe('Дневной отчёт', () => {
       // Прораб исправляет 5 → 3 и отправляет снова.
       await api(prorab, 'POST', '/api/report/entry', {
         date: date(),
-        entry: entry({ volume: 3 }),
+        entry: await entry({ volume: 3 }),
       });
       const resubmit = await api(prorab, 'POST', `/api/report/${reportId}/submit`, { fillSeconds: 60 });
       assert.equal(resubmit.status, 200);
@@ -147,7 +148,7 @@ describe('Дневной отчёт', () => {
       const before = await api(prorab, 'GET', `/api/process/${activeProcessId}`);
       const saved = await api(prorab, 'POST', '/api/report/entry', {
         date: date(),
-        entry: entry({ volume: 10 }),
+        entry: await entry({ volume: 10 }),
       });
       const reportId = saved.body.reportId as string;
       await api(prorab, 'POST', `/api/report/${reportId}/submit`, { fillSeconds: 100 });
@@ -168,7 +169,7 @@ describe('Дневной отчёт', () => {
     it('не даёт отправить пустой отчёт', async () => {
       const saved = await api(prorab, 'POST', '/api/report/entry', {
         date: date(),
-        entry: entry(),
+        entry: await entry(),
       });
       const reportId = saved.body.reportId as string;
       await api(pto, 'GET', `/api/report/${reportId}`);
@@ -196,7 +197,7 @@ describe('Дневной отчёт', () => {
     it('возврат доносит замечание до автора', async () => {
       const saved = await api(prorab, 'POST', '/api/report/entry', {
         date: date(),
-        entry: entry(),
+        entry: await entry(),
       });
       const reportId = saved.body.reportId as string;
       await api(prorab, 'POST', `/api/report/${reportId}/submit`, { fillSeconds: 100 });

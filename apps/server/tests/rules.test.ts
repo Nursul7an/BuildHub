@@ -5,7 +5,7 @@
  */
 import { after, before, describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { ACCOUNTS, api, closeAll, login, photo, resetDatabase } from './helpers.js';
+import { ACCOUNTS, api, closeAll, login, photos, resetDatabase } from './helpers.js';
 import { addWorkdays, isValidPresentationDate } from '../src/rules.js';
 
 describe('Правила без обращения к сети', () => {
@@ -114,7 +114,7 @@ describe('Шлюзы через API', () => {
     const res = await api(prorab, 'POST', `/api/zayavki/${pending.id}/accept`, {
       qtyAccepted: 4.2,
       passportOk: true,
-      photos: photo(),
+      photos: await photos(prorab),
     });
     assert.equal(res.status, 409);
     assert.equal(res.body.code, 'not_delivered');
@@ -131,7 +131,7 @@ describe('Шлюзы через API', () => {
     const res = await api(prorab, 'POST', `/api/zayavki/${inTransit.id}/accept`, {
       qtyAccepted: 12,
       passportOk: false,
-      photos: photo(),
+      photos: await photos(prorab),
     });
     assert.equal(res.status, 200);
 

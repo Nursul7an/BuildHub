@@ -8,6 +8,7 @@ import { parseJson, prisma } from '../db.js';
 import { checkCanPresent, checkStrengthGate, isValidPresentationDate, recomputeChainBlocks } from '../rules.js';
 import { notify } from '../notify.js';
 import { resolveObjectFilter } from '../scope.js';
+import { withETag } from '../http.js';
 
 export async function worksRoutes(app: FastifyInstance) {
   app.addHook('preHandler', app.authenticate);
@@ -34,12 +35,12 @@ export async function worksRoutes(app: FastifyInstance) {
     }));
   });
 
-  app.get('/api/sections', async () => {
+  app.get('/api/sections', async (req, reply) => {
     const sections = await prisma.sectionDef.findMany({
       include: { processes: { orderBy: { order: 'asc' } } },
       orderBy: { sortOrder: 'asc' },
     });
-    return sections.map((s) => ({
+    const payload = sections.map((s) => ({
       id: s.id,
       name: s.name,
       entryCondition: s.entryCondition,
@@ -56,6 +57,8 @@ export async function worksRoutes(app: FastifyInstance) {
         critical: p.critical,
       })),
     }));
+    // Справочник цепочек клиент кеширует: он меняется реже, чем открывается.
+    return withETag(reply, req, payload);
   });
 
   /** Мои работы: процессы, назначенные текущему пользователю (или все на объекте). */

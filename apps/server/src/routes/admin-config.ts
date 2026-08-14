@@ -8,7 +8,7 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { prisma } from '../db.js';
 import { audit, actorOf, emit } from '../audit.js';
-import { fail } from '../http.js';
+import { fail, withETag } from '../http.js';
 import { getThreshold, listThresholds, setThreshold, type ThresholdKey } from '../thresholds.js';
 import { MACHINES, availableTransitions, type Machine } from '../transitions.js';
 import { notify } from '../notify.js';
@@ -25,9 +25,9 @@ export async function adminConfigRoutes(app: FastifyInstance) {
   app.addHook('preHandler', app.authenticate);
 
   /** Действующие пороги — их читает и клиент, чтобы показывать нормы, а не зашивать. */
-  app.get('/api/v1/thresholds', async (req) => {
+  app.get('/api/v1/thresholds', async (req, reply) => {
     const query = z.object({ key: z.enum(THRESHOLD_KEYS).optional() }).parse(req.query ?? {});
-    return listThresholds(query.key);
+    return withETag(reply, req, await listThresholds(query.key));
   });
 
   /** Значение с учётом области — «какая норма действует здесь и сейчас». */

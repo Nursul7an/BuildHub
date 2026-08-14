@@ -91,6 +91,8 @@ async function reset() {
     prisma.processState.deleteMany(),
     prisma.processDef.deleteMany(),
     prisma.sectionDef.deleteMany(),
+    prisma.syncOperation.deleteMany(),
+    prisma.fileObject.deleteMany(),
     prisma.gate.deleteMany(),
     prisma.threshold.deleteMany(),
     prisma.auditLog.deleteMany(),

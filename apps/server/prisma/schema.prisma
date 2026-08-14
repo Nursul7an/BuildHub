@@ -54,6 +54,8 @@ model User {
   reportChecks       ReportCheck[]
   contractorRatings  ContractorRating[]
   payments           Payment[]             @relation("paymentApprover")
+  files              FileObject[]
+  syncOperations     SyncOperation[]
 
   @@index([role])
 }
@@ -288,6 +290,9 @@ model ReportPhoto {
   id      String      @id @default(cuid())
   entryId String
   entry   ReportEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  /// Ссылка на файл в хранилище. Прямых URL нет: файл отдаётся по подписанной ссылке.
+  fileId  String?
+  file    FileObject? @relation(fields: [fileId], references: [id])
   url     String
   /// Геометка и время съёмки — подделать сложнее, чем подпись.
   takenAt DateTime
@@ -885,4 +890,65 @@ model Gate {
   justification String?
 
   @@index([processStateId, status])
+}
+
+// ─────────────────────────── Файлы и офлайн-очередь ───────────────────────────
+// ТЗ §6, §8, §12. Фото несут время и геометку, ссылки живут 15 минут,
+// а операция, отправленная повторно, не должна создавать дубль.
+
+/// Файл в хранилище. Запись создаётся при выдаче ссылки, помечается
+/// загруженной после подтверждения — до этого запись выполнения неполна (ТЗ §8).
+model FileObject {
+  id  String @id @default(uuid())
+  /// Ключ в объектном хранилище.
+  key String @unique
+
+  mime String
+  size Int?
+
+  /// pending | uploaded
+  status String @default("pending")
+
+  /// Время съёмки и геометка. Подделать сложнее, чем подпись, — поэтому
+  /// именно они, а не «дата загрузки», доказывают, что фото с объекта.
+  takenAt DateTime?
+  lat     Float?
+  lon     Float?
+
+  uploadedById String
+  uploadedBy   User   @relation(fields: [uploadedById], references: [id])
+
+  createdAt  DateTime  @default(now())
+  uploadedAt DateTime?
+
+  photos ReportPhoto[]
+
+  @@index([status])
+}
+
+/// Операция из офлайн-очереди клиента. ТЗ §8, критерий приёмки 8.
+model SyncOperation {
+  id String @id @default(uuid())
+  /// UUID, присвоенный клиентом. Повтор с тем же значением возвращает прежний результат.
+  clientOpId String
+  userId     String
+  user       User   @relation(fields: [userId], references: [id])
+
+  /// Логическое время устройства — по нему видно, что операция старше серверной записи.
+  deviceTime DateTime
+  type       String
+  payload    Json
+
+  /// applied | conflict | failed | skipped
+  status String
+  result Json?
+
+  /// Расхождение не перезаписывается молча: помечается и уходит в разбор ПТО.
+  conflictNote   String?
+  conflictTaskId String?
+
+  createdAt DateTime @default(now())
+
+  @@unique([clientOpId, userId])
+  @@index([status])
 }

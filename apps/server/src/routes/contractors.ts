@@ -99,9 +99,8 @@ export async function contractorRoutes(app: FastifyInstance) {
         text: z.string().min(1),
         location: z.string().min(1),
         dueDays: z.number().int().min(1),
-        photos: z
-          .array(z.object({ url: z.string(), takenAt: z.string(), lat: z.number().optional(), lon: z.number().optional() }))
-          .default([]),
+        /** Фото нарушения — ссылки на загруженные файлы. */
+        photos: z.array(z.object({ fileId: z.string() })).default([]),
       })
       .parse(req.body);
 

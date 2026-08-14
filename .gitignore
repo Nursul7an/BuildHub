@@ -9,3 +9,6 @@ apps/server/prisma/dev.db-journal
 # Тестовая база
 apps/server/test.db
 apps/server/test.db-journal
+
+# Локальное файловое хранилище
+apps/server/var/
