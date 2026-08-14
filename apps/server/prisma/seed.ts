@@ -95,6 +95,7 @@ async function reset() {
     prisma.sectionDef.deleteMany(),
     prisma.session.deleteMany(),
     prisma.notificationSetting.deleteMany(),
+    prisma.loginAttempt.deleteMany(),
     prisma.kpiTarget.deleteMany(),
     prisma.issueRouting.deleteMany(),
     prisma.contractAct.deleteMany(),

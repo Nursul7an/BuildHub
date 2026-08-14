@@ -20,6 +20,12 @@ import {
   rotateSession,
 } from './sessions.js';
 import { fail } from './http.js';
+import {
+  checkLoginThrottle,
+  clearLoginAttempts,
+  failLoginThrottled,
+  recordFailedLogin,
+} from './ratelimit.js';
 import { actorOf, audit } from './audit.js';
 
 export { generatePassword };
@@ -117,13 +123,24 @@ export async function authRoutes(app: FastifyInstance) {
 
     // Логин или телефон — на объекте помнят телефон, а не логин.
     const value = parsed.data.login.trim();
+
+    // Придерживаем перебор до проверки пароля: считать хеш на каждую
+    // попытку злоумышленника — самому оплачивать чужую атаку.
+    const throttle = await checkLoginThrottle(value, req.ip);
+    if (throttle.blocked) return failLoginThrottled(reply, throttle);
+
     const user = await prisma.user.findFirst({
       where: { OR: [{ login: value }, { phone: value }], active: true },
     });
 
     if (!user || !(await verifyPassword(user.passwordHash, parsed.data.password))) {
+      await recordFailedLogin(value, req.ip);
+      // Ответ одинаков для несуществующего логина и неверного пароля:
+      // иначе перебором собирают список действующих учёток.
       return fail(reply, 401, 'bad_credentials', 'Неверный логин или пароль');
     }
+
+    await clearLoginAttempts(value, req.ip);
 
     // Прозрачная миграция: старый bcrypt-хеш заменяется argon2id при входе.
     if (needsRehash(user.passwordHash)) {

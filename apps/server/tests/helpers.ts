@@ -11,10 +11,19 @@ let app: FastifyInstance | null = null;
 
 export async function getApp(): Promise<FastifyInstance> {
   if (!app) {
-    app = await buildApp({ logger: false });
+    // Ограничение частоты выключено: тесты стучат подряд и упёрлись бы
+    // в лимит. Само ограничение проверяется отдельным приложением.
+    app = await buildApp({ logger: false, rateLimit: false });
     await app.ready();
   }
   return app;
+}
+
+/** Приложение с включённым ограничением частоты — только для его же тестов. */
+export async function buildLimitedApp(): Promise<FastifyInstance> {
+  const limited = await buildApp({ logger: false, rateLimit: true });
+  await limited.ready();
+  return limited;
 }
 
 /** Возврат к известному состоянию — каждый файл тестов стартует с него. */

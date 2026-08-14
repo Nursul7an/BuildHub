@@ -19,19 +19,31 @@ import { econRoutes } from './routes/econ.js';
 import { issueRoutes } from './routes/issues.js';
 import { kpiRoutes } from './routes/kpi.js';
 import { registerIdempotency } from './http.js';
+import { registerRateLimit } from './ratelimit.js';
 
 /**
  * Сборка приложения отдельно от запуска — чтобы тесты поднимали его в процессе
  * через app.inject(), без портов и ожиданий.
  */
-export async function buildApp(options: { logger?: boolean } = {}): Promise<FastifyInstance> {
+export async function buildApp(
+  options: { logger?: boolean; rateLimit?: boolean } = {},
+): Promise<FastifyInstance> {
   const app = Fastify({
     logger: options.logger === false ? false : { level: process.env.LOG_LEVEL ?? 'info' },
   });
 
   // Формат ошибки один на весь API: {code, message, details}. ТЗ §6.
   app.setErrorHandler((error: unknown, _req, reply) => {
-    const err = error as { validation?: unknown; name?: string; issues?: unknown };
+    const err = error as {
+      validation?: unknown;
+      name?: string;
+      issues?: unknown;
+      statusCode?: number;
+      code?: string;
+      message?: string;
+      details?: unknown;
+    };
+
     if (err.validation || err.name === 'ZodError') {
       return reply.code(400).send({
         code: 'bad_request',
@@ -39,12 +51,36 @@ export async function buildApp(options: { logger?: boolean } = {}): Promise<Fast
         details: err.issues ?? err.validation,
       });
     }
+
+    // Ошибка, которая сама знает свой код ответа, — это осознанный отказ
+    // плагина (например, превышение частоты), а не сбой сервера. Код может
+    // лежать и на самой ошибке, и уже быть выставлен на ответе.
+    // Превращать такой отказ в 500 значит врать клиенту о причине.
+    const declared =
+      typeof err.statusCode === 'number'
+        ? err.statusCode
+        : reply.statusCode >= 400 && reply.statusCode < 500
+          ? reply.statusCode
+          : null;
+
+    if (declared !== null && declared >= 400 && declared < 500) {
+      return reply.code(declared).send({
+        code: err.code ?? 'request_rejected',
+        message: err.message ?? 'Запрос отклонён',
+        ...(err.details === undefined ? {} : { details: err.details }),
+      });
+    }
+
     app.log.error(error);
     return reply.code(500).send({ code: 'internal', message: 'Внутренняя ошибка сервера' });
   });
 
   await app.register(cors, { origin: true });
   await registerAuth(app);
+  // Частоту режет и шлюз (ТЗ §3.1), но он не знает, кто именно пришёл.
+  if (options.rateLimit !== false) {
+    await registerRateLimit(app);
+  }
   // Повтор изменяющего запроса не должен создавать дубль: связь на этаже рвётся.
   registerIdempotency(app);
 
