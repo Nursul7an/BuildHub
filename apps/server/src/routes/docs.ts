@@ -13,78 +13,6 @@ import { emit } from '../audit.js';
 export async function docRoutes(app: FastifyInstance) {
   app.addHook('preHandler', app.authenticate);
 
-  /** Марки комплектов, сгруппированные по стадии — стадии разделяются обязательно. */
-  app.get('/api/project/sets', async (req) => {
-    const query = z.object({ objectId: z.string().optional() }).parse(req.query ?? {});
-    const me = await prisma.user.findUniqueOrThrow({ where: { id: req.currentUser.id } });
-    const objectId = query.objectId ?? me.objectId ?? undefined;
-
-    const sets = await prisma.drawingSet.findMany({
-      where: objectId ? { objectId } : {},
-      include: { sheets: { orderBy: { number: 'asc' } } },
-      orderBy: [{ stage: 'asc' }, { mark: 'asc' }],
-    });
-
-    return sets.map((s) => ({
-      id: s.id,
-      stage: s.stage,
-      mark: s.mark,
-      name: s.name,
-      revision: s.revision,
-      issuedAt: s.issuedAt.toISOString(),
-      sheetCount: s.sheets.length,
-      /** Сколько листов заменено — на это прораб смотрит в первую очередь. */
-      supersededCount: s.sheets.filter((x) => !x.isCurrent).length,
-      sheets: s.sheets.map(serializeSheet),
-    }));
-  });
-
-  /** Действующие листы: только актуальные ревизии, по всем комплектам. */
-  app.get('/api/project/current-sheets', async (req) => {
-    const query = z.object({ objectId: z.string().optional() }).parse(req.query ?? {});
-    const me = await prisma.user.findUniqueOrThrow({ where: { id: req.currentUser.id } });
-    const objectId = query.objectId ?? me.objectId ?? undefined;
-
-    const sheets = await prisma.drawingSheet.findMany({
-      where: { isCurrent: true, ...(objectId ? { set: { objectId } } : {}) },
-      include: { set: true },
-      orderBy: [{ set: { mark: 'asc' } }, { number: 'asc' }],
-    });
-
-    return sheets.map((s) => ({ ...serializeSheet(s), mark: s.set.mark, stage: s.set.stage }));
-  });
-
-  app.get('/api/project/sheets/:id', async (req, reply) => {
-    const { id } = z.object({ id: z.string() }).parse(req.params);
-    const sheet = await prisma.drawingSheet.findUnique({
-      where: { id },
-      include: { set: true, rfis: true },
-    });
-    if (!sheet) return reply.code(404).send({ code: 'not_found', message: 'Лист не найден' });
-
-    // Если лист заменён — показываем, чем именно, чтобы не работали по старому.
-    const replacement = sheet.supersededBy
-      ? await prisma.drawingSheet.findFirst({
-          where: { setId: sheet.setId, number: sheet.supersededBy },
-        })
-      : null;
-
-    // Кто открывал лист — тому и уходит извещение о новой версии (критерий 7).
-    await prisma.sheetView.upsert({
-      where: { sheetId_userId: { sheetId: sheet.id, userId: req.currentUser.id } },
-      create: { sheetId: sheet.id, userId: req.currentUser.id, revision: sheet.revision },
-      update: { revision: sheet.revision, viewedAt: new Date() },
-    });
-
-    return {
-      ...serializeSheet(sheet),
-      mark: sheet.set.mark,
-      stage: sheet.set.stage,
-      replacement: replacement ? serializeSheet(replacement) : null,
-      rfis: sheet.rfis.map((r) => ({ id: r.id, number: r.number, status: r.status })),
-    };
-  });
-
   /** Запрос проектировщику. */
   app.post('/api/rfi', async (req) => {
     const body = z
@@ -272,28 +200,4 @@ export async function docRoutes(app: FastifyInstance) {
 
     return { status };
   });
-}
-
-function serializeSheet(sheet: {
-  id: string;
-  number: string;
-  name: string;
-  revision: string;
-  isCurrent: boolean;
-  supersededBy: string | null;
-  changedAt: Date | null;
-  changeSummary: string | null;
-  fileUrl: string | null;
-}) {
-  return {
-    id: sheet.id,
-    number: sheet.number,
-    name: sheet.name,
-    revision: sheet.revision,
-    isCurrent: sheet.isCurrent,
-    supersededBy: sheet.supersededBy,
-    changedAt: sheet.changedAt?.toISOString() ?? null,
-    changeSummary: sheet.changeSummary,
-    fileUrl: sheet.fileUrl,
-  };
 }

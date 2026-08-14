@@ -12,14 +12,14 @@ import { RootHeader, ScreenHeader } from '../../shell/ScreenHeader';
 import { ScreenBody } from '../../shell/PhoneFrame';
 import { useAction, useQuery } from '../../api/hooks';
 import { api } from '../../api/client';
-import type { DocumentDto, DrawingSetDto, ProtocolDto, RfiDto, SheetDto } from '../../api/types';
+import type { DocumentDto, DrawingSetDto, ProtocolDto, RfiDto, SheetDetailDto, SheetDto } from '../../api/types';
 import { useApp } from '../../store/app';
 
 /* ───────────────────────────── PR1 · Марки комплектов ───────────────────────────── */
 
 export function ProjectScreen() {
   const go = useApp((s) => s.go);
-  const { data } = useQuery<DrawingSetDto[]>('/project/sets');
+  const { data } = useQuery<DrawingSetDto[]>('/v1/doc-sets');
 
   // Стадии разделяются обязательно: П, РД и ИД — разные документы с разной силой.
   const byStage = new Map<string, DrawingSetDto[]>();
@@ -72,9 +72,9 @@ export function ProjectScreen() {
                     {set.revision} от {new Date(set.issuedAt).toLocaleDateString('ru-RU')} · {set.sheetCount}{' '}
                     листов
                   </div>
-                  {set.supersededCount > 0 ? (
+                  {set.revisedCount > 0 ? (
                     <div style={{ fontSize: 12, fontWeight: 700, color: color.warnText, marginTop: 4 }}>
-                      🔴 заменено листов: {set.supersededCount}
+                      🔴 листов с изменениями: {set.revisedCount}
                     </div>
                   ) : null}
                 </Card>
@@ -93,7 +93,7 @@ export function ProjectSetScreen() {
   const params = useApp((s) => s.params);
   const back = useApp((s) => s.back);
   const go = useApp((s) => s.go);
-  const { data } = useQuery<DrawingSetDto[]>('/project/sets');
+  const { data } = useQuery<DrawingSetDto[]>('/v1/doc-sets');
   const set = data?.find((s) => s.id === params.setId);
 
   if (!set) return <ScreenBody style={{ padding: 20, color: color.muted }}>Загружаем…</ScreenBody>;
@@ -117,7 +117,7 @@ export function ProjectSetScreen() {
 export function CurrentSheetsScreen() {
   const back = useApp((s) => s.back);
   const go = useApp((s) => s.go);
-  const { data } = useQuery<SheetDto[]>('/project/current-sheets');
+  const { data } = useQuery<SheetDto[]>('/v1/sheets/active');
 
   return (
     <ScreenBody>
@@ -137,37 +137,21 @@ export function CurrentSheetsScreen() {
 
 function SheetRow({ sheet, onOpen }: { sheet: SheetDto; onOpen: () => void }) {
   return (
-    <Card
-      onClick={onOpen}
-      style={{
-        borderRadius: radius.md,
-        padding: '14px 16px',
-        ...(sheet.isCurrent ? null : { border: `1.5px solid ${color.warnBorder}` }),
-      }}
-    >
+    <Card onClick={onOpen} style={{ borderRadius: radius.md, padding: '14px 16px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
         <div style={{ minWidth: 0 }}>
-          <div style={{ fontSize: 15, fontWeight: 800, color: color.ink }}>
-            {sheet.mark ? `${sheet.mark}-` : ''}
-            {sheet.number}
-          </div>
+          <div style={{ fontSize: 15, fontWeight: 800, color: color.ink }}>{sheet.number}</div>
           <div style={{ fontSize: 12.5, color: color.muted, marginTop: 2 }}>{sheet.name}</div>
         </div>
-        <Badge tone={sheet.isCurrent ? 'green' : 'warn'} style={{ flexShrink: 0 }}>
-          {sheet.isCurrent ? 'действующий' : 'заменён'}
+        {/* В реестре по определению только действующие листы. */}
+        <Badge tone="green" style={{ flexShrink: 0 }}>
+          действующий
         </Badge>
       </div>
-      <div style={{ fontSize: 12, color: color.muted, marginTop: 5, ...tabular }}>{sheet.revision}</div>
-      {!sheet.isCurrent && sheet.supersededBy ? (
-        <div style={{ fontSize: 12.5, fontWeight: 800, color: color.danger, marginTop: 5 }}>
-          🔴 Заменён на {sheet.supersededBy} — работать по нему нельзя
-        </div>
-      ) : null}
-      {sheet.changeSummary && sheet.isCurrent ? (
-        <div style={{ fontSize: 12, color: color.warnText, fontWeight: 700, marginTop: 5 }}>
-          ✎ {sheet.changeSummary}
-        </div>
-      ) : null}
+      <div style={{ fontSize: 12, color: color.muted, marginTop: 5, ...tabular }}>
+        {sheet.revision ?? '—'}
+        {sheet.versionCount && sheet.versionCount > 1 ? ` · изменений: ${sheet.versionCount - 1}` : ''}
+      </div>
     </Card>
   );
 }
@@ -178,8 +162,8 @@ export function SheetScreen() {
   const params = useApp((s) => s.params);
   const back = useApp((s) => s.back);
   const go = useApp((s) => s.go);
-  const { data: sheet } = useQuery<SheetDto & { replacement: SheetDto | null; rfis: { id: string; number: string; status: string }[] }>(
-    params.sheetId ? `/project/sheets/${params.sheetId}` : null,
+  const { data: sheet } = useQuery<SheetDetailDto>(
+    params.sheetId ? `/v1/sheets/${params.sheetId}` : null,
   );
 
   if (!sheet) return <ScreenBody style={{ padding: 20, color: color.muted }}>Загружаем лист…</ScreenBody>;
@@ -189,7 +173,7 @@ export function SheetScreen() {
       <ScreenHeader title={sheet.number} subtitle={sheet.name} onBack={back} />
 
       {/* Предупреждение об устаревшей версии — поверх листа, а не сбоку от него. */}
-      {!sheet.isCurrent ? (
+      {sheet.outdated ? (
         <div
           style={{
             margin: '4px 20px',
@@ -203,8 +187,7 @@ export function SheetScreen() {
             lineHeight: 1.45,
           }}
         >
-          🔴 Это старая версия ({sheet.revision}).{' '}
-          {sheet.replacement ? `Действующий лист — ${sheet.replacement.number}, ${sheet.replacement.revision}.` : ''}
+          🔴 {sheet.warning}
         </div>
       ) : null}
 
@@ -222,14 +205,21 @@ export function SheetScreen() {
           fontSize: 13,
         }}
       >
-        Просмотр листа · {sheet.revision}
+        Просмотр листа · {sheet.version.revision}
       </div>
 
       <Card style={{ margin: '0 20px' }}>
-        <div style={{ fontSize: 13, color: color.inkMuted, ...tabular }}>{sheet.revision}</div>
-        {sheet.changeSummary ? (
+        <div style={{ fontSize: 13, color: color.inkMuted, ...tabular }}>
+          {sheet.version.revision} от {new Date(sheet.version.issuedAt).toLocaleDateString('ru-RU')}
+        </div>
+        {sheet.version.changeSummary ? (
           <div style={{ fontSize: 12.5, color: color.warnText, fontWeight: 700, marginTop: 6 }}>
-            ✎ Что изменилось: {sheet.changeSummary}
+            ✎ Что изменилось: {sheet.version.changeSummary}
+          </div>
+        ) : null}
+        {sheet.history.length > 1 ? (
+          <div style={{ fontSize: 12, color: color.muted, marginTop: 6 }}>
+            История: {sheet.history.map((v) => v.revision).join(' → ')}
           </div>
         ) : null}
         {sheet.rfis.length > 0 ? (
@@ -240,9 +230,11 @@ export function SheetScreen() {
       </Card>
 
       <div style={{ marginTop: 'auto', padding: '16px 20px 24px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {sheet.replacement ? (
-          <PrimaryButton onClick={() => go('project-sheet', { sheetId: sheet.replacement!.id })}>
-            Открыть действующий лист
+        {sheet.outdated && sheet.currentVersion ? (
+          <PrimaryButton
+            onClick={() => go('project-sheet', { sheetId: sheet.id })}
+          >
+            Открыть действующую версию · {sheet.currentVersion.revision}
           </PrimaryButton>
         ) : null}
         <div

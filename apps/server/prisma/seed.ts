@@ -94,6 +94,7 @@ async function reset() {
     prisma.session.deleteMany(),
     prisma.notificationSetting.deleteMany(),
     prisma.sheetView.deleteMany(),
+    prisma.sheetVersion.deleteMany(),
     prisma.syncOperation.deleteMany(),
     prisma.fileObject.deleteMany(),
     prisma.gate.deleteMany(),
@@ -471,7 +472,7 @@ export async function seedDatabase(options: { quiet?: boolean } = {}) {
 
   /* ── Проект: комплекты и листы ── */
   for (const set of DRAWING_SETS) {
-    await prisma.drawingSet.create({
+    const created = await prisma.drawingSet.create({
       data: {
         objectId: objectIds.get(set.objectId)!,
         stage: set.stage,
@@ -479,19 +480,37 @@ export async function seedDatabase(options: { quiet?: boolean } = {}) {
         name: set.name,
         revision: set.revision,
         issuedAt: d(set.issuedAt),
-        sheets: {
-          create: set.sheets.map((s) => ({
-            number: s.number,
-            name: s.name,
-            revision: s.revision,
-            isCurrent: s.isCurrent,
-            supersededBy: 'supersededBy' in s ? s.supersededBy : null,
-            changedAt: 'changedAt' in s && s.changedAt ? d(s.changedAt) : null,
-            changeSummary: 'changeSummary' in s ? s.changeSummary : null,
-          })),
-        },
       },
     });
+
+    // Лист — это личность, версии копятся под ним. КЖ-12 изм. 3 заменён изм. 4:
+    // ровно та ситуация, ради которой раздел «Проект» и существует.
+    for (const sheetFixture of set.sheets) {
+      const sheet = await prisma.drawingSheet.create({
+        data: { setId: created.id, number: sheetFixture.number, name: sheetFixture.name },
+      });
+
+      let currentId: string | null = null;
+      for (const rev of sheetFixture.history) {
+        const version = await prisma.sheetVersion.create({
+          data: {
+            sheetId: sheet.id,
+            revision: rev.revision,
+            issuedAt: d(rev.issuedAt),
+            changeSummary: rev.changeSummary,
+            supersededAt: rev.superseded && 'supersededAt' in rev ? d(rev.supersededAt) : null,
+          },
+        });
+        if (!rev.superseded) currentId = version.id;
+      }
+
+      if (currentId) {
+        await prisma.drawingSheet.update({
+          where: { id: sheet.id },
+          data: { currentVersionId: currentId },
+        });
+      }
+    }
   }
 
   for (const r of RFIS) {

@@ -573,22 +573,54 @@ model DrawingSet {
   sheets DrawingSheet[]
 }
 
+/// Лист как таковой: КЖ-12 остаётся КЖ-12 через все изменения.
+/// Ревизии живут отдельной таблицей — иначе «лист» и «версия листа»
+/// смешиваются, и понять, по какой из них работали, становится нечем.
 model DrawingSheet {
-  id       String     @id @default(cuid())
-  setId    String
-  set      DrawingSet @relation(fields: [setId], references: [id], onDelete: Cascade)
-  number   String
-  name     String
-  revision String
-  /// Контроль актуальности листа — главная функция раздела «Проект».
-  isCurrent     Boolean   @default(true)
-  supersededBy  String?
-  changedAt     DateTime?
-  changeSummary String?
-  fileUrl       String?
+  id     String     @id @default(cuid())
+  setId  String
+  set    DrawingSet @relation(fields: [setId], references: [id], onDelete: Cascade)
+  number String
+  name   String
 
-  rfis  Rfi[]
-  views SheetView[]
+  /// Действующая версия. Ссылка одна — реестр действующих листов строится по ней.
+  currentVersionId String?  @unique
+  currentVersion   SheetVersion? @relation("currentVersion", fields: [currentVersionId], references: [id])
+
+  versions SheetVersion[] @relation("sheetVersions")
+  rfis     Rfi[]
+  views    SheetView[]
+
+  @@unique([setId, number])
+}
+
+/// Версия листа: номер изменения, дата, признак недействительности.
+/// Прежние версии не удаляются — по ним потом объясняют, что было на руках.
+model SheetVersion {
+  id      String       @id @default(uuid())
+  sheetId String
+  sheet   DrawingSheet @relation("sheetVersions", fields: [sheetId], references: [id], onDelete: Cascade)
+
+  /// «изм. 4»
+  revision String
+  issuedAt DateTime
+  /// Что именно изменилось — прораб читает это первым.
+  changeSummary String?
+
+  fileId String?
+  file   FileObject? @relation(fields: [fileId], references: [id])
+
+  /// Недействительна с этого момента; заменена конкретной версией.
+  supersededAt     DateTime?
+  supersededByaId  String?
+  uploadedById     String?
+
+  createdAt DateTime @default(now())
+
+  currentFor DrawingSheet[] @relation("currentVersion")
+  views      SheetView[]
+
+  @@unique([sheetId, revision])
 }
 
 model Rfi {
@@ -925,7 +957,8 @@ model FileObject {
   createdAt  DateTime  @default(now())
   uploadedAt DateTime?
 
-  photos ReportPhoto[]
+  photos        ReportPhoto[]
+  sheetVersions SheetVersion[]
 
   @@index([status])
 }
@@ -983,8 +1016,13 @@ model SheetView {
   sheet   DrawingSheet @relation(fields: [sheetId], references: [id], onDelete: Cascade)
   userId  String
   user    User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  /// Какую именно ревизию человек видел.
-  revision String
+
+  /// Какую именно версию человек открывал: по ней видно, кто мог уйти
+  /// работать по старому листу.
+  versionId String?
+  version   SheetVersion? @relation(fields: [versionId], references: [id])
+  revision  String
+
   viewedAt DateTime @default(now())
 
   @@unique([sheetId, userId])

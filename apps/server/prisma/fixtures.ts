@@ -607,20 +607,35 @@ export const DRAWING_SETS = [
       {
         number: 'КЖ-12',
         name: 'Армирование колонн и стен, 7 эт.',
-        revision: 'изм. 3 от 02.07',
-        isCurrent: false,
-        supersededBy: 'КЖ-12.1',
-        changeSummary: 'Заменён на изм. 4 от 28.07',
+        // Тот самый лист из прототипа: работали по изм. 3, пока не вышло изм. 4.
+        history: [
+          {
+            revision: 'изм. 3',
+            issuedAt: '2026-07-02',
+            changeSummary: 'Исходная выдача рабочей документации',
+            superseded: true,
+            supersededAt: '2026-07-28',
+          },
+          {
+            revision: 'изм. 4',
+            issuedAt: '2026-07-28',
+            changeSummary: 'Изменён шаг хомутов в колоннах К-3',
+            superseded: false,
+          },
+        ],
       },
       {
-        number: 'КЖ-12.1',
-        name: 'Армирование колонн и стен, 7 эт.',
-        revision: 'изм. 4 от 28.07',
-        isCurrent: true,
-        changedAt: '2026-07-28',
-        changeSummary: 'Изменён шаг хомутов в колоннах К-3',
+        number: 'КЖ-14',
+        name: 'Армирование перекрытия, отм. +21,000',
+        history: [
+          {
+            revision: 'изм. 2',
+            issuedAt: '2026-07-15',
+            changeSummary: 'Уточнены отметки низа плиты',
+            superseded: false,
+          },
+        ],
       },
-      { number: 'КЖ-14', name: 'Армирование перекрытия, отм. +21,000', revision: 'изм. 2 от 15.07', isCurrent: true },
     ],
   },
   {
@@ -631,7 +646,18 @@ export const DRAWING_SETS = [
     revision: 'изм. 2',
     issuedAt: '2026-06-30',
     sheets: [
-      { number: 'ЭОМ-5', name: 'План силовой разводки, 7 эт.', revision: 'изм. 2 от 30.06', isCurrent: true },
+      {
+        number: 'ЭОМ-5',
+        name: 'План силовой разводки, 7 эт.',
+        history: [
+          {
+            revision: 'изм. 2',
+            issuedAt: '2026-06-30',
+            changeSummary: 'Перенесены точки подключения',
+            superseded: false,
+          },
+        ],
+      },
     ],
   },
 ] as const;

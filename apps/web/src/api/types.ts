@@ -413,7 +413,8 @@ export interface DrawingSetDto {
   revision: string;
   issuedAt: string;
   sheetCount: number;
-  supersededCount: number;
+  /** Сколько листов пережили замену — на это смотрят первым делом. */
+  revisedCount: number;
   sheets: SheetDto[];
 }
 
@@ -421,14 +422,46 @@ export interface SheetDto {
   id: string;
   number: string;
   name: string;
-  revision: string;
-  isCurrent: boolean;
-  supersededBy: string | null;
-  changedAt: string | null;
-  changeSummary: string | null;
-  fileUrl: string | null;
+  /** Ревизия действующей версии. */
+  revision: string | null;
+  issuedAt: string | null;
+  versionCount?: number;
+  versionId?: string;
   mark?: string;
   stage?: string;
+}
+
+export interface SheetVersionDto {
+  id: string;
+  revision: string;
+  issuedAt: string;
+  changeSummary: string | null;
+  superseded: boolean;
+  supersededAt?: string | null;
+}
+
+/** Карточка листа: какую версию открыли и действует ли она. */
+export interface SheetDetailDto {
+  id: string;
+  number: string;
+  name: string;
+  mark: string;
+  stage: string;
+  version: {
+    id: string;
+    revision: string;
+    issuedAt: string;
+    changeSummary: string | null;
+    fileId: string | null;
+  };
+  outdated: boolean;
+  supersededAt: string | null;
+  currentVersion: { id: string; revision: string; issuedAt: string; changeSummary: string | null } | null;
+  warning: string | null;
+  /** Дата, на которую отдан ответ — для офлайн-метки «проверьте актуальность». */
+  asOf: string;
+  history: SheetVersionDto[];
+  rfis: { id: string; number: string; status: string }[];
 }
 
 export interface RfiDto {
