@@ -3,14 +3,15 @@
 // повторяют то, что прототип показывает на экранах, включая шлюзы (АОСР, протокол
 // прочности) — они здесь ограничения, а не подсказки в интерфейсе.
 //
-// SQLite: перечисления хранятся строками, списки — JSON-строками.
+// PostgreSQL 16 по ТЗ §3.1. Величины — Decimal (NUMERIC): единица измерения
+// хранится рядом с числом, и округления в деньгах и объёмах не накапливаются.
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -755,4 +756,133 @@ model Notification {
   link     String?
 
   @@index([toRole, read])
+}
+
+// ─────────────────────────── Аудит, события, пороги ───────────────────────────
+// ТЗ §4, §5, §9, §12. Эти таблицы — не служебные: на них держатся критерии
+// приёмки 3, 11 и 12.
+
+/// Журнал аудита. Только добавление: править и удалять записи нельзя,
+/// иначе журнал не доказательство. Критерий приёмки 11.
+model AuditLog {
+  id     String @id @default(uuid())
+  /// Кто. Храним и id, и подпись — учётку могут переименовать или отключить,
+  /// а журнал обязан читаться спустя годы.
+  actorId    String?
+  actorLabel String
+  actorRole  String
+
+  /// Что изменилось: сущность и её идентификатор.
+  entity   String
+  entityId String
+  /// create | update | status | delete
+  action   String
+  /// Например `status`, `doneQty`, `qty`.
+  field    String?
+  /// Прежнее и новое значение — текстом, чтобы журнал не зависел от схемы.
+  oldValue String?
+  newValue String?
+
+  /// Причина, если действие её требует (возврат отчёта, разблокировка ГИ).
+  reason String?
+
+  at DateTime @default(now())
+
+  @@index([entity, entityId])
+  @@index([at])
+  @@index([actorId])
+}
+
+/// Transactional outbox. Переход статуса пишет событие в той же транзакции,
+/// воркер разбирает и рассылает. Уведомление не теряется при сбое доставки. ТЗ §3.3.
+model DomainEvent {
+  id          String    @id @default(uuid())
+  type        String
+  aggregate   String
+  aggregateId String
+  /// JSONB: полезная нагрузка события.
+  payload     Json
+  createdAt   DateTime  @default(now())
+  publishedAt DateTime?
+  /// Сколько раз воркер пытался разобрать — чтобы «отравленное» событие не крутилось вечно.
+  attempts    Int       @default(0)
+  lastError   String?
+
+  @@index([publishedAt])
+  @@index([aggregate, aggregateId])
+}
+
+/// Пороги и лимиты как данные, а не константы в коде. ТЗ §9, критерий приёмки 12.
+///
+/// Область: company (по умолчанию) → facility (переопределение по ППР объекта).
+/// Более узкая область побеждает. Версии не перезаписываются: у порога есть
+/// период действия, поэтому старый отчёт можно перечитать по норме, что
+/// действовала на его дату.
+model Threshold {
+  id   String @id @default(uuid())
+  /// winterTempC | presentLeadWorkdays | strippingStrengthPct | autonomyLimit | kpiTarget
+  key  String
+  /// company | facility | process
+  scopeType String
+  /// id объекта или процесса; для company — null.
+  scopeId   String?
+  /// Для лимитов автономности — по какой роли и типу решения.
+  roleKey   String?
+
+  value Decimal @db.Decimal(14, 3)
+  unit  String?
+
+  /// Откуда норма: ППР, приказ, КЖ, договор — на это ссылаются в споре.
+  source String?
+
+  validFrom DateTime  @default(now())
+  validTo   DateTime?
+  version   Int       @default(1)
+
+  createdAt DateTime @default(now())
+  createdBy String?
+
+  @@index([key, scopeType, scopeId])
+}
+
+/// Идемпотентность изменяющих запросов и офлайн-очереди. ТЗ §6, §8, критерий 8.
+model IdempotencyKey {
+  id     String @id @default(uuid())
+  /// Idempotency-Key заголовка или client_op_id офлайн-операции.
+  key    String
+  userId String
+  method String
+  path   String
+  /// Отпечаток тела: тот же ключ с другим телом — это ошибка клиента, а не повтор.
+  bodyHash String
+
+  status       Int
+  responseBody Json
+
+  createdAt DateTime @default(now())
+
+  @@unique([key, userId])
+  @@index([createdAt])
+}
+
+/// Шлюз блокировки процесса. ТЗ §4 (`gates`), критерий приёмки 4.
+/// Разблокировать может только главный инженер и только с обоснованием —
+/// обоснование хранится, потому что именно оно потом объясняет, почему поехали дальше.
+model Gate {
+  id             String @id @default(uuid())
+  processStateId String
+  /// aosr | strength | doc
+  kind   String
+  reason String
+  /// open | released
+  status String @default("open")
+
+  createdAt DateTime @default(now())
+
+  releasedById  String?
+  releasedAt    DateTime?
+  /// Обоснование разблокировки — обязательно при снятии вручную.
+  justification String?
+
+  @@index([processStateId, status])
 }

@@ -90,7 +90,7 @@ export async function zayavkaRoutes(app: FastifyInstance) {
         acceptances: { include: { acceptedBy: true } },
       },
     });
-    if (!zayavka) return reply.code(404).send({ error: 'not_found', message: 'Заявка не найдена' });
+    if (!zayavka) return reply.code(404).send({ code: 'not_found', message: 'Заявка не найдена' });
     return serializeZayavka(zayavka);
   });
 
@@ -134,10 +134,10 @@ export async function zayavkaRoutes(app: FastifyInstance) {
 
     if (body.kind === 'tech') {
       if (!body.tech) {
-        return reply.code(400).send({ error: 'bad_request', message: 'Нужны параметры техники' });
+        return reply.code(400).send({ code: 'bad_request', message: 'Нужны параметры техники' });
       }
       const failure = checkFrontChecklist(body.tech.frontChecklist);
-      if (failure) return reply.code(422).send({ error: failure.code, message: failure.message });
+      if (failure) return reply.code(422).send({ code: failure.code, message: failure.message });
     }
 
     const object = await prisma.constructionObject.findUniqueOrThrow({ where: { id: body.objectId } });
@@ -244,7 +244,7 @@ export async function zayavkaRoutes(app: FastifyInstance) {
 
     const item = await prisma.zayavkaItem.findUnique({ where: { id: body.itemId } });
     if (!item || item.zayavkaId !== id) {
-      return reply.code(404).send({ error: 'not_found', message: 'Позиция не найдена' });
+      return reply.code(404).send({ code: 'not_found', message: 'Позиция не найдена' });
     }
 
     await prisma.zayavkaItem.update({
@@ -340,15 +340,15 @@ export async function zayavkaRoutes(app: FastifyInstance) {
       where: { id },
       include: { items: { include: { catalogItem: true } } },
     });
-    if (!zayavka) return reply.code(404).send({ error: 'not_found', message: 'Заявка не найдена' });
+    if (!zayavka) return reply.code(404).send({ code: 'not_found', message: 'Заявка не найдена' });
     if (zayavka.status !== 'inTransit' && zayavka.status !== 'delivered') {
       // «Принять материал» не должно быть доступно на грузе, который ещё едет.
       return reply
         .code(409)
-        .send({ error: 'not_delivered', message: 'Материал ещё не на объекте — приёмка недоступна' });
+        .send({ code: 'not_delivered', message: 'Материал ещё не на объекте — приёмка недоступна' });
     }
     if (body.photos.length === 0) {
-      return reply.code(422).send({ error: 'no_photo', message: 'Фото приёмки обязательно' });
+      return reply.code(422).send({ code: 'no_photo', message: 'Фото приёмки обязательно' });
     }
 
     await prisma.materialAcceptance.create({
@@ -425,7 +425,7 @@ export async function zayavkaRoutes(app: FastifyInstance) {
       .parse(req.body);
 
     if (body.idleHours > 0 && !body.idleReason) {
-      return reply.code(422).send({ error: 'no_reason', message: 'Укажите причину простоя техники' });
+      return reply.code(422).send({ code: 'no_reason', message: 'Укажите причину простоя техники' });
     }
 
     await prisma.techReport.create({

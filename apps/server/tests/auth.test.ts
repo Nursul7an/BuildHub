@@ -56,7 +56,7 @@ describe('Вход и пароли', () => {
     // До смены пароля любой другой экран закрыт.
     const blocked = await api(session.body.token, 'GET', '/api/today');
     assert.equal(blocked.status, 403);
-    assert.equal(blocked.body.error, 'password_change_required');
+    assert.equal(blocked.body.code, 'password_change_required');
 
     const tooShort = await api(session.body.token, 'POST', '/api/auth/password', {
       newPassword: 'korotko',

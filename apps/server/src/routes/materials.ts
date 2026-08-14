@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { parseJson, prisma } from '../db.js';
 import { notify } from '../notify.js';
 import { resolveObjectFilter } from '../scope.js';
+import { actorOf, auditChanges, emit } from '../audit.js';
 
 export async function materialRoutes(app: FastifyInstance) {
   app.addHook('preHandler', app.authenticate);
@@ -33,7 +34,7 @@ export async function materialRoutes(app: FastifyInstance) {
 
     const scope = await resolveObjectFilter(req.currentUser.id, req.currentUser.role, query.objectId);
     if (scope.deny) {
-      return reply.code(403).send({ error: 'forbidden', message: 'Объект вне вашей области' });
+      return reply.code(403).send({ code: 'forbidden', message: 'Объект вне вашей области' });
     }
 
     const balances = await prisma.stockBalance.findMany({
@@ -75,19 +76,18 @@ export async function materialRoutes(app: FastifyInstance) {
       include: { catalogItem: true },
     });
     if (!balance) {
-      return reply.code(404).send({ error: 'not_found', message: 'Позиции нет на складе объекта' });
+      return reply.code(404).send({ code: 'not_found', message: 'Позиции нет на складе объекта' });
     }
     if (balance.qty < body.qty) {
       return reply
         .code(409)
-        .send({ error: 'not_enough', message: `На складе ${balance.qty} ${balance.unit} — меньше запрошенного` });
+        .send({ code: 'not_enough', message: `На складе ${balance.qty} ${balance.unit} — меньше запрошенного` });
     }
 
     // Выдача сверх норматива требует причины: иначе перерасход всплывёт без объяснения.
     const overspend = balance.specRemainder !== null && body.qty > balance.specRemainder;
     if (overspend && !body.overspendReason) {
-      return reply.code(422).send({
-        error: 'no_reason',
+      return reply.code(422).send({ code: 'no_reason',
         message: `Выдача больше норматива по спецификации (${balance.specRemainder} ${balance.unit}) — укажите причину`,
       });
     }
@@ -105,6 +105,23 @@ export async function materialRoutes(app: FastifyInstance) {
     await prisma.stockBalance.update({
       where: { id: balance.id },
       data: { qty: { decrement: body.qty } },
+    });
+
+    // Изменение остатка — в журнал: критерий приёмки 11 требует прежнее и новое значение.
+    const issuer = await prisma.user.findUniqueOrThrow({ where: { id: req.currentUser.id } });
+    await auditChanges(
+      actorOf(req.currentUser, issuer.fullName),
+      'stockBalance',
+      balance.id,
+      { qty: Number(balance.qty) },
+      { qty: Number(balance.qty) - body.qty },
+      body.overspendReason,
+    );
+    await emit('MaterialIssued', 'stockBalance', balance.id, {
+      catalogItemId: body.catalogItemId,
+      qty: body.qty,
+      toUserId: body.toUserId,
+      overspend,
     });
 
     if (overspend) {

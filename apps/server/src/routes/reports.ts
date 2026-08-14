@@ -7,6 +7,10 @@ import { z } from 'zod';
 import { parseJson, prisma } from '../db.js';
 import { checkReportEntry } from '../rules.js';
 import { notify } from '../notify.js';
+import { actorOf, audit, auditChanges, emit } from '../audit.js';
+import { getThreshold } from '../thresholds.js';
+import { checkTransition } from '../transitions.js';
+import { fail, failTransition } from '../http.js';
 import { serializeState } from './works.js';
 
 const photoSchema = z.object({
@@ -138,17 +142,23 @@ export async function reportRoutes(app: FastifyInstance) {
     const body = z.object({ date: z.string(), entry: entrySchema }).parse(req.body);
     const date = dayStart(body.date);
 
-    const failure = checkReportEntry(body.entry);
-    if (failure) return reply.code(422).send({ error: failure.code, message: failure.message });
-
     const state = await prisma.processState.findUnique({
       where: { id: body.entry.processStateId },
       include: { processDef: true },
     });
-    if (!state) return reply.code(404).send({ error: 'not_found', message: 'Процесс не найден' });
+    if (!state) return fail(reply, 404, 'not_found', 'Процесс не найден');
     if (state.status === 'blocked') {
-      return reply.code(409).send({ error: 'blocked', message: state.blockedReason ?? 'Процесс заблокирован' });
+      return failTransition(reply, 'blocked', state.blockedReason ?? 'Процесс заблокирован');
     }
+
+    // Температурный порог берётся по объекту: на разных ППР он разный. ТЗ §9.
+    const winterTempC = await getThreshold({
+      key: 'winterTempC',
+      facilityId: state.objectId,
+      processId: state.processDefId,
+    });
+    const failure = checkReportEntry(body.entry, winterTempC);
+    if (failure) return fail(reply, 422, failure.code, failure.message);
 
     const report = await prisma.dailyReport.upsert({
       where: { date_authorId: { date, authorId: req.currentUser.id } },
@@ -205,26 +215,33 @@ export async function reportRoutes(app: FastifyInstance) {
       where: { id },
       include: { entries: { include: { photos: true } } },
     });
-    if (!report) return reply.code(404).send({ error: 'not_found', message: 'Отчёт не найден' });
+    if (!report) return reply.code(404).send({ code: 'not_found', message: 'Отчёт не найден' });
     if (report.authorId !== req.currentUser.id) {
-      return reply.code(403).send({ error: 'forbidden', message: 'Это не ваш отчёт' });
+      return reply.code(403).send({ code: 'forbidden', message: 'Это не ваш отчёт' });
     }
     if (report.entries.length === 0) {
-      return reply.code(422).send({ error: 'empty', message: 'Заполните хотя бы одну работу' });
+      return reply.code(422).send({ code: 'empty', message: 'Заполните хотя бы одну работу' });
     }
-    if (report.status === 'accepted') {
-      return reply
-        .code(409)
-        .send({ error: 'already_accepted', message: 'Отчёт уже подтверждён — изменить его нельзя' });
-    }
-    if (report.status === 'atPto' || report.status === 'atForeman') {
-      return reply
-        .code(409)
-        .send({ error: 'already_submitted', message: 'Отчёт уже отправлен и ждёт проверки' });
-    }
-
     const isMaster = req.currentUser.role === 'master';
     const status = isMaster ? 'atForeman' : 'atPto';
+
+    // Допустимость перехода решает таблица статусов, а не набор if-ов. ТЗ §5.
+    const allowed = checkTransition('report', report.status, status, req.currentUser.role);
+    if (!allowed.ok) {
+      const code =
+        report.status === 'accepted'
+          ? 'already_accepted'
+          : report.status === 'atPto' || report.status === 'atForeman'
+            ? 'already_submitted'
+            : allowed.code;
+      const message =
+        code === 'already_accepted'
+          ? 'Отчёт уже подтверждён — изменить его нельзя'
+          : code === 'already_submitted'
+            ? 'Отчёт уже отправлен и ждёт проверки'
+            : allowed.message;
+      return failTransition(reply, code, message, { from: report.status, allowed: allowed.allowed });
+    }
 
     // Факт по процессам растёт сразу — данные видны руководству со статусом «не подтверждён».
     // Прибавляем только то, что ещё не прибавлено: повторная отправка после возврата
@@ -249,6 +266,21 @@ export async function reportRoutes(app: FastifyInstance) {
         ];
       }),
     ]);
+
+    const me = await prisma.user.findUniqueOrThrow({ where: { id: req.currentUser.id } });
+    await audit(actorOf(req.currentUser, me.fullName), {
+      entity: 'dailyReport',
+      entityId: id,
+      action: 'status',
+      field: 'status',
+      oldValue: report.status,
+      newValue: status,
+    });
+    await emit('ReportSubmitted', 'dailyReport', id, {
+      authorId: req.currentUser.id,
+      status,
+      entries: report.entries.length,
+    });
 
     await notify(
       isMaster ? 'prorab' : 'pto',
@@ -289,14 +321,14 @@ export async function reportRoutes(app: FastifyInstance) {
       .parse(req.body);
 
     const report = await prisma.dailyReport.findUnique({ where: { id }, include: { entries: true } });
-    if (!report) return reply.code(404).send({ error: 'not_found', message: 'Отчёт не найден' });
+    if (!report) return reply.code(404).send({ code: 'not_found', message: 'Отчёт не найден' });
 
     if (body.decision === 'adjust') {
       if (!body.adjustment) {
-        return reply.code(400).send({ error: 'bad_request', message: 'Нужны новое значение и причина' });
+        return reply.code(400).send({ code: 'bad_request', message: 'Нужны новое значение и причина' });
       }
       const entry = report.entries.find((e) => e.id === body.adjustment!.entryId);
-      if (!entry) return reply.code(404).send({ error: 'not_found', message: 'Запись не найдена' });
+      if (!entry) return reply.code(404).send({ code: 'not_found', message: 'Запись не найдена' });
 
       // Корректировка двигает факт на разницу и переписывает «уже учтено»,
       // иначе следующая отправка вернёт объём, который ПТО только что снял.
@@ -323,6 +355,23 @@ export async function reportRoutes(app: FastifyInstance) {
         },
       });
       await prisma.dailyReport.update({ where: { id }, data: { status: 'adjusted' } });
+
+      const actor = await prisma.user.findUniqueOrThrow({ where: { id: req.currentUser.id } });
+      await auditChanges(
+        actorOf(req.currentUser, actor.fullName),
+        'reportEntry',
+        entry.id,
+        { volume: entry.volume, status: report.status },
+        { volume: body.adjustment.to, status: 'adjusted' },
+        body.adjustment.reason,
+      );
+      await emit('ReportAdjusted', 'dailyReport', id, {
+        entryId: entry.id,
+        from: entry.volume,
+        to: body.adjustment.to,
+        reason: body.adjustment.reason,
+      });
+
       await notify(
         'prorab',
         'report',
@@ -346,6 +395,19 @@ export async function reportRoutes(app: FastifyInstance) {
       await prisma.reportCheck.create({
         data: { reportId: id, actorId: req.currentUser.id, decision: 'return', comment: body.comment },
       });
+
+      const actor = await prisma.user.findUniqueOrThrow({ where: { id: req.currentUser.id } });
+      await audit(actorOf(req.currentUser, actor.fullName), {
+        entity: 'dailyReport',
+        entityId: id,
+        action: 'status',
+        field: 'status',
+        oldValue: report.status,
+        newValue: 'returned',
+        reason: body.comment,
+      });
+      await emit('ReportReturned', 'dailyReport', id, { reason: body.comment, authorId: report.authorId });
+
       await notify(
         'prorab',
         'report',
@@ -361,6 +423,18 @@ export async function reportRoutes(app: FastifyInstance) {
     await prisma.reportCheck.create({
       data: { reportId: id, actorId: req.currentUser.id, decision: 'accept', comment: body.comment },
     });
+
+    const approver = await prisma.user.findUniqueOrThrow({ where: { id: req.currentUser.id } });
+    await audit(actorOf(req.currentUser, approver.fullName), {
+      entity: 'dailyReport',
+      entityId: id,
+      action: 'status',
+      field: 'status',
+      oldValue: report.status,
+      newValue: 'accepted',
+      reason: body.comment,
+    });
+    await emit('ReportAccepted', 'dailyReport', id, { authorId: report.authorId });
     await notify('prorab', 'report', '✓ Отчёт подтверждён ПТО', 'Данные ушли руководству', undefined, report.authorId);
     return { status: 'accepted' };
   });
@@ -378,7 +452,7 @@ export async function reportRoutes(app: FastifyInstance) {
         checks: { orderBy: { createdAt: 'desc' } },
       },
     });
-    if (!report) return reply.code(404).send({ error: 'not_found', message: 'Отчёт не найден' });
+    if (!report) return reply.code(404).send({ code: 'not_found', message: 'Отчёт не найден' });
     return serializeReport(report);
   });
 }

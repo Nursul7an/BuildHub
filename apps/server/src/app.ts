@@ -11,6 +11,8 @@ import { bossRoutes } from './routes/boss.js';
 import { adminRoutes } from './routes/admin.js';
 import { notificationRoutes } from './routes/notifications.js';
 import { assistantRoutes } from './routes/assistant.js';
+import { adminConfigRoutes } from './routes/admin-config.js';
+import { registerIdempotency } from './http.js';
 
 /**
  * Сборка приложения отдельно от запуска — чтобы тесты поднимали его в процессе
@@ -21,8 +23,24 @@ export async function buildApp(options: { logger?: boolean } = {}): Promise<Fast
     logger: options.logger === false ? false : { level: process.env.LOG_LEVEL ?? 'info' },
   });
 
+  // Формат ошибки один на весь API: {code, message, details}. ТЗ §6.
+  app.setErrorHandler((error: unknown, _req, reply) => {
+    const err = error as { validation?: unknown; name?: string; issues?: unknown };
+    if (err.validation || err.name === 'ZodError') {
+      return reply.code(400).send({
+        code: 'bad_request',
+        message: 'Проверьте переданные данные',
+        details: err.issues ?? err.validation,
+      });
+    }
+    app.log.error(error);
+    return reply.code(500).send({ code: 'internal', message: 'Внутренняя ошибка сервера' });
+  });
+
   await app.register(cors, { origin: true });
   await registerAuth(app);
+  // Повтор изменяющего запроса не должен создавать дубль: связь на этаже рвётся.
+  registerIdempotency(app);
 
   await app.register(authRoutes);
   await app.register(worksRoutes);
@@ -35,17 +53,9 @@ export async function buildApp(options: { logger?: boolean } = {}): Promise<Fast
   await app.register(adminRoutes);
   await app.register(notificationRoutes);
   await app.register(assistantRoutes);
+  await app.register(adminConfigRoutes);
 
   app.get('/api/health', async () => ({ ok: true }));
-
-  app.setErrorHandler((error: unknown, _req, reply) => {
-    const err = error as { validation?: unknown; name?: string };
-    if (err.validation || err.name === 'ZodError') {
-      return reply.code(400).send({ error: 'bad_request', message: 'Проверьте переданные данные' });
-    }
-    app.log.error(error);
-    return reply.code(500).send({ error: 'internal', message: 'Внутренняя ошибка сервера' });
-  });
 
   return app;
 }

@@ -106,7 +106,7 @@ export async function contractorRoutes(app: FastifyInstance) {
       .parse(req.body);
 
     const contractor = await prisma.contractor.findUnique({ where: { id } });
-    if (!contractor) return reply.code(404).send({ error: 'not_found', message: 'Подрядчик не найден' });
+    if (!contractor) return reply.code(404).send({ code: 'not_found', message: 'Подрядчик не найден' });
 
     if (req.currentUser.role === 'master') {
       // Мастер фиксирует — предписание выдаёт прораб.

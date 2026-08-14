@@ -66,7 +66,7 @@ export async function worksRoutes(app: FastifyInstance) {
 
     const scope = await resolveObjectFilter(req.currentUser.id, req.currentUser.role, query.objectId);
     if (scope.deny) {
-      return reply.code(403).send({ error: 'forbidden', message: 'Объект вне вашей области' });
+      return reply.code(403).send({ code: 'forbidden', message: 'Объект вне вашей области' });
     }
 
     const states = await prisma.processState.findMany({
@@ -155,7 +155,7 @@ export async function worksRoutes(app: FastifyInstance) {
         protocols: true,
       },
     });
-    if (!state) return reply.code(404).send({ error: 'not_found', message: 'Процесс не найден' });
+    if (!state) return reply.code(404).send({ code: 'not_found', message: 'Процесс не найден' });
 
     const presentBlock = await checkCanPresent(state.id);
     const strengthBlock = await checkStrengthGate(state.id);
@@ -217,7 +217,7 @@ export async function worksRoutes(app: FastifyInstance) {
       where: { id },
       include: { processDef: true, block: true, object: true },
     });
-    if (!state) return reply.code(404).send({ error: 'not_found', message: 'Процесс не найден' });
+    if (!state) return reply.code(404).send({ code: 'not_found', message: 'Процесс не найден' });
 
     // Расчётная потеря простоя — по ставкам, а не «на глаз».
     const HOURLY_RATE = 175; // сом/час на человека
@@ -280,11 +280,10 @@ export async function worksRoutes(app: FastifyInstance) {
       .parse(req.body);
 
     const failure = await checkCanPresent(id);
-    if (failure) return reply.code(409).send({ error: failure.code, message: failure.message });
+    if (failure) return reply.code(409).send({ code: failure.code, message: failure.message });
 
     if (!isValidPresentationDate(new Date(body.date))) {
-      return reply.code(409).send({
-        error: 'too_soon',
+      return reply.code(409).send({ code: 'too_soon',
         message: 'По норме извещение — не позднее чем за 3 рабочих дня',
       });
     }
@@ -328,7 +327,7 @@ export async function worksRoutes(app: FastifyInstance) {
       where: { id },
       include: { processDef: true },
     });
-    if (!state) return reply.code(404).send({ error: 'not_found', message: 'Процесс не найден' });
+    if (!state) return reply.code(404).send({ code: 'not_found', message: 'Процесс не найден' });
 
     await prisma.processState.update({
       where: { id },

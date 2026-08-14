@@ -117,13 +117,12 @@ export async function bossRoutes(app: FastifyInstance) {
   app.post('/api/boss/payments/:id/approve', { preHandler: [app.requirePermission('finance.approvePayment')] }, async (req, reply) => {
     const { id } = z.object({ id: z.string() }).parse(req.params);
     const payment = await prisma.payment.findUnique({ where: { id } });
-    if (!payment) return reply.code(404).send({ error: 'not_found', message: 'Платёж не найден' });
+    if (!payment) return reply.code(404).send({ code: 'not_found', message: 'Платёж не найден' });
 
     const escalate = await needsEscalation(req.currentUser.role, 'payment', payment.amount);
     if (escalate && req.currentUser.role !== 'dir') {
       await notify('dir', 'task', '💰 Платёж выше лимита автономности', `${payment.name} · ${payment.amount} млн сом`);
-      return reply.code(409).send({
-        error: 'above_limit',
+      return reply.code(409).send({ code: 'above_limit',
         message: 'Сумма выше вашего лимита автономности — ушла директору',
       });
     }

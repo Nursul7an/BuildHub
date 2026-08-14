@@ -50,7 +50,7 @@ describe('Дневной отчёт', () => {
         entry: entry({ volume: 0 }),
       });
       assert.equal(res.status, 422);
-      assert.equal(res.body.error, 'no_volume');
+      assert.equal(res.body.code, 'no_volume');
     });
 
     it('требует хотя бы одно фото', async () => {
@@ -59,7 +59,7 @@ describe('Дневной отчёт', () => {
         entry: entry({ photos: [] }),
       });
       assert.equal(res.status, 422);
-      assert.equal(res.body.error, 'no_photo');
+      assert.equal(res.body.code, 'no_photo');
     });
 
     it('ниже +5 °C требует зимний метод', async () => {
@@ -68,7 +68,7 @@ describe('Дневной отчёт', () => {
         entry: entry({ tempAir: -3 }),
       });
       assert.equal(without.status, 422);
-      assert.equal(without.body.error, 'no_winter_method');
+      assert.equal(without.body.code, 'no_winter_method');
 
       const withMethod = await api(prorab, 'POST', '/api/report/entry', {
         date: date(),
@@ -83,7 +83,7 @@ describe('Дневной отчёт', () => {
         entry: entry({ processStateId: blockedProcessId }),
       });
       assert.equal(res.status, 409);
-      assert.equal(res.body.error, 'blocked');
+      assert.equal(res.body.code, 'blocked');
     });
   });
 
@@ -110,7 +110,7 @@ describe('Дневной отчёт', () => {
       // Повторная отправка отклоняется, факт не растёт.
       const second = await api(prorab, 'POST', `/api/report/${reportId}/submit`, { fillSeconds: 180 });
       assert.equal(second.status, 409);
-      assert.equal(second.body.error, 'already_submitted');
+      assert.equal(second.body.code, 'already_submitted');
 
       const afterSecond = await api(prorab, 'GET', `/api/process/${activeProcessId}`);
       assert.equal(afterSecond.body.doneQty, afterFirst.body.doneQty);

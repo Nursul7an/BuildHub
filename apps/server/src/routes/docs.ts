@@ -59,7 +59,7 @@ export async function docRoutes(app: FastifyInstance) {
       where: { id },
       include: { set: true, rfis: true },
     });
-    if (!sheet) return reply.code(404).send({ error: 'not_found', message: 'Лист не найден' });
+    if (!sheet) return reply.code(404).send({ code: 'not_found', message: 'Лист не найден' });
 
     // Если лист заменён — показываем, чем именно, чтобы не работали по старому.
     const replacement = sheet.supersededBy
@@ -174,9 +174,9 @@ export async function docRoutes(app: FastifyInstance) {
       where: { id: body.processStateId },
       include: { processDef: { include: { section: true } }, block: true, object: true },
     });
-    if (!state) return reply.code(404).send({ error: 'not_found', message: 'Процесс не найден' });
+    if (!state) return reply.code(404).send({ code: 'not_found', message: 'Процесс не найден' });
     if (!state.processDef.requiresAosr) {
-      return reply.code(409).send({ error: 'no_aosr', message: 'Этот процесс не требует АОСР' });
+      return reply.code(409).send({ code: 'no_aosr', message: 'Этот процесс не требует АОСР' });
     }
 
     const count = await prisma.siteDocument.count({ where: { objectId: state.objectId, kind: 'aosr' } });

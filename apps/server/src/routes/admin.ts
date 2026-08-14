@@ -121,7 +121,7 @@ export async function adminRoutes(app: FastifyInstance) {
       prisma.user.findUnique({ where: { id: body.assigneeId } }),
     ]);
     if (!section || !block || !assignee) {
-      return reply.code(404).send({ error: 'not_found', message: 'Проверьте объект, блок и исполнителя' });
+      return reply.code(404).send({ code: 'not_found', message: 'Проверьте объект, блок и исполнителя' });
     }
 
     // Цепочка процессов заводится по справочнику раздела — её состав задаёт ПТО по ППР.

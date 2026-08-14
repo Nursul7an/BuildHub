@@ -31,11 +31,11 @@ export async function registerAuth(app: FastifyInstance) {
     try {
       await req.jwtVerify();
     } catch {
-      return reply.code(401).send({ error: 'unauthorized', message: 'Нужен вход в систему' });
+      return reply.code(401).send({ code: 'unauthorized', message: 'Нужен вход в систему' });
     }
     const user = await prisma.user.findUnique({ where: { id: req.user.sub } });
     if (!user || !user.active) {
-      return reply.code(401).send({ error: 'unauthorized', message: 'Учётная запись отключена' });
+      return reply.code(401).send({ code: 'unauthorized', message: 'Учётная запись отключена' });
     }
     req.currentUser = {
       id: user.id,
@@ -47,7 +47,7 @@ export async function registerAuth(app: FastifyInstance) {
     if (user.mustChangePassword && !isPasswordRoute) {
       return reply
         .code(403)
-        .send({ error: 'password_change_required', message: 'Сначала смените пароль' });
+        .send({ code: 'password_change_required', message: 'Сначала смените пароль' });
     }
     return undefined;
   });
@@ -58,7 +58,7 @@ export async function registerAuth(app: FastifyInstance) {
       if (!can(req.currentUser.role, permission)) {
         return reply
           .code(403)
-          .send({ error: 'forbidden', message: 'Роль не имеет права на это действие' });
+          .send({ code: 'forbidden', message: 'Роль не имеет права на это действие' });
       }
       return undefined;
     };
@@ -84,7 +84,7 @@ export async function authRoutes(app: FastifyInstance) {
   app.post('/api/auth/login', async (req, reply) => {
     const parsed = loginSchema.safeParse(req.body);
     if (!parsed.success) {
-      return reply.code(400).send({ error: 'bad_request', message: 'Заполните логин и пароль' });
+      return reply.code(400).send({ code: 'bad_request', message: 'Заполните логин и пароль' });
     }
     // Логин или телефон — на объекте помнят телефон, а не логин.
     const value = parsed.data.login.trim();
@@ -92,7 +92,7 @@ export async function authRoutes(app: FastifyInstance) {
       where: { OR: [{ login: value }, { phone: value }], active: true },
     });
     if (!user || !(await bcrypt.compare(parsed.data.password, user.passwordHash))) {
-      return reply.code(401).send({ error: 'bad_credentials', message: 'Неверный логин или пароль' });
+      return reply.code(401).send({ code: 'bad_credentials', message: 'Неверный логин или пароль' });
     }
     const token = app.jwt.sign({ sub: user.id, role: user.role as Role });
     return {
@@ -108,8 +108,7 @@ export async function authRoutes(app: FastifyInstance) {
     async (req, reply) => {
       const parsed = passwordSchema.safeParse(req.body);
       if (!parsed.success) {
-        return reply.code(400).send({
-          error: 'bad_request',
+        return reply.code(400).send({ code: 'bad_request',
           message: parsed.error.issues[0]?.message ?? 'Проверьте пароль',
         });
       }

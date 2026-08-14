@@ -41,7 +41,7 @@ describe('Шлюзы через API', () => {
       notify: ['ПТО · Гульмира С.'],
     });
     assert.equal(res.status, 409);
-    assert.equal(res.body.error, 'not_complete');
+    assert.equal(res.body.code, 'not_complete');
   });
 
   it('объясняет блокировку прямо в строке цепочки', async () => {
@@ -102,7 +102,7 @@ describe('Шлюзы через API', () => {
       },
     });
     assert.equal(res.status, 422);
-    assert.equal(res.body.error, 'front_not_ready');
+    assert.equal(res.body.code, 'front_not_ready');
     assert.match(res.body.message, /опасная зона/i);
   });
 
@@ -117,7 +117,7 @@ describe('Шлюзы через API', () => {
       photos: photo(),
     });
     assert.equal(res.status, 409);
-    assert.equal(res.body.error, 'not_delivered');
+    assert.equal(res.body.code, 'not_delivered');
   });
 
   it('помечает партию без паспорта и извещает ПТО и снабжение', async () => {
@@ -154,7 +154,7 @@ describe('Шлюзы через API', () => {
 
     const res = await api(gi, 'POST', `/api/boss/payments/${above.id}/approve`);
     assert.equal(res.status, 409);
-    assert.equal(res.body.error, 'above_limit');
+    assert.equal(res.body.code, 'above_limit');
 
     const dir = await login(ACCOUNTS.dir);
     const dirInbox = await api(dir, 'GET', '/api/notifications?unread=1');

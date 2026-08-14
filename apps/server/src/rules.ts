@@ -5,12 +5,14 @@
  * блокировки, но держать их должен сервер — иначе шлюз обходится любым клиентом.
  */
 import { prisma } from './db.js';
+import { FALLBACK, getThreshold } from './thresholds.js';
 
-/** Ниже этой температуры воздуха зимний метод обязателен. */
-export const WINTER_TEMP_C = 5;
-
-/** Извещение о освидетельствовании — не позднее чем за 3 рабочих дня. */
-export const PRESENT_LEAD_WORKDAYS = 3;
+/**
+ * Значения по умолчанию. Рабочие берутся из справочника порогов (ТЗ §9):
+ * на разных объектах ППР задаёт разные нормы, и хранить их в коде нельзя.
+ */
+export const WINTER_TEMP_C = FALLBACK.winterTempC;
+export const PRESENT_LEAD_WORKDAYS = FALLBACK.presentLeadWorkdays;
 
 export function addWorkdays(from: Date, days: number): Date {
   const d = new Date(from);
@@ -23,8 +25,12 @@ export function addWorkdays(from: Date, days: number): Date {
   return d;
 }
 
-export function isValidPresentationDate(scheduledFor: Date, now = new Date()): boolean {
-  const earliest = addWorkdays(now, PRESENT_LEAD_WORKDAYS);
+export function isValidPresentationDate(
+  scheduledFor: Date,
+  now = new Date(),
+  leadWorkdays = PRESENT_LEAD_WORKDAYS,
+): boolean {
+  const earliest = addWorkdays(now, leadWorkdays);
   earliest.setHours(0, 0, 0, 0);
   const target = new Date(scheduledFor);
   target.setHours(0, 0, 0, 0);
@@ -128,12 +134,15 @@ export async function checkStrengthGate(processStateId: string): Promise<RuleFai
 }
 
 /** Запись в отчёт: минимум одно фото и зимний метод при низкой температуре. */
-export function checkReportEntry(entry: {
-  photos: unknown[];
-  tempAir?: number | null;
-  winterMethod?: string | null;
-  volume: number;
-}): RuleFailure | null {
+export function checkReportEntry(
+  entry: {
+    photos: unknown[];
+    tempAir?: number | null;
+    winterMethod?: string | null;
+    volume: number;
+  },
+  winterTempC: number = WINTER_TEMP_C,
+): RuleFailure | null {
   if (!(entry.volume > 0)) {
     return { code: 'no_volume', message: 'Введите объём за сегодня' };
   }
@@ -143,7 +152,7 @@ export function checkReportEntry(entry: {
   if (
     entry.tempAir !== undefined &&
     entry.tempAir !== null &&
-    entry.tempAir < WINTER_TEMP_C &&
+    entry.tempAir < winterTempC &&
     !entry.winterMethod
   ) {
     return {

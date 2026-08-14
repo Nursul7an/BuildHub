@@ -91,6 +91,11 @@ async function reset() {
     prisma.processState.deleteMany(),
     prisma.processDef.deleteMany(),
     prisma.sectionDef.deleteMany(),
+    prisma.gate.deleteMany(),
+    prisma.threshold.deleteMany(),
+    prisma.auditLog.deleteMany(),
+    prisma.domainEvent.deleteMany(),
+    prisma.idempotencyKey.deleteMany(),
     prisma.block.deleteMany(),
     prisma.user.deleteMany(),
     prisma.constructionObject.deleteMany(),
@@ -679,6 +684,43 @@ export async function seedDatabase(options: { quiet?: boolean } = {}) {
     ],
   });
 
+  /* ── Пороги как справочник (ТЗ §9) ──
+     Значения по умолчанию — на уровне компании; по объекту ППР может задать своё. */
+  await prisma.threshold.createMany({
+    data: [
+      { key: 'winterTempC', scopeType: 'company', value: 5, unit: '°C', source: 'СНиП КР 12-01' },
+      { key: 'presentLeadWorkdays', scopeType: 'company', value: 3, unit: 'раб. дн.', source: 'СНиП КР 12-02' },
+      { key: 'strippingStrengthPct', scopeType: 'company', value: 70, unit: '%', source: 'общие данные КЖ' },
+      { key: 'idleHourlyRate', scopeType: 'company', value: 175, unit: 'сом/чел·ч', source: 'приказ по оплате труда' },
+      // Ак-Орго: по ППР распалубочная прочность выше общей нормы.
+      {
+        key: 'strippingStrengthPct',
+        scopeType: 'facility',
+        scopeId: objectIds.get('ak')!,
+        value: 80,
+        unit: '%',
+        source: 'ППР ЖК «Ак-Орго»',
+      },
+      { key: 'autonomyLimit', scopeType: 'company', roleKey: 'gi', value: 5, unit: 'млн сом', source: 'приказ' },
+      { key: 'autonomyLimit', scopeType: 'company', roleKey: 'pto', value: 1, unit: 'млн сом', source: 'приказ' },
+      { key: 'autonomyLimit', scopeType: 'company', roleKey: 'snab', value: 2, unit: 'млн сом', source: 'приказ' },
+    ],
+  });
+
+  /* ── Шлюзы: то, что реально держит процессы на объекте ── */
+  const blockedStates = await prisma.processState.findMany({
+    where: { objectId: ak, status: 'blocked' },
+  });
+  for (const st of blockedStates) {
+    await prisma.gate.create({
+      data: {
+        processStateId: st.id,
+        kind: st.blockedReason?.includes('прочност') ? 'strength' : 'aosr',
+        reason: st.blockedReason ?? 'заблокирован',
+      },
+    });
+  }
+
   const counts = {
     объектов: await prisma.constructionObject.count(),
     пользователей: await prisma.user.count(),
@@ -687,6 +729,8 @@ export async function seedDatabase(options: { quiet?: boolean } = {}) {
     'процессов на объекте': await prisma.processState.count(),
     заявок: await prisma.zayavka.count(),
     подрядчиков: await prisma.contractor.count(),
+    порогов: await prisma.threshold.count(),
+    шлюзов: await prisma.gate.count(),
   };
   if (!options.quiet) {
     console.log('Сев завершён:', counts);
