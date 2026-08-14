@@ -20,6 +20,8 @@ import { issueRoutes } from './routes/issues.js';
 import { kpiRoutes } from './routes/kpi.js';
 import { registerIdempotency } from './http.js';
 import { registerRateLimit } from './ratelimit.js';
+import { registerObservability, requestIdOf } from './observability.js';
+import { opsRoutes } from './routes/ops.js';
 
 /**
  * Сборка приложения отдельно от запуска — чтобы тесты поднимали его в процессе
@@ -33,7 +35,7 @@ export async function buildApp(
   });
 
   // Формат ошибки один на весь API: {code, message, details}. ТЗ §6.
-  app.setErrorHandler((error: unknown, _req, reply) => {
+  app.setErrorHandler((error: unknown, req, reply) => {
     const err = error as {
       validation?: unknown;
       name?: string;
@@ -71,9 +73,19 @@ export async function buildApp(
       });
     }
 
-    app.log.error(error);
-    return reply.code(500).send({ code: 'internal', message: 'Внутренняя ошибка сервера' });
+    // На жалобу «у меня не сохранилось» нужен след в журнале,
+    // поэтому идентификатор запроса возвращается клиенту.
+    const requestId = requestIdOf(req);
+    app.log.error({ err: error, requestId }, 'необработанная ошибка');
+    return reply.code(500).send({
+      code: 'internal',
+      message: 'Внутренняя ошибка сервера',
+      ...(requestId ? { details: { requestId } } : {}),
+    });
   });
+
+  // Замеры включаются раньше всего: считать нужно и то, что упало.
+  registerObservability(app);
 
   await app.register(cors, { origin: true });
   await registerAuth(app);
@@ -102,6 +114,7 @@ export async function buildApp(
   await app.register(econRoutes);
   await app.register(issueRoutes);
   await app.register(kpiRoutes);
+  await app.register(opsRoutes);
 
   app.get('/api/health', async () => ({ ok: true }));
 
