@@ -13,6 +13,7 @@ import {
   Chip,
   PrimaryButton,
   SectionLabel,
+  daysSince,
   formatNumber,
   tabular,
 } from '../../design/primitives';
@@ -37,9 +38,7 @@ export function MaterialsTodayScreen() {
 
   const toNormalize = list.filter((z) => z.items.some((i) => !i.matched) && z.status !== 'closed');
   const stale = list.filter(
-    (z) =>
-      ['new', 'normalizing', 'approved'].includes(z.status) &&
-      Date.now() - new Date(z.createdAt).getTime() > 2 * 86_400_000,
+    (z) => ['new', 'normalizing', 'approved'].includes(z.status) && daysSince(z.createdAt) >= 2,
   );
   const arriving = list.filter((z) => z.status === 'inTransit' || z.status === 'delivered');
   const noPassport = (stock ?? []).filter((s) => !s.hasPassport);
@@ -180,7 +179,7 @@ export function MaterialsZayavkiScreen() {
         {(data ?? []).map((z) => {
           const item = z.items[0];
           const unmatched = z.items.find((i) => !i.matched);
-          const days = Math.floor((Date.now() - new Date(z.createdAt).getTime()) / 86_400_000);
+          const days = daysSince(z.createdAt);
           return (
             <Card key={z.id} style={{ borderRadius: radius.md, padding: '14px 16px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>

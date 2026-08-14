@@ -655,3 +655,15 @@ export function EmptyState({
     </div>
   );
 }
+
+/**
+ * Разница в днях по календарю, а не по секундам: заявка, поданная позавчера
+ * вечером, для человека висит два дня, а не «1,88».
+ */
+export function daysSince(iso: string, now = new Date()): number {
+  const a = new Date(iso);
+  a.setHours(0, 0, 0, 0);
+  const b = new Date(now);
+  b.setHours(0, 0, 0, 0);
+  return Math.round((b.getTime() - a.getTime()) / 86_400_000);
+}

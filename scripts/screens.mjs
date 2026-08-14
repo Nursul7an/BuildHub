@@ -13,15 +13,23 @@ page.on('pageerror', (e) => errors.push(String(e)));
 const phone = () => page.locator('div').filter({ hasText: /^/ }).first();
 
 async function shot(name) {
+  if (process.env.TRACE) {
+    const st = await page.evaluate(() => {
+      const s = window.buildHub.getState();
+      return { me: s.me?.role ?? null, screen: s.screen };
+    });
+    console.log('    state', name, JSON.stringify(st));
+  }
   await page.waitForTimeout(500);
   const frame = await page.$('#root > div > div:last-child');
   await (frame || page).screenshot({ path: `${OUT}/${name}.png` });
   console.log('  shot', name);
 }
 
-async function tapNav(label) {
-  await page.locator('div', { hasText: new RegExp(`^${label}$`) }).last().click({ timeout: 5000 }).catch(() => {});
-  await page.waitForTimeout(600);
+/** Переход на корень таба. Со сфокусированных экранов навигации нет — там «назад». */
+async function goRoot(screen) {
+  await page.evaluate((s) => window.buildHub.getState().go(s), screen);
+  await page.waitForTimeout(700);
 }
 
 async function tapText(text, nth = 0) {
@@ -43,23 +51,23 @@ await page.getByText('Войти', { exact: true }).click();
 await page.waitForTimeout(1400);
 await shot('02-today');
 
-await tapNav('Работы');
+await goRoot('works');
 await shot('03-works');
 await tapText('показать процессы');
 await tapText('Вся цепочка раздела');
 await shot('04-chain');
 
-await tapNav('Сегодня');
+await goRoot('today');
 await tapText('Армирование колонн и стен', 1);
 await shot('05-process');
 
-await tapNav('Заявки');
+await goRoot('zayavki');
 await shot('06-zayavki');
 await tapText('+ Заявка');
 await page.waitForTimeout(400);
 await shot('07-zayavka-new');
 
-await tapNav('Ещё');
+await goRoot('more');
 await shot('08-more');
 await tapText('Подрядчики');
 await shot('09-contractors');
@@ -67,40 +75,40 @@ await shot('09-contractors');
 console.log('ПТО');
 await switchRole('Инженер ПТО');
 await shot('10-pto-today');
-await tapNav('Приёмка');
+await goRoot('pto-queue');
 await shot('11-pto-queue');
-await tapNav('Объекты');
+await goRoot('pto-objects');
 await shot('12-pto-objects');
 
 console.log('директор');
 await switchRole('Директор');
 await shot('13-boss-digest');
-await tapNav('Задачи');
+await goRoot('boss-inbox');
 await shot('14-boss-inbox');
-await tapNav('Финансы');
+await goRoot('boss-finance');
 await shot('15-boss-finance');
 
 console.log('главный инженер');
 await switchRole('Гл. инженер');
-await tapNav('Качество');
+await goRoot('boss-quality');
 await shot('16-gi-quality');
 
 console.log('снабжение');
 await switchRole('Снабжение');
 await shot('17-mat-today');
-await tapNav('Заявки');
+await goRoot('mat-zayavki');
 await shot('18-mat-zayavki');
 
 console.log('завсклад');
 await switchRole('Завсклад');
 await shot('19-sklad-today');
-await tapNav('Склад');
+await goRoot('mat-stock');
 await shot('20-stock');
 
 console.log('спецтехника');
 await switchRole('Спецтехника');
 await shot('21-tech-today');
-await tapNav('Парк');
+await goRoot('tech-fleet');
 await shot('22-fleet');
 
 if (errors.length) {
