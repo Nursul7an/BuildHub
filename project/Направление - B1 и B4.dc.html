@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=Golos+Text:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#E9EAEE;font-family:Manrope,sans-serif}
+a{color:#3D4FDE;text-decoration:none}a:hover{color:#2A3AB8}
+</style>
+</helmet>
+<section style="padding:48px 56px;display:flex;flex-direction:column;gap:56px">
+  <div style="max-width:760px;display:flex;flex-direction:column;gap:8px">
+    <div style="font-size:13px;font-weight:700;letter-spacing:0.08em;color:#6B7080">BUILD HUB · МОДУЛЬ «ПРОИЗВОДСТВО» · ШАГ 1 — НАПРАВЛЕНИЕ</div>
+    <div style="font-size:30px;font-weight:800;color:#14161F">Три стилевых варианта: B1 «Сегодня» + B4 «Форма ввода»</div>
+    <div style="font-size:15px;color:#4A4F5C;line-height:1.5">Общие для всех вариантов: контраст текста ≥7:1, тач-зоны ≥48dp, статус = цвет + иконка + текст, табличные цифры, путь до ввода — 2 тапа. Различаются: гарнитура, тон Primary, радиусы, плотность.</div>
+  </div>
+
+  <!-- ═══════════ 1a ═══════════ -->
+  <div id="1a" style="display:flex;flex-direction:column;gap:20px">
+    <div style="display:flex;align-items:center;gap:14px">
+      <div style="background:#3D4FDE;color:#fff;font-weight:800;font-size:14px;padding:6px 12px;border-radius:8px">1a</div>
+      <div style="font-size:20px;font-weight:800;color:#14161F">«Индиго» — дружелюбный банк</div>
+      <div style="display:flex;gap:6px;margin-left:8px">
+        <div style="width:22px;height:22px;border-radius:6px;background:#3D4FDE"></div>
+        <div style="width:22px;height:22px;border-radius:6px;background:#F0A32B"></div>
+        <div style="width:22px;height:22px;border-radius:6px;background:#1E9E5A"></div>
+        <div style="width:22px;height:22px;border-radius:6px;background:#E85D2A"></div>
+        <div style="width:22px;height:22px;border-radius:6px;background:#14161F"></div>
+      </div>
+      <div style="font-size:13px;color:#6B7080">Manrope · радиус 20 · мягкие тени, крупные карточки</div>
+    </div>
+    <div style="display:flex;gap:32px;flex-wrap:wrap;font-family:Manrope,sans-serif">
+      <!-- 1a B1 -->
+      <div style="width:360px;background:#F4F5F9;border-radius:28px;border:1px solid #D8DAE3;overflow:hidden;box-shadow:0 12px 32px rgba(20,22,31,0.10);display:flex;flex-direction:column">
+        <div style="display:flex;justify-content:space-between;padding:10px 20px 0;font-size:12px;font-weight:700;color:#14161F;font-variant-numeric:tabular-nums"><span>18:40</span><span>▮▮▮ 78%</span></div>
+        <div style="padding:16px 20px 8px;display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-size:13px;font-weight:600;color:#6B7080">Понедельник, 4 авг</div>
+            <div style="font-size:22px;font-weight:800;color:#14161F">ЖК «Ак-Орго»</div>
+          </div>
+          <div style="width:44px;height:44px;border-radius:22px;background:#3D4FDE;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px">АЖ</div>
+        </div>
+        <div style="margin:8px 20px;background:#FDEEDD;border:1px solid #F0C489;border-radius:16px;padding:12px 14px;display:flex;align-items:center;gap:10px">
+          <div style="font-size:18px">↩</div>
+          <div style="flex:1">
+            <div style="font-size:14px;font-weight:700;color:#8A5410">Отчёт за 3 авг возвращён ПТО</div>
+            <div style="font-size:13px;color:#8A5410">«Проверьте объём кладки»</div>
+          </div>
+          <div style="font-size:14px;font-weight:700;color:#B06A00">Исправить</div>
+        </div>
+        <div style="margin:8px 20px;background:#fff;border-radius:20px;padding:16px;display:flex;align-items:center;gap:16px;box-shadow:0 2px 8px rgba(20,22,31,0.06)">
+          <div style="width:64px;height:64px;border-radius:32px;background:conic-gradient(#3D4FDE 0deg,#E2E4EE 0deg);display:flex;align-items:center;justify-content:center">
+            <div style="width:50px;height:50px;border-radius:25px;background:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;color:#14161F;font-variant-numeric:tabular-nums">0/3</div>
+          </div>
+          <div>
+            <div style="font-size:16px;font-weight:800;color:#14161F">Отчёт за сегодня</div>
+            <div style="font-size:13.5px;color:#6B7080">Заполнено 0 из 3 работ · до 19:00</div>
+          </div>
+        </div>
+        <div style="padding:10px 20px 4px;font-size:13px;font-weight:700;letter-spacing:0.06em;color:#6B7080">МОИ РАБОТЫ</div>
+        <div style="display:flex;flex-direction:column;gap:10px;padding:0 20px">
+          <div style="background:#fff;border-radius:20px;padding:16px;box-shadow:0 2px 8px rgba(20,22,31,0.06)">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div style="font-size:16px;font-weight:800;color:#14161F">Монолит</div>
+              <div style="font-size:12.5px;font-weight:700;color:#6B7080;background:#EEF0F6;border-radius:10px;padding:4px 10px">○ Не заполнено</div>
+            </div>
+            <div style="font-size:13.5px;color:#6B7080;margin-top:2px">Блок Б · 7 этаж</div>
+            <div style="display:flex;align-items:center;gap:10px;margin-top:10px">
+              <div style="flex:1;height:8px;border-radius:4px;background:#E2E4EE"><div style="width:65%;height:8px;border-radius:4px;background:#3D4FDE"></div></div>
+              <div style="font-size:14px;font-weight:800;color:#14161F;font-variant-numeric:tabular-nums">65%</div>
+            </div>
+            <div style="font-size:12.5px;color:#6B7080;margin-top:4px;font-variant-numeric:tabular-nums">312 из 480 м³</div>
+          </div>
+          <div style="background:#fff;border-radius:20px;padding:16px;box-shadow:0 2px 8px rgba(20,22,31,0.06)">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div style="font-size:16px;font-weight:800;color:#14161F">Кладка</div>
+              <div style="font-size:12.5px;font-weight:700;color:#6B7080;background:#EEF0F6;border-radius:10px;padding:4px 10px">○ Не заполнено</div>
+            </div>
+            <div style="font-size:13.5px;color:#6B7080;margin-top:2px">Блок Б · 5 этаж</div>
+            <div style="display:flex;align-items:center;gap:10px;margin-top:10px">
+              <div style="flex:1;height:8px;border-radius:4px;background:#E2E4EE"><div style="width:48%;height:8px;border-radius:4px;background:#3D4FDE"></div></div>
+              <div style="font-size:14px;font-weight:800;color:#14161F;font-variant-numeric:tabular-nums">48%</div>
+            </div>
+            <div style="font-size:12.5px;color:#6B7080;margin-top:4px;font-variant-numeric:tabular-nums">1 940 из 4 040 м²</div>
+          </div>
+          <div style="background:#fff;border-radius:20px;padding:16px;box-shadow:0 2px 8px rgba(20,22,31,0.06)">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div style="font-size:16px;font-weight:800;color:#14161F">Электрика</div>
+              <div style="font-size:12.5px;font-weight:700;color:#6B7080;background:#EEF0F6;border-radius:10px;padding:4px 10px">○ Не заполнено</div>
+            </div>
+            <div style="font-size:13.5px;color:#6B7080;margin-top:2px">Блок А · 3 этаж</div>
+            <div style="display:flex;align-items:center;gap:10px;margin-top:10px">
+              <div style="flex:1;height:8px;border-radius:4px;background:#E2E4EE"><div style="width:30%;height:8px;border-radius:4px;background:#3D4FDE"></div></div>
+              <div style="font-size:14px;font-weight:800;color:#14161F;font-variant-numeric:tabular-nums">30%</div>
+            </div>
+            <div style="font-size:12.5px;color:#6B7080;margin-top:4px;font-variant-numeric:tabular-nums">126 из 420 точек</div>
+          </div>
+        </div>
+        <div style="padding:16px 20px 8px">
+          <div style="height:56px;border-radius:18px;background:#C9CCDA;color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800">Отправить отчёт · 0 из 3</div>
+        </div>
+        <div style="display:flex;border-top:1px solid #E2E4EE;background:#fff;padding:10px 8px 18px">
+          <div style="flex:1;text-align:center;color:#3D4FDE"><div style="font-size:20px">▣</div><div style="font-size:11.5px;font-weight:700">Сегодня</div></div>
+          <div style="flex:1;text-align:center;color:#6B7080"><div style="font-size:20px">⌂</div><div style="font-size:11.5px;font-weight:600">Объект</div></div>
+          <div style="flex:1;text-align:center;color:#6B7080"><div style="font-size:20px">◔</div><div style="font-size:11.5px;font-weight:600">Уведомления</div></div>
+          <div style="flex:1;text-align:center;color:#6B7080"><div style="font-size:20px">◉</div><div style="font-size:11.5px;font-weight:600">Профиль</div></div>
+        </div>
+      </div>
+      <!-- 1a B4 -->
+      <div style="width:360px;background:#F4F5F9;border-radius:28px;border:1px solid #D8DAE3;overflow:hidden;box-shadow:0 12px 32px rgba(20,22,31,0.10);display:flex;flex-direction:column">
+        <div style="display:flex;justify-content:space-between;padding:10px 20px 0;font-size:12px;font-weight:700;color:#14161F;font-variant-numeric:tabular-nums"><span>18:41</span><span>▮▮▮ 78%</span></div>
+        <div style="padding:14px 20px 10px;display:flex;align-items:center;gap:12px;background:#F4F5F9">
+          <div style="width:40px;height:40px;border-radius:14px;background:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;color:#14161F;box-shadow:0 1px 4px rgba(20,22,31,0.08)">‹</div>
+          <div>
+            <div style="font-size:17px;font-weight:800;color:#14161F">Монолит</div>
+            <div style="font-size:13px;color:#6B7080">Блок Б · 7 этаж · ЖК «Ак-Орго»</div>
+          </div>
+        </div>
+        <div style="margin:6px 20px;background:#fff;border-radius:20px;padding:18px;box-shadow:0 0 0 2px #3D4FDE">
+          <div style="font-size:13px;font-weight:700;color:#6B7080">ОБЪЁМ ЗА СЕГОДНЯ</div>
+          <div style="display:flex;align-items:baseline;gap:8px;margin-top:6px">
+            <div style="font-size:44px;font-weight:800;color:#14161F;font-variant-numeric:tabular-nums">32<span style="display:inline-block;width:2px;height:36px;background:#3D4FDE;margin-left:2px;vertical-align:-4px"></span></div>
+            <div style="font-size:20px;font-weight:700;color:#6B7080">м³</div>
+          </div>
+          <div style="margin-top:10px;background:#F0F4FF;border-radius:12px;padding:10px 12px">
+            <div style="font-size:14.5px;font-weight:700;color:#14161F;font-variant-numeric:tabular-nums">312 → 344 из 480 м³ · 71,7%</div>
+            <div style="font-size:13px;font-weight:700;color:#1E9E5A;font-variant-numeric:tabular-nums">+6,7% за день</div>
+            <div style="height:8px;border-radius:4px;background:#E2E4EE;margin-top:8px"><div style="width:71.7%;height:8px;border-radius:4px;background:linear-gradient(90deg,#3D4FDE 90%,#8E9AF0)"></div></div>
+          </div>
+          <div style="display:inline-flex;margin-top:10px;background:#EEF0F6;border-radius:12px;padding:8px 14px;font-size:13.5px;font-weight:700;color:#3D4FDE">↺ Как вчера · 28 м³</div>
+        </div>
+        <div style="margin:8px 20px;background:#fff;border-radius:20px;padding:14px 18px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 2px 8px rgba(20,22,31,0.06)">
+          <div>
+            <div style="font-size:13px;font-weight:700;color:#6B7080">РАБОЧИЕ</div>
+            <div style="font-size:12px;color:#9AA0AE">вчера: 14</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:14px">
+            <div style="width:48px;height:48px;border-radius:16px;background:#EEF0F6;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:#14161F">−</div>
+            <div style="font-size:26px;font-weight:800;color:#14161F;min-width:36px;text-align:center;font-variant-numeric:tabular-nums">14</div>
+            <div style="width:48px;height:48px;border-radius:16px;background:#3D4FDE;color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800">+</div>
+          </div>
+        </div>
+        <div style="margin:8px 20px 0;font-size:13px;font-weight:700;letter-spacing:0.06em;color:#6B7080">ФОТО · МИН. 1</div>
+        <div style="display:flex;gap:10px;padding:8px 20px;overflow:hidden">
+          <div style="width:84px;height:84px;border-radius:16px;background:#3D4FDE;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;flex:none"><div style="font-size:24px">◉</div><div style="font-size:11px;font-weight:700">Камера</div></div>
+          <div style="width:84px;height:84px;border-radius:16px;flex:none;position:relative;background:repeating-linear-gradient(45deg,#D8DAE3 0 8px,#E7E9F0 8px 16px)"><div style="position:absolute;bottom:5px;left:5px;background:rgba(20,22,31,0.75);color:#fff;font-size:9.5px;font-weight:700;border-radius:7px;padding:2px 6px">📍 18:41</div></div>
+          <div style="width:84px;height:84px;border-radius:16px;flex:none;position:relative;background:repeating-linear-gradient(45deg,#D8DAE3 0 8px,#E7E9F0 8px 16px)"><div style="position:absolute;bottom:5px;left:5px;background:rgba(20,22,31,0.75);color:#fff;font-size:9.5px;font-weight:700;border-radius:7px;padding:2px 6px">📍 18:42</div></div>
+        </div>
+        <div style="margin:6px 20px 0;font-size:13px;font-weight:700;letter-spacing:0.06em;color:#6B7080">ПРОБЛЕМЫ</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;padding:8px 20px">
+          <div style="background:#3D4FDE;color:#fff;border-radius:14px;padding:10px 14px;font-size:13.5px;font-weight:700">✓ Нет материала</div>
+          <div style="background:#fff;color:#14161F;border-radius:14px;padding:10px 14px;font-size:13.5px;font-weight:600;border:1px solid #D8DAE3">Нет техники</div>
+          <div style="background:#fff;color:#14161F;border-radius:14px;padding:10px 14px;font-size:13.5px;font-weight:600;border:1px solid #D8DAE3">Погода</div>
+          <div style="background:#fff;color:#14161F;border-radius:14px;padding:10px 14px;font-size:13.5px;font-weight:600;border:1px solid #D8DAE3">Простой</div>
+          <div style="background:#fff;color:#14161F;border-radius:14px;padding:10px 14px;font-size:13.5px;font-weight:600;border:1px solid #D8DAE3">Другое</div>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;padding:0 20px 8px">
+          <div style="background:#EEF0FF;color:#3D4FDE;border-radius:12px;padding:8px 12px;font-size:13px;font-weight:700;border:1px solid #B9C1F2">✓ Арматура Ø12</div>
+          <div style="background:#fff;color:#6B7080;border-radius:12px;padding:8px 12px;font-size:13px;font-weight:600;border:1px solid #D8DAE3">Бетон М350</div>
+          <div style="background:#fff;color:#6B7080;border-radius:12px;padding:8px 12px;font-size:13px;font-weight:600;border:1px solid #D8DAE3">Опалубка</div>
+        </div>
+        <div style="margin:6px 20px;background:#fff;border-radius:16px;padding:14px 18px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 2px 8px rgba(20,22,31,0.06)">
+          <div style="font-size:14.5px;font-weight:700;color:#14161F">Добавить детали</div>
+          <div style="font-size:13px;color:#6B7080">ИТР · техника · материалы ▾</div>
+        </div>
+        <div style="margin-top:8px;display:flex;gap:10px;padding:12px 20px 20px;background:#fff;border-top:1px solid #E2E4EE">
+          <div style="flex:1.2;height:56px;border-radius:18px;background:#3D4FDE;color:#fff;display:flex;align-items:center;justify-content:center;font-size:15.5px;font-weight:800">Сохранить</div>
+          <div style="flex:1;height:56px;border-radius:18px;background:#EEF0F6;color:#14161F;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;text-align:center;line-height:1.2">Сохранить и следующий →</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ 1b ═══════════ -->
+  <div id="1b" style="display:flex;flex-direction:column;gap:20px">
+    <div style="display:flex;align-items:center;gap:14px">
+      <div style="background:#163B8C;color:#fff;font-weight:800;font-size:14px;padding:6px 12px;border-radius:6px">1b</div>
+      <div style="font-size:20px;font-weight:800;color:#14161F;font-family:'IBM Plex Sans',sans-serif">«Прораб» — контраст для солнца</div>
+      <div style="display:flex;gap:6px;margin-left:8px">
+        <div style="width:22px;height:22px;border-radius:4px;background:#163B8C"></div>
+        <div style="width:22px;height:22px;border-radius:4px;background:#E8960C"></div>
+        <div style="width:22px;height:22px;border-radius:4px;background:#177A45"></div>
+        <div style="width:22px;height:22px;border-radius:4px;background:#C2410C"></div>
+        <div style="width:22px;height:22px;border-radius:4px;background:#0B1220"></div>
+      </div>
+      <div style="font-size:13px;color:#6B7080">IBM Plex Sans · радиус 10 · плотнее, тёмная шапка, жёсткие границы вместо теней</div>
+    </div>
+    <div style="display:flex;gap:32px;flex-wrap:wrap;font-family:'IBM Plex Sans',sans-serif">
+      <!-- 1b B1 -->
+      <div style="width:360px;background:#EEF1F6;border-radius:20px;border:1px solid #C6CCD8;overflow:hidden;box-shadow:0 12px 32px rgba(11,18,32,0.10);display:flex;flex-direction:column">
+        <div style="background:#0F2A63;padding:0 0 14px">
+          <div style="display:flex;justify-content:space-between;padding:10px 18px 0;font-size:12px;font-weight:600;color:#B9C6E4;font-variant-numeric:tabular-nums"><span>18:40</span><span>▮▮▮ 78%</span></div>
+          <div style="padding:12px 18px 0;display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <div style="font-size:12.5px;font-weight:600;color:#8FA3CE;text-transform:uppercase;letter-spacing:0.06em">Пн, 4 авг · до 19:00</div>
+              <div style="font-size:21px;font-weight:700;color:#fff">ЖК «Ак-Орго»</div>
+            </div>
+            <div style="width:42px;height:42px;border-radius:10px;background:#E8960C;color:#0B1220;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px">АЖ</div>
+          </div>
+          <div style="margin:12px 18px 0;background:#16357B;border-radius:10px;padding:12px 14px;display:flex;align-items:center;gap:12px;border:1px solid #2A4C9B">
+            <div style="font-size:22px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums">0<span style="color:#8FA3CE">/3</span></div>
+            <div style="flex:1">
+              <div style="font-size:13.5px;font-weight:600;color:#fff">Работ заполнено</div>
+              <div style="height:6px;border-radius:3px;background:#0B1F4E;margin-top:6px"><div style="width:2%;height:6px;border-radius:3px;background:#E8960C"></div></div>
+            </div>
+          </div>
+        </div>
+        <div style="margin:12px 18px 0;background:#FCE9D6;border:1px solid #E8960C;border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:10px">
+          <div style="font-size:16px">↩</div>
+          <div style="flex:1;font-size:13.5px;font-weight:600;color:#7A4A08">Отчёт за 3 авг возвращён ПТО — исправить</div>
+          <div style="font-size:16px;color:#7A4A08">›</div>
+        </div>
+        <div style="padding:12px 18px 4px;font-size:12px;font-weight:700;letter-spacing:0.08em;color:#5C6474">МОИ РАБОТЫ · 3</div>
+        <div style="display:flex;flex-direction:column;gap:8px;padding:0 18px">
+          <div style="background:#fff;border-radius:12px;padding:12px 14px;border:1px solid #C6CCD8">
+            <div style="display:flex;justify-content:space-between;align-items:baseline">
+              <div style="font-size:15.5px;font-weight:700;color:#0B1220">Монолит · Блок Б · 7 эт</div>
+              <div style="font-size:17px;font-weight:700;color:#0B1220;font-variant-numeric:tabular-nums">65%</div>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">
+              <div style="font-size:12.5px;color:#5C6474;font-variant-numeric:tabular-nums">312 / 480 м³</div>
+              <div style="font-size:12px;font-weight:700;color:#5C6474">○ НЕ ЗАПОЛНЕНО</div>
+            </div>
+            <div style="height:6px;border-radius:3px;background:#E3E7EF;margin-top:8px"><div style="width:65%;height:6px;border-radius:3px;background:#163B8C"></div></div>
+          </div>
+          <div style="background:#fff;border-radius:12px;padding:12px 14px;border:1px solid #C6CCD8">
+            <div style="display:flex;justify-content:space-between;align-items:baseline">
+              <div style="font-size:15.5px;font-weight:700;color:#0B1220">Кладка · Блок Б · 5 эт</div>
+              <div style="font-size:17px;font-weight:700;color:#0B1220;font-variant-numeric:tabular-nums">48%</div>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">
+              <div style="font-size:12.5px;color:#5C6474;font-variant-numeric:tabular-nums">1 940 / 4 040 м²</div>
+              <div style="font-size:12px;font-weight:700;color:#5C6474">○ НЕ ЗАПОЛНЕНО</div>
+            </div>
+            <div style="height:6px;border-radius:3px;background:#E3E7EF;margin-top:8px"><div style="width:48%;height:6px;border-radius:3px;background:#163B8C"></div></div>
+          </div>
+          <div style="background:#fff;border-radius:12px;padding:12px 14px;border:1px solid #C6CCD8">
+            <div style="display:flex;justify-content:space-between;align-items:baseline">
+              <div style="font-size:15.5px;font-weight:700;color:#0B1220">Электрика · Блок А · 3 эт</div>
+              <div style="font-size:17px;font-weight:700;color:#0B1220;font-variant-numeric:tabular-nums">30%</div>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">
+              <div style="font-size:12.5px;color:#5C6474;font-variant-numeric:tabular-nums">126 / 420 точек</div>
+              <div style="font-size:12px;font-weight:700;color:#5C6474">○ НЕ ЗАПОЛНЕНО</div>
+            </div>
+            <div style="height:6px;border-radius:3px;background:#E3E7EF;margin-top:8px"><div style="width:30%;height:6px;border-radius:3px;background:#163B8C"></div></div>
+          </div>
+        </div>
+        <div style="padding:14px 18px 6px">
+          <div style="height:54px;border-radius:12px;background:#B9C1CF;color:#fff;display:flex;align-items:center;justify-content:center;font-size:15.5px;font-weight:700">Отправить отчёт · 0 из 3</div>
+        </div>
+        <div style="display:flex;border-top:1px solid #C6CCD8;background:#fff;padding:8px 8px 16px">
+          <div style="flex:1;text-align:center;color:#163B8C"><div style="font-size:19px">▣</div><div style="font-size:11px;font-weight:700">Сегодня</div></div>
+          <div style="flex:1;text-align:center;color:#5C6474"><div style="font-size:19px">⌂</div><div style="font-size:11px;font-weight:600">Объект</div></div>
+          <div style="flex:1;text-align:center;color:#5C6474"><div style="font-size:19px">◔</div><div style="font-size:11px;font-weight:600">Уведомления</div></div>
+          <div style="flex:1;text-align:center;color:#5C6474"><div style="font-size:19px">◉</div><div style="font-size:11px;font-weight:600">Профиль</div></div>
+        </div>
+      </div>
+      <!-- 1b B4 -->
+      <div style="width:360px;background:#EEF1F6;border-radius:20px;border:1px solid #C6CCD8;overflow:hidden;box-shadow:0 12px 32px rgba(11,18,32,0.10);display:flex;flex-direction:column">
+        <div style="background:#0F2A63;padding-bottom:12px">
+          <div style="display:flex;justify-content:space-between;padding:10px 18px 0;font-size:12px;font-weight:600;color:#B9C6E4;font-variant-numeric:tabular-nums"><span>18:41</span><span>▮▮▮ 78%</span></div>
+          <div style="padding:10px 18px 0;display:flex;align-items:center;gap:12px">
+            <div style="width:38px;height:38px;border-radius:10px;background:#16357B;color:#fff;display:flex;align-items:center;justify-content:center;font-size:17px;border:1px solid #2A4C9B">‹</div>
+            <div>
+              <div style="font-size:16.5px;font-weight:700;color:#fff">Монолит</div>
+              <div style="font-size:12.5px;color:#8FA3CE">Блок Б · 7 этаж · Ак-Орго</div>
+            </div>
+          </div>
+        </div>
+        <div style="margin:12px 18px 0;background:#fff;border-radius:12px;padding:16px;border:2px solid #163B8C">
+          <div style="font-size:12px;font-weight:700;letter-spacing:0.08em;color:#5C6474">ОБЪЁМ ЗА СЕГОДНЯ</div>
+          <div style="display:flex;align-items:baseline;gap:8px;margin-top:4px">
+            <div style="font-size:42px;font-weight:700;color:#0B1220;font-variant-numeric:tabular-nums">32<span style="display:inline-block;width:2px;height:34px;background:#163B8C;margin-left:2px;vertical-align:-3px"></span></div>
+            <div style="font-size:19px;font-weight:600;color:#5C6474">м³</div>
+          </div>
+          <div style="margin-top:8px;border-top:1px dashed #C6CCD8;padding-top:8px">
+            <div style="font-size:14px;font-weight:700;color:#0B1220;font-variant-numeric:tabular-nums">312 → 344 из 480 м³ · 71,7% <span style="color:#177A45">▲ +6,7%</span></div>
+            <div style="height:8px;border-radius:4px;background:#E3E7EF;margin-top:8px"><div style="width:71.7%;height:8px;border-radius:4px;background:#163B8C;border-right:3px solid #E8960C"></div></div>
+          </div>
+          <div style="display:inline-flex;margin-top:10px;border:1px solid #163B8C;border-radius:10px;padding:8px 12px;font-size:13px;font-weight:700;color:#163B8C">↺ Как вчера · 28 м³</div>
+        </div>
+        <div style="margin:10px 18px 0;background:#fff;border-radius:12px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;border:1px solid #C6CCD8">
+          <div style="font-size:13px;font-weight:700;color:#5C6474">РАБОЧИЕ <span style="font-weight:500;color:#9AA2B2">· вчера 14</span></div>
+          <div style="display:flex;align-items:center;gap:12px">
+            <div style="width:46px;height:46px;border-radius:10px;border:1px solid #C6CCD8;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:#0B1220">−</div>
+            <div style="font-size:24px;font-weight:700;color:#0B1220;min-width:34px;text-align:center;font-variant-numeric:tabular-nums">14</div>
+            <div style="width:46px;height:46px;border-radius:10px;background:#163B8C;color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700">+</div>
+          </div>
+        </div>
+        <div style="margin:12px 18px 0;font-size:12px;font-weight:700;letter-spacing:0.08em;color:#5C6474">ФОТО · МИНИМУМ 1</div>
+        <div style="display:flex;gap:8px;padding:6px 18px">
+          <div style="width:80px;height:80px;border-radius:10px;background:#163B8C;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;flex:none"><div style="font-size:22px">◉</div><div style="font-size:10.5px;font-weight:700">Камера</div></div>
+          <div style="width:80px;height:80px;border-radius:10px;flex:none;position:relative;background:repeating-linear-gradient(45deg,#C6CCD8 0 8px,#DCE1EA 8px 16px)"><div style="position:absolute;bottom:4px;left:4px;background:#0B1220;color:#fff;font-size:9px;font-weight:700;border-radius:5px;padding:2px 5px">📍 18:41</div></div>
+          <div style="width:80px;height:80px;border-radius:10px;flex:none;position:relative;background:repeating-linear-gradient(45deg,#C6CCD8 0 8px,#DCE1EA 8px 16px)"><div style="position:absolute;bottom:4px;left:4px;background:#0B1220;color:#fff;font-size:9px;font-weight:700;border-radius:5px;padding:2px 5px">📍 18:42</div></div>
+        </div>
+        <div style="margin:10px 18px 0;font-size:12px;font-weight:700;letter-spacing:0.08em;color:#5C6474">ПРОБЛЕМЫ</div>
+        <div style="display:flex;flex-wrap:wrap;gap:7px;padding:6px 18px">
+          <div style="background:#E8960C;color:#0B1220;border-radius:9px;padding:9px 13px;font-size:13px;font-weight:700">✓ Нет материала</div>
+          <div style="background:#fff;color:#0B1220;border-radius:9px;padding:9px 13px;font-size:13px;font-weight:600;border:1px solid #C6CCD8">Нет техники</div>
+          <div style="background:#fff;color:#0B1220;border-radius:9px;padding:9px 13px;font-size:13px;font-weight:600;border:1px solid #C6CCD8">Погода</div>
+          <div style="background:#fff;color:#0B1220;border-radius:9px;padding:9px 13px;font-size:13px;font-weight:600;border:1px solid #C6CCD8">Простой</div>
+          <div style="background:#fff;color:#0B1220;border-radius:9px;padding:9px 13px;font-size:13px;font-weight:600;border:1px solid #C6CCD8">Другое</div>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:7px;padding:0 18px 6px">
+          <div style="background:#FCE9D6;color:#7A4A08;border-radius:8px;padding:7px 11px;font-size:12.5px;font-weight:700;border:1px solid #E8960C">✓ Арматура Ø12</div>
+          <div style="background:#fff;color:#5C6474;border-radius:8px;padding:7px 11px;font-size:12.5px;font-weight:600;border:1px solid #C6CCD8">Бетон М350</div>
+          <div style="background:#fff;color:#5C6474;border-radius:8px;padding:7px 11px;font-size:12.5px;font-weight:600;border:1px solid #C6CCD8">Опалубка</div>
+        </div>
+        <div style="margin:8px 18px;background:#fff;border-radius:12px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;border:1px solid #C6CCD8">
+          <div style="font-size:14px;font-weight:700;color:#0B1220">Добавить детали</div>
+          <div style="font-size:12.5px;color:#5C6474">ИТР · техника · материалы ▾</div>
+        </div>
+        <div style="margin-top:6px;display:flex;gap:8px;padding:12px 18px 18px;background:#fff;border-top:1px solid #C6CCD8">
+          <div style="flex:1.2;height:54px;border-radius:12px;background:#163B8C;color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700">Сохранить</div>
+          <div style="flex:1;height:54px;border-radius:12px;border:1.5px solid #163B8C;color:#163B8C;display:flex;align-items:center;justify-content:center;font-size:13.5px;font-weight:700;text-align:center;line-height:1.2">Сохранить и следующий →</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ 1c ═══════════ -->
+  <div id="1c" style="display:flex;flex-direction:column;gap:20px">
+    <div style="display:flex;align-items:center;gap:14px">
+      <div style="background:#4338CA;color:#fff;font-weight:800;font-size:14px;padding:6px 12px;border-radius:7px">1c</div>
+      <div style="font-size:20px;font-weight:700;color:#1C1917;font-family:'Golos Text',sans-serif">«Тёплый минимум» — воздух и цифры</div>
+      <div style="display:flex;gap:6px;margin-left:8px">
+        <div style="width:22px;height:22px;border-radius:5px;background:#4338CA"></div>
+        <div style="width:22px;height:22px;border-radius:5px;background:#D97706"></div>
+        <div style="width:22px;height:22px;border-radius:5px;background:#15803D"></div>
+        <div style="width:22px;height:22px;border-radius:5px;background:#DC2626"></div>
+        <div style="width:22px;height:22px;border-radius:5px;background:#1C1917"></div>
+      </div>
+      <div style="font-size:13px;color:#6B7080">Golos Text · радиус 14 · тёплый фон, минимум рамок, крупные цифры как главный декор</div>
+    </div>
+    <div style="display:flex;gap:32px;flex-wrap:wrap;font-family:'Golos Text',sans-serif">
+      <!-- 1c B1 -->
+      <div style="width:360px;background:#F7F5F1;border-radius:24px;border:1px solid #DDD8CF;overflow:hidden;box-shadow:0 12px 32px rgba(28,25,23,0.10);display:flex;flex-direction:column">
+        <div style="display:flex;justify-content:space-between;padding:10px 22px 0;font-size:12px;font-weight:600;color:#1C1917;font-variant-numeric:tabular-nums"><span>18:40</span><span>▮▮▮ 78%</span></div>
+        <div style="padding:18px 22px 6px">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="font-size:13px;font-weight:600;color:#78716C">Пн, 4 августа</div>
+            <div style="width:40px;height:40px;border-radius:20px;background:#E9E4DB;color:#1C1917;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px">АЖ</div>
+          </div>
+          <div style="font-size:26px;font-weight:700;color:#1C1917;margin-top:2px;letter-spacing:-0.01em">Ак-Орго</div>
+          <div style="font-size:15px;color:#78716C;margin-top:2px">Заполнено <span style="font-weight:700;color:#1C1917;font-variant-numeric:tabular-nums">0 из 3</span> работ · до 19:00</div>
+          <div style="height:6px;border-radius:3px;background:#E9E4DB;margin-top:10px"><div style="width:2%;height:6px;border-radius:3px;background:#4338CA"></div></div>
+        </div>
+        <div style="margin:12px 22px 0;background:#FFF7ED;border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:10px;border:1px solid #F1D4A8">
+          <div style="font-size:17px">↩</div>
+          <div style="flex:1;font-size:13.5px;font-weight:600;color:#92400E">Отчёт за 3 авг возвращён — исправить</div>
+          <div style="color:#92400E">›</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px;padding:16px 22px 0">
+          <div style="background:#fff;border-radius:16px;padding:16px 18px">
+            <div style="display:flex;justify-content:space-between;align-items:baseline">
+              <div style="font-size:16px;font-weight:700;color:#1C1917">Монолит</div>
+              <div style="font-size:22px;font-weight:700;color:#1C1917;font-variant-numeric:tabular-nums">65<span style="font-size:14px;color:#78716C">%</span></div>
+            </div>
+            <div style="font-size:13px;color:#78716C">Блок Б · 7 этаж · <span style="font-variant-numeric:tabular-nums">312/480 м³</span></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px">
+              <div style="flex:1;height:5px;border-radius:3px;background:#EDEAE3;margin-right:12px"><div style="width:65%;height:5px;border-radius:3px;background:#4338CA"></div></div>
+              <div style="font-size:12px;font-weight:700;color:#78716C">○ не заполнено</div>
+            </div>
+          </div>
+          <div style="background:#fff;border-radius:16px;padding:16px 18px">
+            <div style="display:flex;justify-content:space-between;align-items:baseline">
+              <div style="font-size:16px;font-weight:700;color:#1C1917">Кладка</div>
+              <div style="font-size:22px;font-weight:700;color:#1C1917;font-variant-numeric:tabular-nums">48<span style="font-size:14px;color:#78716C">%</span></div>
+            </div>
+            <div style="font-size:13px;color:#78716C">Блок Б · 5 этаж · <span style="font-variant-numeric:tabular-nums">1 940/4 040 м²</span></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px">
+              <div style="flex:1;height:5px;border-radius:3px;background:#EDEAE3;margin-right:12px"><div style="width:48%;height:5px;border-radius:3px;background:#4338CA"></div></div>
+              <div style="font-size:12px;font-weight:700;color:#78716C">○ не заполнено</div>
+            </div>
+          </div>
+          <div style="background:#fff;border-radius:16px;padding:16px 18px">
+            <div style="display:flex;justify-content:space-between;align-items:baseline">
+              <div style="font-size:16px;font-weight:700;color:#1C1917">Электрика</div>
+              <div style="font-size:22px;font-weight:700;color:#1C1917;font-variant-numeric:tabular-nums">30<span style="font-size:14px;color:#78716C">%</span></div>
+            </div>
+            <div style="font-size:13px;color:#78716C">Блок А · 3 этаж · <span style="font-variant-numeric:tabular-nums">126/420 точек</span></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px">
+              <div style="flex:1;height:5px;border-radius:3px;background:#EDEAE3;margin-right:12px"><div style="width:30%;height:5px;border-radius:3px;background:#4338CA"></div></div>
+              <div style="font-size:12px;font-weight:700;color:#78716C">○ не заполнено</div>
+            </div>
+          </div>
+        </div>
+        <div style="padding:16px 22px 6px">
+          <div style="height:56px;border-radius:16px;background:#CFC9BE;color:#fff;display:flex;align-items:center;justify-content:center;font-size:15.5px;font-weight:700">Отправить отчёт · 0 из 3</div>
+        </div>
+        <div style="display:flex;border-top:1px solid #E9E4DB;background:#fff;padding:10px 8px 18px">
+          <div style="flex:1;text-align:center;color:#4338CA"><div style="font-size:19px">▣</div><div style="font-size:11px;font-weight:700">Сегодня</div></div>
+          <div style="flex:1;text-align:center;color:#78716C"><div style="font-size:19px">⌂</div><div style="font-size:11px;font-weight:600">Объект</div></div>
+          <div style="flex:1;text-align:center;color:#78716C"><div style="font-size:19px">◔</div><div style="font-size:11px;font-weight:600">Уведомления</div></div>
+          <div style="flex:1;text-align:center;color:#78716C"><div style="font-size:19px">◉</div><div style="font-size:11px;font-weight:600">Профиль</div></div>
+        </div>
+      </div>
+      <!-- 1c B4 -->
+      <div style="width:360px;background:#F7F5F1;border-radius:24px;border:1px solid #DDD8CF;overflow:hidden;box-shadow:0 12px 32px rgba(28,25,23,0.10);display:flex;flex-direction:column">
+        <div style="display:flex;justify-content:space-between;padding:10px 22px 0;font-size:12px;font-weight:600;color:#1C1917;font-variant-numeric:tabular-nums"><span>18:41</span><span>▮▮▮ 78%</span></div>
+        <div style="padding:14px 22px 8px;display:flex;align-items:center;gap:12px">
+          <div style="width:40px;height:40px;border-radius:20px;background:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;color:#1C1917">‹</div>
+          <div>
+            <div style="font-size:17px;font-weight:700;color:#1C1917">Монолит</div>
+            <div style="font-size:13px;color:#78716C">Блок Б · 7 этаж · Ак-Орго</div>
+          </div>
+        </div>
+        <div style="margin:4px 22px;background:#fff;border-radius:18px;padding:20px">
+          <div style="font-size:12.5px;font-weight:600;color:#78716C;text-transform:uppercase;letter-spacing:0.06em">Объём за сегодня</div>
+          <div style="display:flex;align-items:baseline;gap:8px;margin-top:4px">
+            <div style="font-size:46px;font-weight:700;color:#1C1917;letter-spacing:-0.02em;font-variant-numeric:tabular-nums">32<span style="display:inline-block;width:2px;height:38px;background:#4338CA;margin-left:2px;vertical-align:-4px"></span></div>
+            <div style="font-size:20px;font-weight:600;color:#78716C">м³</div>
+          </div>
+          <div style="font-size:14.5px;font-weight:600;color:#1C1917;margin-top:8px;font-variant-numeric:tabular-nums">312 → 344 из 480 м³ · 71,7% <span style="color:#15803D">+6,7%</span></div>
+          <div style="height:6px;border-radius:3px;background:#EDEAE3;margin-top:8px"><div style="width:71.7%;height:6px;border-radius:3px;background:#4338CA"></div></div>
+          <div style="display:inline-flex;margin-top:12px;background:#F0EEFB;border-radius:11px;padding:9px 13px;font-size:13px;font-weight:700;color:#4338CA">↺ Как вчера · 28 м³</div>
+        </div>
+        <div style="margin:8px 22px 0;background:#fff;border-radius:16px;padding:14px 18px;display:flex;justify-content:space-between;align-items:center">
+          <div style="font-size:14px;font-weight:600;color:#78716C">Рабочие <span style="font-size:12px;color:#A8A29E">· вчера 14</span></div>
+          <div style="display:flex;align-items:center;gap:12px">
+            <div style="width:46px;height:46px;border-radius:13px;background:#F0EEE8;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:#1C1917">−</div>
+            <div style="font-size:24px;font-weight:700;color:#1C1917;min-width:34px;text-align:center;font-variant-numeric:tabular-nums">14</div>
+            <div style="width:46px;height:46px;border-radius:13px;background:#4338CA;color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700">+</div>
+          </div>
+        </div>
+        <div style="margin:14px 22px 0;font-size:12.5px;font-weight:600;color:#78716C;text-transform:uppercase;letter-spacing:0.06em">Фото · мин. 1</div>
+        <div style="display:flex;gap:9px;padding:8px 22px">
+          <div style="width:82px;height:82px;border-radius:14px;background:#4338CA;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;flex:none"><div style="font-size:23px">◉</div><div style="font-size:10.5px;font-weight:700">Камера</div></div>
+          <div style="width:82px;height:82px;border-radius:14px;flex:none;position:relative;background:repeating-linear-gradient(45deg,#DDD8CF 0 8px,#EAE6DE 8px 16px)"><div style="position:absolute;bottom:5px;left:5px;background:rgba(28,25,23,0.78);color:#fff;font-size:9.5px;font-weight:700;border-radius:6px;padding:2px 6px">📍 18:41</div></div>
+          <div style="width:82px;height:82px;border-radius:14px;flex:none;position:relative;background:repeating-linear-gradient(45deg,#DDD8CF 0 8px,#EAE6DE 8px 16px)"><div style="position:absolute;bottom:5px;left:5px;background:rgba(28,25,23,0.78);color:#fff;font-size:9.5px;font-weight:700;border-radius:6px;padding:2px 6px">📍 18:42</div></div>
+        </div>
+        <div style="margin:8px 22px 0;font-size:12.5px;font-weight:600;color:#78716C;text-transform:uppercase;letter-spacing:0.06em">Проблемы</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;padding:8px 22px">
+          <div style="background:#1C1917;color:#fff;border-radius:12px;padding:10px 14px;font-size:13.5px;font-weight:600">✓ Нет материала</div>
+          <div style="background:#fff;color:#1C1917;border-radius:12px;padding:10px 14px;font-size:13.5px;font-weight:500">Нет техники</div>
+          <div style="background:#fff;color:#1C1917;border-radius:12px;padding:10px 14px;font-size:13.5px;font-weight:500">Погода</div>
+          <div style="background:#fff;color:#1C1917;border-radius:12px;padding:10px 14px;font-size:13.5px;font-weight:500">Простой</div>
+          <div style="background:#fff;color:#1C1917;border-radius:12px;padding:10px 14px;font-size:13.5px;font-weight:500">Другое</div>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;padding:0 22px 8px">
+          <div style="background:#FFF7ED;color:#92400E;border-radius:10px;padding:8px 12px;font-size:12.5px;font-weight:700;border:1px solid #F1D4A8">✓ Арматура Ø12</div>
+          <div style="background:#fff;color:#78716C;border-radius:10px;padding:8px 12px;font-size:12.5px;font-weight:500">Бетон М350</div>
+          <div style="background:#fff;color:#78716C;border-radius:10px;padding:8px 12px;font-size:12.5px;font-weight:500">Опалубка</div>
+        </div>
+        <div style="margin:6px 22px;background:#fff;border-radius:14px;padding:14px 18px;display:flex;justify-content:space-between;align-items:center">
+          <div style="font-size:14px;font-weight:700;color:#1C1917">Добавить детали</div>
+          <div style="font-size:12.5px;color:#78716C">ИТР · техника · материалы ▾</div>
+        </div>
+        <div style="margin-top:8px;display:flex;gap:10px;padding:12px 22px 20px;background:#fff;border-top:1px solid #E9E4DB">
+          <div style="flex:1.2;height:56px;border-radius:15px;background:#1C1917;color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700">Сохранить</div>
+          <div style="flex:1;height:56px;border-radius:15px;background:#F0EEE8;color:#1C1917;display:flex;align-items:center;justify-content:center;font-size:13.5px;font-weight:700;text-align:center;line-height:1.2">Сохранить и следующий →</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="max-width:760px;background:#fff;border-radius:16px;padding:20px 24px;border:1px solid #D8DAE3">
+    <div style="font-size:15px;font-weight:800;color:#14161F;margin-bottom:8px">Принятые допущения (по вашим ответам)</div>
+    <div style="font-size:14px;color:#4A4F5C;line-height:1.65">Мастер и прораб — два отдельных потока (будут прорисованы оба на Шаге 2). ВОР: допущение «ПТО загружает Excel», помечено в макетах. Фото обязательны: мин. 1 на раздел. До 10 активных объектов. SLA: 12 ч — «просрочено», 24 ч — эскалация. Голосовой ввод исключён из формы. Прототип с таймером — после утверждения направления.</div>
+  </div>
+</section>
+</x-dc>
+</body>
+</html>

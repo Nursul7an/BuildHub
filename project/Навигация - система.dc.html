@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#E9EAEE;font-family:Manrope,sans-serif}
+a{color:#3D4FDE;text-decoration:none}a:hover{color:#2A3AB8}
+svg{display:block}
+</style>
+</helmet>
+<section style="padding:48px 56px;display:flex;flex-direction:column;gap:44px;max-width:1240px">
+  <div style="display:flex;flex-direction:column;gap:8px;max-width:840px">
+    <div style="font-size:13px;font-weight:700;letter-spacing:0.08em;color:#6B7080">BUILD HUB · СИСТЕМА НИЖНЕЙ НАВИГАЦИИ · v2</div>
+    <div style="font-size:30px;font-weight:800;color:#14161F">Одна навигация на все роли: 4 таба + контекстная FAB</div>
+    <div style="font-size:15px;color:#4A4F5C;line-height:1.5">Правила: «Ещё» всегда последний, первый таб — дневной экран роли. Иконки 24×24, линия 2dp, один вес. Активное состояние = заливка + цвет + жирная подпись + пилюля (3 признака, работает на солнце). Подпись 12sp, обрезка запрещена. Панель 64dp, тач-зона — весь слот.</div>
+  </div>
+
+  <!-- 1 ИКОНКИ -->
+  <div style="display:flex;flex-direction:column;gap:14px">
+    <div style="font-size:18px;font-weight:800;color:#14161F">1 · Набор иконок — 14 штук, контурная / залитая</div>
+    <div style="display:flex;flex-wrap:wrap;gap:12px">
+      <div style="width:150px;background:#fff;border:1px solid #D8DAE3;border-radius:16px;padding:14px;text-align:center">
+        <div style="display:flex;justify-content:center;gap:14px">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6B7080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M3 9h18M8 3v4M16 3v4M9 14.5l2 2 4-4"></path></svg>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="#3D4FDE" stroke="#3D4FDE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M8 3v4M16 3v4" fill="none"></path><path d="M9 14.5l2 2 4-4" fill="none" stroke="#fff"></path></svg>
+        </div>
+        <div style="font-size:13px;font-weight:800;color:#14161F;margin-top:10px">Сегодня</div>
+        <div style="font-size:11px;color:#9AA0AE">календарь с галочкой</div>
+      </div>
+      <div style="width:150px;background:#fff;border:1px solid #D8DAE3;border-radius:16px;padding:14px;text-align:center">
+        <div style="display:flex;justify-content:center;gap:14px">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6B7080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16v-5a6 6 0 0 1 12 0v5l1.5 2.5h-15L6 16z"></path><path d="M10 21a2 2 0 0 0 4 0"></path></svg>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="#3D4FDE" stroke="#3D4FDE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16v-5a6 6 0 0 1 12 0v5l1.5 2.5h-15L6 16z"></path><path d="M10 21a2 2 0 0 0 4 0" fill="none"></path></svg>
+        </div>
+        <div style="font-size:13px;font-weight:800;color:#14161F;margin-top:10px">Уведомления</div>
+        <div style="font-size:11px;color:#9AA0AE">колокольчик · было ◔</div>
+      </div>
+      <div style="width:150px;background:#fff;border:1px solid #D8DAE3;border-radius:16px;padding:14px;text-align:center">
+        <div style="display:flex;justify-content:center;gap:14px">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6B7080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 4.5v9L12 21l-9-4.5v-9L12 3z"></path><path d="M3 7.5L12 12l9-4.5M12 12v9"></path></svg>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="#3D4FDE" stroke="#3D4FDE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 4.5v9L12 21l-9-4.5v-9L12 3z"></path><path d="M3 7.5L12 12l9-4.5M12 12v9" fill="none" stroke="#fff"></path></svg>
+        </div>
+        <div style="font-size:13px;font-weight:800;color:#14161F;margin-top:10px">Заявки</div>
+        <div style="font-size:11px;color:#9AA0AE">коробка · было ⇄</div>
+      </div>
+      <div style="width:150px;background:#fff;border:1px solid #D8DAE3;border-radius:16px;padding:14px;text-align:center">
+        <div style="display:flex;justify-content:center;gap:14px">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6B7080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="13" height="8" rx="1"></rect><path d="M15 10h4l3 3v2h-3"></path><circle cx="7" cy="18" r="2"></circle><circle cx="17" cy="18" r="2"></circle></svg>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="#3D4FDE" stroke="#3D4FDE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="13" height="8" rx="1"></rect><path d="M15 10h4l3 3v2h-3" fill="none"></path><circle cx="7" cy="18" r="2" fill="#fff"></circle><circle cx="17" cy="18" r="2" fill="#fff"></circle></svg>
+        </div>
+        <div style="font-size:13px;font-weight:800;color:#14161F;margin-top:10px">Поставщики</div>
+        <div style="font-size:11px;color:#9AA0AE">грузовик</div>
+      </div>
+      <div style="width:150px;background:#fff;border:1px solid #D8DAE3;border-radius:16px;padding:14px;text-align:center">
+        <div style="display:flex;justify-content:center;gap:14px">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6B7080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"></path></svg>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="#3D4FDE" stroke="#3D4FDE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"></path></svg>
+        </div>
+        <div style="font-size:13px;font-weight:800;color:#14161F;margin-top:10px">Документы</div>
+        <div style="font-size:11px;color:#9AA0AE">папка</div>
+      </div>
+      <div style="width:150px;background:#fff;border:1px solid #D8DAE3;border-radius:16px;padding:14px;text-align:center">
+        <div style="display:flex;justify-content:center;gap:14px">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6B7080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"></rect><circle cx="12" cy="12" r="2.6"></circle><path d="M5.5 12h.01M18.5 12h.01"></path></svg>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="#3D4FDE" stroke="#3D4FDE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"></rect><circle cx="12" cy="12" r="2.6" fill="#fff"></circle></svg>
+        </div>
+        <div style="font-size:13px;font-weight:800;color:#14161F;margin-top:10px">Финансы</div>
+        <div style="font-size:11px;color:#9AA0AE">купюра</div>
+      </div>
+      <div style="width:150px;background:#fff;border:1px solid #D8DAE3;border-radius:16px;padding:14px;text-align:center">
+        <div style="display:flex;justify-content:center;gap:14px">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6B7080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 5H6L3 13v5a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1v-5l-3-8z"></path><path d="M3 13h5l2 3h4l2-3h5"></path></svg>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="#3D4FDE" stroke="#3D4FDE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 5H6L3 13v5a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1v-5l-3-8z"></path><path d="M3 13h5l2 3h4l2-3h5" fill="none" stroke="#fff"></path></svg>
+        </div>
+        <div style="font-size:13px;font-weight:800;color:#14161F;margin-top:10px">Решения</div>
+        <div style="font-size:11px;color:#9AA0AE">входящие · лоток</div>
+      </div>
+      <div style="width:150px;background:#fff;border:1px solid #D8DAE3;border-radius:16px;padding:14px;text-align:center">
+        <div style="display:flex;justify-content:center;gap:14px">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6B7080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.5"></circle><path d="M5 20a7 7 0 0 1 14 0"></path></svg>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="#3D4FDE" stroke="#3D4FDE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.5"></circle><path d="M5 20a7 7 0 0 1 14 0"></path></svg>
+        </div>
+        <div style="font-size:13px;font-weight:800;color:#14161F;margin-top:10px">Профиль</div>
+        <div style="font-size:11px;color:#9AA0AE">силуэт · было ◉</div>
+      </div>
+      <div style="width:150px;background:#fff;border:1px solid #D8DAE3;border-radius:16px;padding:14px;text-align:center">
+        <div style="display:flex;justify-content:center;gap:14px">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6B7080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.4"></circle><circle cx="12" cy="12" r="1.4"></circle><circle cx="19" cy="12" r="1.4"></circle></svg>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="#3D4FDE" stroke="#3D4FDE" stroke-width="2"><circle cx="5" cy="12" r="1.8"></circle><circle cx="12" cy="12" r="1.8"></circle><circle cx="19" cy="12" r="1.8"></circle></svg>
+        </div>
+        <div style="font-size:13px;font-weight:800;color:#14161F;margin-top:10px">Ещё</div>
+        <div style="font-size:11px;color:#9AA0AE">три точки</div>
+      </div>
+      <div style="width:150px;background:#fff;border:2px solid #B9C1F2;border-radius:16px;padding:14px;text-align:center">
+        <div style="display:flex;justify-content:center;gap:14px">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6B7080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21h7M7.5 21V6M3 6h18M17 6v4M7.5 11l5-5"></path><circle cx="17" cy="11.8" r="1.5"></circle></svg>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3D4FDE" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21h7M7.5 21V6M3 6h18M17 6v4M7.5 11l5-5"></path><circle cx="17" cy="11.8" r="1.5" fill="#3D4FDE"></circle></svg>
+        </div>
+        <div style="font-size:13px;font-weight:800;color:#14161F;margin-top:10px">Объекты</div>
+        <div style="font-size:11px;color:#3D4FDE;font-weight:700">своя · башенный кран</div>
+      </div>
+      <div style="width:150px;background:#fff;border:2px solid #B9C1F2;border-radius:16px;padding:14px;text-align:center">
+        <div style="display:flex;justify-content:center;gap:14px">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6B7080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="4.4" rx="1"></rect><rect x="4" y="10" width="16" height="4.4" rx="1"></rect><rect x="4" y="16" width="16" height="4.4" rx="1"></rect></svg>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="#3D4FDE" stroke="#3D4FDE" stroke-width="1.6"><rect x="4" y="4" width="16" height="4.4" rx="1"></rect><rect x="4" y="10" width="16" height="4.4" rx="1"></rect><rect x="4" y="16" width="16" height="4.4" rx="1"></rect></svg>
+        </div>
+        <div style="font-size:13px;font-weight:800;color:#14161F;margin-top:10px">Работы</div>
+        <div style="font-size:11px;color:#3D4FDE;font-weight:700">своя · этажи в разрезе</div>
+      </div>
+      <div style="width:150px;background:#fff;border:2px solid #B9C1F2;border-radius:16px;padding:14px;text-align:center">
+        <div style="display:flex;justify-content:center;gap:14px">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6B7080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3.5h6v3.6a3 3 0 0 1-1.2 2.4l1.2 2.5H9l1.2-2.5A3 3 0 0 1 9 7.1V3.5z"></path><path d="M6 12h12a1 1 0 0 1 1 1v3H5v-3a1 1 0 0 1 1-1z"></path><path d="M5 20h14"></path></svg>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="#3D4FDE" stroke="#3D4FDE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3.5h6v3.6a3 3 0 0 1-1.2 2.4l1.2 2.5H9l1.2-2.5A3 3 0 0 1 9 7.1V3.5z"></path><path d="M6 12h12a1 1 0 0 1 1 1v3H5v-3a1 1 0 0 1 1-1z"></path><path d="M5 20h14" fill="none"></path></svg>
+        </div>
+        <div style="font-size:13px;font-weight:800;color:#14161F;margin-top:10px">Приёмка</div>
+        <div style="font-size:11px;color:#3D4FDE;font-weight:700">своя · штамп на акте</div>
+      </div>
+      <div style="width:150px;background:#fff;border:2px solid #B9C1F2;border-radius:16px;padding:14px;text-align:center">
+        <div style="display:flex;justify-content:center;gap:14px">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6B7080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15a8 8 0 0 1 16 0"></path><path d="M2.5 15.5h19"></path><path d="M12 5.5V9"></path></svg>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="#3D4FDE" stroke="#3D4FDE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15a8 8 0 0 1 16 0z"></path><path d="M2.5 15.5h19" fill="none"></path><path d="M12 5.5V9" fill="none" stroke="#fff"></path></svg>
+        </div>
+        <div style="font-size:13px;font-weight:800;color:#14161F;margin-top:10px">Подрядчики</div>
+        <div style="font-size:11px;color:#3D4FDE;font-weight:700">своя · каска, не инструменты</div>
+      </div>
+      <div style="width:150px;background:#fff;border:2px solid #B9C1F2;border-radius:16px;padding:14px;text-align:center">
+        <div style="display:flex;justify-content:center;gap:14px">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6B7080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="1.5"></rect><path d="M12 8.5l1.1 2.2 2.4.35-1.75 1.7.4 2.4L12 14l-2.15 1.15.4-2.4-1.75-1.7 2.4-.35L12 8.5z"></path></svg>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="#3D4FDE" stroke="#3D4FDE" stroke-width="2" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="1.5"></rect><path d="M12 8.5l1.1 2.2 2.4.35-1.75 1.7.4 2.4L12 14l-2.15 1.15.4-2.4-1.75-1.7 2.4-.35L12 8.5z" fill="#fff" stroke="#fff" stroke-width="1"></path></svg>
+        </div>
+        <div style="font-size:13px;font-weight:800;color:#14161F;margin-top:10px">Сводка</div>
+        <div style="font-size:11px;color:#3D4FDE;font-weight:700">своя · лист со звездой (AI)</div>
+      </div>
+      <div style="width:150px;background:#fff;border:1px solid #D8DAE3;border-radius:16px;padding:14px;text-align:center">
+        <div style="display:flex;justify-content:center;gap:14px">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6B7080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7.5V12l3 2"></path></svg>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="#3D4FDE" stroke="#3D4FDE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7.5V12l3 2" fill="none" stroke="#fff"></path></svg>
+        </div>
+        <div style="font-size:13px;font-weight:800;color:#14161F;margin-top:10px">Сегодня · снабжение</div>
+        <div style="font-size:11px;color:#9AA0AE">очередь дня · часы</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2 КОМПОНЕНТ -->
+  <div style="display:flex;flex-direction:column;gap:14px">
+    <div style="font-size:18px;font-weight:800;color:#14161F">2 · Компонент панели — состояния</div>
+    <div style="display:flex;gap:24px;flex-wrap:wrap">
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="font-size:12.5px;font-weight:700;color:#6B7080">RU · активен «Сегодня» · красный бейдж (действие) на Заявках · серая точка (инфо) на «Ещё»</div>
+        <div style="width:360px;background:#fff;border:1px solid #D8DAE3;border-radius:16px;overflow:hidden">
+          <div style="display:flex;padding:8px 4px 14px">
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding-top:2px">
+              <div style="width:34px;height:4px;border-radius:2px;background:#3D4FDE;margin-bottom:2px"></div>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="#3D4FDE" stroke="#3D4FDE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M8 3v4M16 3v4" fill="none"></path><path d="M9 14.5l2 2 4-4" fill="none" stroke="#fff"></path></svg>
+              <div style="font-size:12px;font-weight:800;color:#3D4FDE">Сегодня</div>
+            </div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;justify-content:flex-end">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6B7080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="4.4" rx="1"></rect><rect x="4" y="10" width="16" height="4.4" rx="1"></rect><rect x="4" y="16" width="16" height="4.4" rx="1"></rect></svg>
+              <div style="font-size:12px;font-weight:500;color:#6B7080">Работы</div>
+            </div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;justify-content:flex-end;position:relative">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6B7080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 4.5v9L12 21l-9-4.5v-9L12 3z"></path><path d="M3 7.5L12 12l9-4.5M12 12v9"></path></svg>
+              <div style="position:absolute;top:-4px;right:24px;background:#B3261E;color:#fff;font-size:10px;font-weight:800;border-radius:9px;padding:1px 6px;font-variant-numeric:tabular-nums">2</div>
+              <div style="font-size:12px;font-weight:500;color:#6B7080">Заявки</div>
+            </div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;justify-content:flex-end;position:relative">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6B7080" stroke-width="2"><circle cx="5" cy="12" r="1.4"></circle><circle cx="12" cy="12" r="1.4"></circle><circle cx="19" cy="12" r="1.4"></circle></svg>
+              <div style="position:absolute;top:-1px;right:30px;width:8px;height:8px;border-radius:4px;background:#9AA0AE"></div>
+              <div style="font-size:12px;font-weight:500;color:#6B7080">Ещё</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="font-size:12.5px;font-weight:700;color:#6B7080">RU · полоса черновика над панелью · бейдж 9+</div>
+        <div style="width:360px;background:#fff;border:1px solid #D8DAE3;border-radius:16px;overflow:hidden">
+          <div style="display:flex;justify-content:space-between;align-items:center;background:#FDEEDD;border-bottom:1px solid #F0C489;padding:9px 16px">
+            <div style="font-size:12.5px;font-weight:700;color:#8A5410">⚠ Черновик отчёта не отправлен</div>
+            <div style="font-size:12.5px;font-weight:800;color:#B06A00">Отправить</div>
+          </div>
+          <div style="display:flex;padding:8px 4px 14px">
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;justify-content:flex-end">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6B7080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M3 9h18M8 3v4M16 3v4M9 14.5l2 2 4-4"></path></svg>
+              <div style="font-size:12px;font-weight:500;color:#6B7080">Сегодня</div>
+            </div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding-top:2px">
+              <div style="width:34px;height:4px;border-radius:2px;background:#3D4FDE;margin-bottom:2px"></div>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="#3D4FDE" stroke="#3D4FDE" stroke-width="1.6"><rect x="4" y="4" width="16" height="4.4" rx="1"></rect><rect x="4" y="10" width="16" height="4.4" rx="1"></rect><rect x="4" y="16" width="16" height="4.4" rx="1"></rect></svg>
+              <div style="font-size:12px;font-weight:800;color:#3D4FDE">Работы</div>
+            </div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;justify-content:flex-end;position:relative">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6B7080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 4.5v9L12 21l-9-4.5v-9L12 3z"></path><path d="M3 7.5L12 12l9-4.5M12 12v9"></path></svg>
+              <div style="position:absolute;top:-4px;right:20px;background:#B3261E;color:#fff;font-size:10px;font-weight:800;border-radius:9px;padding:1px 5px">9+</div>
+              <div style="font-size:12px;font-weight:500;color:#6B7080">Заявки</div>
+            </div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;justify-content:flex-end">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6B7080" stroke-width="2"><circle cx="5" cy="12" r="1.4"></circle><circle cx="12" cy="12" r="1.4"></circle><circle cx="19" cy="12" r="1.4"></circle></svg>
+              <div style="font-size:12px;font-weight:500;color:#6B7080">Ещё</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="font-size:12.5px;font-weight:700;color:#6B7080">KG · черновик перевода, проверить носителем ⚠</div>
+        <div style="width:360px;background:#fff;border:1px solid #D8DAE3;border-radius:16px;overflow:hidden">
+          <div style="display:flex;padding:8px 4px 14px">
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding-top:2px">
+              <div style="width:34px;height:4px;border-radius:2px;background:#3D4FDE;margin-bottom:2px"></div>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="#3D4FDE" stroke="#3D4FDE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M8 3v4M16 3v4" fill="none"></path><path d="M9 14.5l2 2 4-4" fill="none" stroke="#fff"></path></svg>
+              <div style="font-size:12px;font-weight:800;color:#3D4FDE">Бүгүн</div>
+            </div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;justify-content:flex-end">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6B7080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="4.4" rx="1"></rect><rect x="4" y="10" width="16" height="4.4" rx="1"></rect><rect x="4" y="16" width="16" height="4.4" rx="1"></rect></svg>
+              <div style="font-size:12px;font-weight:500;color:#6B7080">Иштер</div>
+            </div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;justify-content:flex-end;position:relative">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6B7080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 4.5v9L12 21l-9-4.5v-9L12 3z"></path><path d="M3 7.5L12 12l9-4.5M12 12v9"></path></svg>
+              <div style="position:absolute;top:-4px;right:22px;background:#B3261E;color:#fff;font-size:10px;font-weight:800;border-radius:9px;padding:1px 6px">2</div>
+              <div style="font-size:12px;font-weight:500;color:#6B7080">Арыздар</div>
+            </div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;justify-content:flex-end">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6B7080" stroke-width="2"><circle cx="5" cy="12" r="1.4"></circle><circle cx="12" cy="12" r="1.4"></circle><circle cx="19" cy="12" r="1.4"></circle></svg>
+              <div style="font-size:12px;font-weight:500;color:#6B7080">Дагы</div>
+            </div>
+          </div>
+        </div>
+        <div style="font-size:12px;color:#8A5410;background:#FDEEDD;border:1px solid #F0C489;border-radius:10px;padding:8px 12px;max-width:360px;line-height:1.5">Длинные слова: «Жеткирүүчүлөр» (13 зн.) → сокращённая форма <b>«Жеткирүү»</b>, «Документтер» (11 зн.) → <b>«Документ»</b>. Кегль 12sp не уменьшаем, обрезку не допускаем. Все переводы — черновик до проверки носителем.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3 РОЛИ -->
+  <div style="display:flex;flex-direction:column;gap:14px">
+    <div style="font-size:18px;font-weight:800;color:#14161F">3 · Панели четырёх ролей — везде 4 таба</div>
+    <div style="display:flex;gap:20px;flex-wrap:wrap">
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <div style="font-size:12.5px;font-weight:800;color:#14161F">👷 Прораб</div>
+        <div style="width:300px;background:#fff;border:1px solid #D8DAE3;border-radius:14px;display:flex;padding:8px 2px 12px">
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px"><div style="width:30px;height:4px;border-radius:2px;background:#3D4FDE"></div><svg width="22" height="22" viewBox="0 0 24 24" fill="#3D4FDE" stroke="#3D4FDE" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M9 14.5l2 2 4-4" fill="none" stroke="#fff"></path></svg><div style="font-size:11.5px;font-weight:800;color:#3D4FDE">Сегодня</div></div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;justify-content:flex-end"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6B7080" stroke-width="2"><rect x="4" y="4" width="16" height="4.4" rx="1"></rect><rect x="4" y="10" width="16" height="4.4" rx="1"></rect><rect x="4" y="16" width="16" height="4.4" rx="1"></rect></svg><div style="font-size:11.5px;font-weight:500;color:#6B7080">Работы</div></div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;justify-content:flex-end"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6B7080" stroke-width="2" stroke-linejoin="round"><path d="M12 3l9 4.5v9L12 21l-9-4.5v-9L12 3z"></path><path d="M3 7.5L12 12l9-4.5M12 12v9"></path></svg><div style="font-size:11.5px;font-weight:500;color:#6B7080">Заявки</div></div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;justify-content:flex-end"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6B7080" stroke-width="2"><circle cx="5" cy="12" r="1.4"></circle><circle cx="12" cy="12" r="1.4"></circle><circle cx="19" cy="12" r="1.4"></circle></svg><div style="font-size:11.5px;font-weight:500;color:#6B7080">Ещё</div></div>
+        </div>
+        <div style="font-size:11px;color:#9AA0AE">в «Ещё»: Подрядчики · Документы · Уведомления · Профиль…</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <div style="font-size:12.5px;font-weight:800;color:#14161F">📋 ПТО</div>
+        <div style="width:300px;background:#fff;border:1px solid #D8DAE3;border-radius:14px;display:flex;padding:8px 2px 12px">
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px"><div style="width:30px;height:4px;border-radius:2px;background:#3D4FDE"></div><svg width="22" height="22" viewBox="0 0 24 24" fill="#3D4FDE" stroke="#3D4FDE" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M9 14.5l2 2 4-4" fill="none" stroke="#fff"></path></svg><div style="font-size:11.5px;font-weight:800;color:#3D4FDE">Сегодня</div></div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;justify-content:flex-end"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6B7080" stroke-width="2" stroke-linejoin="round"><path d="M9 3.5h6v3.6a3 3 0 0 1-1.2 2.4l1.2 2.5H9l1.2-2.5A3 3 0 0 1 9 7.1V3.5z"></path><path d="M6 12h12a1 1 0 0 1 1 1v3H5v-3a1 1 0 0 1 1-1z"></path><path d="M5 20h14"></path></svg><div style="font-size:11.5px;font-weight:500;color:#6B7080">Приёмка</div></div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;justify-content:flex-end"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6B7080" stroke-width="2"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"></path></svg><div style="font-size:11.5px;font-weight:500;color:#6B7080">Документы</div></div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;justify-content:flex-end"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6B7080" stroke-width="2"><circle cx="5" cy="12" r="1.4"></circle><circle cx="12" cy="12" r="1.4"></circle><circle cx="19" cy="12" r="1.4"></circle></svg><div style="font-size:11.5px;font-weight:500;color:#6B7080">Ещё</div></div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <div style="font-size:12.5px;font-weight:800;color:#14161F">🚚 Снабжение</div>
+        <div style="width:300px;background:#fff;border:1px solid #D8DAE3;border-radius:14px;display:flex;padding:8px 2px 12px">
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px"><div style="width:30px;height:4px;border-radius:2px;background:#3D4FDE"></div><svg width="22" height="22" viewBox="0 0 24 24" fill="#3D4FDE" stroke="#3D4FDE" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7.5V12l3 2" fill="none" stroke="#fff"></path></svg><div style="font-size:11.5px;font-weight:800;color:#3D4FDE">Сегодня</div></div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;justify-content:flex-end;position:relative"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6B7080" stroke-width="2" stroke-linejoin="round"><path d="M12 3l9 4.5v9L12 21l-9-4.5v-9L12 3z"></path><path d="M3 7.5L12 12l9-4.5M12 12v9"></path></svg><div style="position:absolute;top:-4px;right:16px;background:#B3261E;color:#fff;font-size:9.5px;font-weight:800;border-radius:8px;padding:1px 5px">3</div><div style="font-size:11.5px;font-weight:500;color:#6B7080">Заявки</div></div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;justify-content:flex-end"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6B7080" stroke-width="2" stroke-linecap="round"><rect x="2" y="7" width="13" height="8" rx="1"></rect><path d="M15 10h4l3 3v2h-3"></path><circle cx="7" cy="18" r="2"></circle><circle cx="17" cy="18" r="2"></circle></svg><div style="font-size:11.5px;font-weight:500;color:#6B7080">Поставщики</div></div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;justify-content:flex-end"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6B7080" stroke-width="2"><circle cx="5" cy="12" r="1.4"></circle><circle cx="12" cy="12" r="1.4"></circle><circle cx="19" cy="12" r="1.4"></circle></svg><div style="font-size:11.5px;font-weight:500;color:#6B7080">Ещё</div></div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <div style="font-size:12.5px;font-weight:800;color:#14161F">📊 Руководство</div>
+        <div style="width:300px;background:#fff;border:1px solid #D8DAE3;border-radius:14px;display:flex;padding:8px 2px 12px">
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px"><div style="width:30px;height:4px;border-radius:2px;background:#3D4FDE"></div><svg width="22" height="22" viewBox="0 0 24 24" fill="#3D4FDE" stroke="#3D4FDE" stroke-width="2" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="1.5"></rect><path d="M12 8.5l1.1 2.2 2.4.35-1.75 1.7.4 2.4L12 14l-2.15 1.15.4-2.4-1.75-1.7 2.4-.35L12 8.5z" fill="#fff" stroke="#fff" stroke-width="1"></path></svg><div style="font-size:11.5px;font-weight:800;color:#3D4FDE">Сводка</div></div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;justify-content:flex-end;position:relative"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6B7080" stroke-width="2" stroke-linejoin="round"><path d="M18 5H6L3 13v5a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1v-5l-3-8z"></path><path d="M3 13h5l2 3h4l2-3h5"></path></svg><div style="position:absolute;top:-4px;right:14px;background:#B3261E;color:#fff;font-size:9.5px;font-weight:800;border-radius:8px;padding:1px 5px">4</div><div style="font-size:11.5px;font-weight:500;color:#6B7080">Решения</div></div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;justify-content:flex-end"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6B7080" stroke-width="2" stroke-linecap="round"><path d="M4 21h7M7.5 21V6M3 6h18M17 6v4M7.5 11l5-5"></path><circle cx="17" cy="11.8" r="1.5"></circle></svg><div style="font-size:11.5px;font-weight:500;color:#6B7080">Объекты</div></div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;justify-content:flex-end;position:relative"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6B7080" stroke-width="2"><circle cx="5" cy="12" r="1.4"></circle><circle cx="12" cy="12" r="1.4"></circle><circle cx="19" cy="12" r="1.4"></circle></svg><div style="position:absolute;top:-1px;right:26px;width:8px;height:8px;border-radius:4px;background:#9AA0AE"></div><div style="font-size:11.5px;font-weight:500;color:#6B7080">Ещё</div></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="display:flex;background:#EEF0F6;border-radius:11px;padding:3px">
+            <div style="background:#fff;border-radius:9px;padding:5px 12px;font-size:12px;font-weight:800;color:#14161F;box-shadow:0 1px 3px rgba(20,22,31,0.10)">Производство</div>
+            <div style="padding:5px 12px;font-size:12px;font-weight:700;color:#6B7080">Деньги</div>
+          </div>
+          <div style="font-size:11px;color:#9AA0AE;line-height:1.4">финансы — не пятый таб,<br>а переключатель внутри «Объектов»</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4 ЕЩЁ + 5 FAB + 6 SCROLL -->
+  <div style="display:flex;gap:32px;flex-wrap:wrap;align-items:flex-start">
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="font-size:18px;font-weight:800;color:#14161F">4 · Экран «Ещё» — прораб</div>
+      <div style="width:360px;background:#F4F5F9;border-radius:28px;border:1px solid #D8DAE3;overflow:hidden;box-shadow:0 12px 32px rgba(20,22,31,0.10);display:flex;flex-direction:column;min-height:680px">
+        <div style="display:flex;justify-content:space-between;padding:10px 20px 0;font-size:12px;font-weight:700;color:#14161F;font-variant-numeric:tabular-nums"><span>12:30</span><span>▮▮▮ 82%</span></div>
+        <div style="margin:16px 20px 0;background:#fff;border-radius:20px;padding:16px;display:flex;gap:14px;align-items:center;box-shadow:0 2px 8px rgba(20,22,31,0.06)">
+          <div style="width:56px;height:56px;border-radius:28px;background:#3D4FDE;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:20px">АЖ</div>
+          <div>
+            <div style="font-size:17px;font-weight:800;color:#14161F">Азамат Жумабеков</div>
+            <div style="font-size:13px;color:#6B7080">Прораб · ЖК «Ак-Орго»</div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:7px;padding:14px 20px 0">
+          <div style="background:#fff;border-radius:16px;padding:14px 16px;display:flex;gap:14px;align-items:center;box-shadow:0 2px 8px rgba(20,22,31,0.06)">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#14161F" stroke-width="2" stroke-linecap="round"><path d="M4 15a8 8 0 0 1 16 0"></path><path d="M2.5 15.5h19"></path><path d="M12 5.5V9"></path></svg>
+            <div style="flex:1;font-size:15px;font-weight:700;color:#14161F">Подрядчики</div>
+            <div style="background:#B3261E;color:#fff;font-size:10.5px;font-weight:800;border-radius:9px;padding:1px 7px">1</div>
+            <div style="color:#9AA0AE">›</div>
+          </div>
+          <div style="background:#fff;border-radius:16px;padding:14px 16px;display:flex;gap:14px;align-items:center;box-shadow:0 2px 8px rgba(20,22,31,0.06)">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#14161F" stroke-width="2"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"></path></svg>
+            <div style="flex:1;font-size:15px;font-weight:700;color:#14161F">Документы</div>
+            <div style="color:#9AA0AE">›</div>
+          </div>
+          <div style="background:#fff;border-radius:16px;padding:14px 16px;display:flex;gap:14px;align-items:center;box-shadow:0 2px 8px rgba(20,22,31,0.06)">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#14161F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16v-5a6 6 0 0 1 12 0v5l1.5 2.5h-15L6 16z"></path><path d="M10 21a2 2 0 0 0 4 0"></path></svg>
+            <div style="flex:1;font-size:15px;font-weight:700;color:#14161F">Уведомления</div>
+            <div style="width:8px;height:8px;border-radius:4px;background:#9AA0AE"></div>
+            <div style="color:#9AA0AE">›</div>
+          </div>
+          <div style="background:#fff;border-radius:16px;padding:14px 16px;display:flex;gap:14px;align-items:center;box-shadow:0 2px 8px rgba(20,22,31,0.06)">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#14161F" stroke-width="2"><circle cx="12" cy="8" r="3.5"></circle><path d="M5 20a7 7 0 0 1 14 0"></path></svg>
+            <div style="flex:1;font-size:15px;font-weight:700;color:#14161F">Профиль и мои работы</div>
+            <div style="color:#9AA0AE">›</div>
+          </div>
+          <div style="background:#fff;border-radius:16px;padding:14px 16px;display:flex;gap:14px;align-items:center;box-shadow:0 2px 8px rgba(20,22,31,0.06)">
+            <div style="width:24px;font-size:16px;text-align:center">Аа</div>
+            <div style="flex:1;font-size:15px;font-weight:700;color:#14161F">Язык</div>
+            <div style="display:flex;background:#EEF0F6;border-radius:10px;padding:2px"><div style="background:#fff;border-radius:8px;padding:4px 10px;font-size:11.5px;font-weight:800">RU</div><div style="padding:4px 10px;font-size:11.5px;font-weight:700;color:#6B7080">KG</div></div>
+          </div>
+          <div style="background:#fff;border-radius:16px;padding:14px 16px;display:flex;gap:14px;align-items:center;box-shadow:0 2px 8px rgba(20,22,31,0.06)">
+            <div style="width:24px;font-size:16px;text-align:center">?</div>
+            <div style="flex:1;font-size:15px;font-weight:700;color:#14161F">Помощь</div>
+            <div style="color:#9AA0AE">›</div>
+          </div>
+          <div style="background:#fff;border-radius:16px;padding:14px 16px;box-shadow:0 2px 8px rgba(20,22,31,0.06)">
+            <div style="font-size:15px;font-weight:700;color:#B3261E">Выйти из аккаунта</div>
+          </div>
+        </div>
+        <div style="margin-top:auto;display:flex;border-top:1px solid #E2E4EE;background:#fff;padding:8px 4px 16px">
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;justify-content:flex-end"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6B7080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M3 9h18M8 3v4M16 3v4M9 14.5l2 2 4-4"></path></svg><div style="font-size:12px;font-weight:500;color:#6B7080">Сегодня</div></div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;justify-content:flex-end"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6B7080" stroke-width="2"><rect x="4" y="4" width="16" height="4.4" rx="1"></rect><rect x="4" y="10" width="16" height="4.4" rx="1"></rect><rect x="4" y="16" width="16" height="4.4" rx="1"></rect></svg><div style="font-size:12px;font-weight:500;color:#6B7080">Работы</div></div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;justify-content:flex-end;position:relative"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6B7080" stroke-width="2" stroke-linejoin="round"><path d="M12 3l9 4.5v9L12 21l-9-4.5v-9L12 3z"></path><path d="M3 7.5L12 12l9-4.5M12 12v9"></path></svg><div style="position:absolute;top:-4px;right:24px;background:#B3261E;color:#fff;font-size:10px;font-weight:800;border-radius:9px;padding:1px 6px">2</div><div style="font-size:12px;font-weight:500;color:#6B7080">Заявки</div></div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding-top:2px"><div style="width:34px;height:4px;border-radius:2px;background:#3D4FDE;margin-bottom:2px"></div><svg width="24" height="24" viewBox="0 0 24 24" fill="#3D4FDE" stroke="#3D4FDE" stroke-width="2"><circle cx="5" cy="12" r="1.8"></circle><circle cx="12" cy="12" r="1.8"></circle><circle cx="19" cy="12" r="1.8"></circle></svg><div style="font-size:12px;font-weight:800;color:#3D4FDE">Ещё</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="font-size:18px;font-weight:800;color:#14161F">5 · FAB — контекстная кнопка</div>
+      <div style="display:flex;flex-direction:column;gap:12px;background:#fff;border:1px solid #D8DAE3;border-radius:20px;padding:20px;width:320px">
+        <div style="font-size:12px;font-weight:700;color:#6B7080">РАЗВЁРНУТАЯ · МЕНЯЕТСЯ ПО РАЗДЕЛАМ</div>
+        <div style="display:inline-flex;align-items:center;gap:8px;background:#3D4FDE;color:#fff;border-radius:28px;height:56px;padding:0 22px;font-size:15px;font-weight:800;box-shadow:0 8px 20px rgba(61,79,222,0.40);width:fit-content">＋ Внести</div>
+        <div style="font-size:11px;color:#9AA0AE;margin-top:-6px">Сегодня · Работы (прораб)</div>
+        <div style="display:inline-flex;align-items:center;gap:8px;background:#3D4FDE;color:#fff;border-radius:28px;height:56px;padding:0 22px;font-size:15px;font-weight:800;box-shadow:0 8px 20px rgba(61,79,222,0.40);width:fit-content">＋ Заявка</div>
+        <div style="font-size:11px;color:#9AA0AE;margin-top:-6px">Заявки (прораб и снабжение)</div>
+        <div style="display:inline-flex;align-items:center;gap:8px;background:#3D4FDE;color:#fff;border-radius:28px;height:56px;padding:0 22px;font-size:15px;font-weight:800;box-shadow:0 8px 20px rgba(61,79,222,0.40);width:fit-content">＋ Поручение</div>
+        <div style="font-size:11px;color:#9AA0AE;margin-top:-6px">Сводка (руководство)</div>
+        <div style="font-size:12px;font-weight:700;color:#6B7080;margin-top:6px">СЖАТАЯ · ПРИ СКРОЛЛЕ ВНИЗ</div>
+        <div style="width:56px;height:56px;border-radius:28px;background:#3D4FDE;color:#fff;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800;box-shadow:0 8px 20px rgba(61,79,222,0.40)">＋</div>
+        <div style="font-size:12px;color:#4A4F5C;line-height:1.55">Скролл вниз — сжимается до круга 56×56, вверх — разворачивается с подписью. На «Ещё» кнопки нет. Не голый «+»: подпись обязательна.</div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="font-size:18px;font-weight:800;color:#14161F">6 · Список пролистан до конца — FAB не перекрывает</div>
+      <div style="width:360px;background:#F4F5F9;border-radius:28px;border:1px solid #D8DAE3;overflow:hidden;box-shadow:0 12px 32px rgba(20,22,31,0.10);display:flex;flex-direction:column;min-height:680px;position:relative">
+        <div style="display:flex;justify-content:space-between;padding:10px 20px 0;font-size:12px;font-weight:700;color:#14161F;font-variant-numeric:tabular-nums"><span>18:42</span><span>▮▮▮ 77%</span></div>
+        <div style="padding:12px 20px 4px;font-size:13px;color:#9AA0AE">… список заявок, конец</div>
+        <div style="display:flex;flex-direction:column;gap:7px;padding:0 20px">
+          <div style="background:#fff;border-radius:16px;padding:13px 15px;box-shadow:0 2px 8px rgba(20,22,31,0.06);opacity:0.6">
+            <div style="font-size:12.5px;font-weight:800;color:#3D4FDE">ЗВ-АКО-26-0171</div>
+            <div style="font-size:14px;font-weight:700;color:#14161F;margin-top:3px">Опалубочная фанера · 60 листов</div>
+          </div>
+          <div style="background:#fff;border-radius:16px;padding:13px 15px;box-shadow:0 2px 8px rgba(20,22,31,0.06)">
+            <div style="display:flex;justify-content:space-between"><div style="font-size:12.5px;font-weight:800;color:#3D4FDE">ЗВ-АКО-26-0168</div><div style="font-size:11.5px;font-weight:700;color:#166B3F;background:#E3F5EB;border-radius:8px;padding:3px 8px">закрыта</div></div>
+            <div style="font-size:14px;font-weight:700;color:#14161F;margin-top:3px">Бетон М350 · 48 м³ — последняя карточка</div>
+            <div style="font-size:12px;color:#6B7080;margin-top:2px">видна целиком, не под кнопкой</div>
+          </div>
+        </div>
+        <div style="height:88px;display:flex;align-items:center;justify-content:center;font-size:11px;color:#B9BFCF;border:1px dashed #D8DAE3;border-radius:12px;margin:8px 20px 6px">отступ 88 dp под FAB — у всех списков</div>
+        <div style="position:absolute;right:16px;bottom:88px;display:inline-flex;align-items:center;gap:8px;background:#3D4FDE;color:#fff;border-radius:28px;height:56px;padding:0 22px;font-size:15px;font-weight:800;box-shadow:0 8px 20px rgba(61,79,222,0.40)">＋ Заявка</div>
+        <div style="margin-top:auto;display:flex;border-top:1px solid #E2E4EE;background:#fff;padding:8px 4px 16px">
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;justify-content:flex-end"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6B7080" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M3 9h18M8 3v4M16 3v4M9 14.5l2 2 4-4"></path></svg><div style="font-size:12px;font-weight:500;color:#6B7080">Сегодня</div></div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;justify-content:flex-end"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6B7080" stroke-width="2"><rect x="4" y="4" width="16" height="4.4" rx="1"></rect><rect x="4" y="10" width="16" height="4.4" rx="1"></rect><rect x="4" y="16" width="16" height="4.4" rx="1"></rect></svg><div style="font-size:12px;font-weight:500;color:#6B7080">Работы</div></div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding-top:2px"><div style="width:34px;height:4px;border-radius:2px;background:#3D4FDE;margin-bottom:2px"></div><svg width="24" height="24" viewBox="0 0 24 24" fill="#3D4FDE" stroke="#3D4FDE" stroke-width="2" stroke-linejoin="round"><path d="M12 3l9 4.5v9L12 21l-9-4.5v-9L12 3z"></path><path d="M3 7.5L12 12l9-4.5M12 12v9" fill="none" stroke="#fff"></path></svg><div style="font-size:12px;font-weight:800;color:#3D4FDE">Заявки</div></div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;justify-content:flex-end"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6B7080" stroke-width="2"><circle cx="5" cy="12" r="1.4"></circle><circle cx="12" cy="12" r="1.4"></circle><circle cx="19" cy="12" r="1.4"></circle></svg><div style="font-size:12px;font-weight:500;color:#6B7080">Ещё</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="max-width:840px;background:#fff;border-radius:16px;padding:20px 24px;border:1px solid #D8DAE3">
+    <div style="font-size:15px;font-weight:800;color:#14161F;margin-bottom:8px">Главная проверка</div>
+    <div style="font-size:14px;color:#4A4F5C;line-height:1.65">Показать панель человеку, не видевшему приложение: каждая иконка должна угадываться без подписи. Кран = объекты, каска = подрядчики, штамп = приёмка, коробка = заявки, колокольчик = уведомления. Бейджи: красный с числом — требует действия; серая точка — просто новое. «Ещё» агрегирует бейджи содержимого.</div>
+  </div>
+</section>
+</x-dc>
+</body>
+</html>

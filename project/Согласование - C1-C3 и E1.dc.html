@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#E9EAEE;font-family:Manrope,sans-serif}
+a{color:#3D4FDE;text-decoration:none}a:hover{color:#2A3AB8}
+</style>
+</helmet>
+<section style="padding:48px 56px;display:flex;flex-direction:column;gap:40px">
+  <div style="max-width:820px;display:flex;flex-direction:column;gap:8px">
+    <div style="font-size:13px;font-weight:700;letter-spacing:0.08em;color:#6B7080">BUILD HUB · ШАГ 3 — СОГЛАСОВАНИЕ · СТИЛЬ 1a «ИНДИГО» · RU</div>
+    <div style="font-size:30px;font-weight:800;color:#14161F">Экраны C1–C3 (ПТО / главный инженер) + E1 «Уведомления»</div>
+    <div style="font-size:15px;color:#4A4F5C;line-height:1.5">Сортировка по срочности, свайп-действия, массовое подтверждение, метки аномалий, SLA-счётчики (12 ч — просрочено, 24 ч — эскалация). Корректировка — только с обоснованием, история правок видна прорабу.</div>
+  </div>
+  <div style="display:flex;gap:36px;flex-wrap:wrap;align-items:flex-start">
+
+    <!-- C1 -->
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="font-size:14px;font-weight:800;color:#14161F">C1 · Очередь согласования <span style="font-weight:600;color:#6B7080">— средняя строка показана в свайпе</span></div>
+      <div style="width:360px;background:#F4F5F9;border-radius:28px;border:1px solid #D8DAE3;overflow:hidden;box-shadow:0 12px 32px rgba(20,22,31,0.10);display:flex;flex-direction:column;min-height:760px">
+        <div style="display:flex;justify-content:space-between;padding:10px 20px 0;font-size:12px;font-weight:700;color:#14161F;font-variant-numeric:tabular-nums"><span>19:05</span><span>▮▮▮ 64%</span></div>
+        <div style="padding:16px 20px 8px;display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-size:13px;font-weight:600;color:#6B7080">Инженер ПТО · Гульмира С.</div>
+            <div style="font-size:22px;font-weight:800;color:#14161F">На проверку <span style="color:#3D4FDE;font-variant-numeric:tabular-nums">7</span></div>
+          </div>
+          <div style="font-size:13px;font-weight:700;color:#3D4FDE;background:#EEF0FF;border-radius:12px;padding:8px 12px">☑ Выбрать</div>
+        </div>
+        <div style="display:flex;gap:8px;padding:4px 20px 8px">
+          <div style="background:#3D4FDE;color:#fff;border-radius:12px;padding:7px 12px;font-size:13px;font-weight:700">Все · 7</div>
+          <div style="background:#fff;color:#B3261E;border-radius:12px;padding:7px 12px;font-size:13px;font-weight:700;border:1px solid #D8DAE3">Просрочено · 1</div>
+          <div style="background:#fff;color:#14161F;border-radius:12px;padding:7px 12px;font-size:13px;font-weight:600;border:1px solid #D8DAE3">Ак-Орго · 4</div>
+        </div>
+        <div style="padding:4px 20px;font-size:12.5px;font-weight:700;letter-spacing:0.06em;color:#B3261E">ПРОСРОЧЕНО</div>
+        <div style="margin:0 20px;background:#fff;border-radius:18px;padding:14px 16px;border:1.5px solid #F0B4B0;box-shadow:0 2px 8px rgba(20,22,31,0.06)">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="font-size:15px;font-weight:800;color:#14161F">Бакыт У. · ЖК «Бишкек Сити»</div>
+            <div style="font-size:12px;font-weight:800;color:#B3261E;font-variant-numeric:tabular-nums">⏱ 26 ч</div>
+          </div>
+          <div style="font-size:13px;color:#4A4F5C;margin-top:4px;font-variant-numeric:tabular-nums">Блок А · Фасад +420 м² (44,1%) · 9 чел · 1 фото</div>
+          <div style="display:inline-flex;margin-top:6px;font-size:11.5px;font-weight:700;color:#B3261E;background:#FBEAE9;border-radius:8px;padding:3px 8px">эскалировано гл. инженеру</div>
+        </div>
+        <div style="padding:10px 20px 4px;font-size:12.5px;font-weight:700;letter-spacing:0.06em;color:#6B7080">СЕГОДНЯ</div>
+        <div style="margin:0 20px;border-radius:18px;overflow:hidden;position:relative;background:#1E9E5A">
+          <div style="position:absolute;left:16px;top:0;bottom:0;display:flex;align-items:center;color:#fff;font-size:14px;font-weight:800">✓ Подтвердить</div>
+          <div style="background:#fff;border-radius:18px;padding:14px 16px;margin-left:118px;box-shadow:0 2px 8px rgba(20,22,31,0.10)">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div style="font-size:15px;font-weight:800;color:#14161F">Азамат Ж. · Ак-Орго</div>
+              <div style="font-size:12px;font-weight:700;color:#6B7080;font-variant-numeric:tabular-nums">⏱ 20 мин</div>
+            </div>
+            <div style="font-size:13px;color:#4A4F5C;margin-top:4px;font-variant-numeric:tabular-nums">Монолит +32 м³ (71,7%) · 14 чел…</div>
+          </div>
+        </div>
+        <div style="margin:8px 20px 0;background:#fff;border-radius:18px;padding:14px 16px;box-shadow:0 2px 8px rgba(20,22,31,0.06)">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="font-size:15px;font-weight:800;color:#14161F;display:flex;align-items:center;gap:7px"><span style="width:8px;height:8px;border-radius:4px;background:#B3261E;flex:none"></span>Тилек М. · Ак-Орго</div>
+            <div style="font-size:12px;font-weight:700;color:#6B7080;font-variant-numeric:tabular-nums">⏱ 1 ч</div>
+          </div>
+          <div style="font-size:13px;color:#4A4F5C;margin-top:4px;font-variant-numeric:tabular-nums">Кладка +2 600 шт (<b style="color:#B3261E">+40% за день</b>) · 11 чел · 2 фото</div>
+          <div style="display:inline-flex;margin-top:6px;font-size:11.5px;font-weight:700;color:#B3261E;background:#FBEAE9;border-radius:8px;padding:3px 8px">аномалия — проверить фото</div>
+        </div>
+        <div style="margin:8px 20px 0;background:#fff;border-radius:18px;padding:14px 16px;box-shadow:0 2px 8px rgba(20,22,31,0.06)">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="font-size:15px;font-weight:800;color:#14161F">Эрлан К. · Джал Резиденс</div>
+            <div style="font-size:12px;font-weight:700;color:#6B7080;font-variant-numeric:tabular-nums">⏱ 2 ч</div>
+          </div>
+          <div style="font-size:13px;color:#4A4F5C;margin-top:4px;font-variant-numeric:tabular-nums">Отделка +260 м² (58,2%) · 16 чел · 4 фото</div>
+        </div>
+        <div style="margin:8px 20px 0;background:#fff;border-radius:18px;padding:14px 16px;box-shadow:0 2px 8px rgba(20,22,31,0.06)">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="font-size:15px;font-weight:800;color:#14161F">Азамат Ж. · Ак-Орго</div>
+            <div style="font-size:12px;font-weight:700;color:#6B7080;font-variant-numeric:tabular-nums">⏱ 20 мин</div>
+          </div>
+          <div style="font-size:13px;color:#4A4F5C;margin-top:4px;font-variant-numeric:tabular-nums">Кладка +480 шт (52,5%) · 12 чел · 3 фото</div>
+        </div>
+        <div style="margin:10px 20px 0;display:flex;justify-content:center;gap:16px;font-size:12px;color:#6B7080">
+          <span>← свайп влево — <b style="color:#B06A00">вернуть</b></span>
+          <span>свайп вправо — <b style="color:#166B3F">подтвердить</b> →</span>
+        </div>
+        <div style="margin-top:auto;display:flex;border-top:1px solid #E2E4EE;background:#fff;padding:10px 8px 18px">
+          <div style="flex:1;text-align:center;color:#3D4FDE"><div style="font-size:20px">☑</div><div style="font-size:11.5px;font-weight:700">Очередь</div></div>
+          <div style="flex:1;text-align:center;color:#6B7080"><div style="font-size:20px">⌂</div><div style="font-size:11.5px;font-weight:600">Объекты</div></div>
+          <div style="flex:1;text-align:center;color:#6B7080"><div style="font-size:20px">◔</div><div style="font-size:11.5px;font-weight:600">Уведомления</div></div>
+          <div style="flex:1;text-align:center;color:#6B7080"><div style="font-size:20px">◉</div><div style="font-size:11.5px;font-weight:600">Профиль</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- C1 bulk -->
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="font-size:14px;font-weight:800;color:#14161F">C1 · Массовое подтверждение <span style="font-weight:600;color:#6B7080">— долгое нажатие включает выбор</span></div>
+      <div style="width:360px;background:#F4F5F9;border-radius:28px;border:1px solid #D8DAE3;overflow:hidden;box-shadow:0 12px 32px rgba(20,22,31,0.10);display:flex;flex-direction:column;min-height:760px">
+        <div style="display:flex;justify-content:space-between;padding:10px 20px 0;font-size:12px;font-weight:700;color:#14161F;font-variant-numeric:tabular-nums"><span>19:06</span><span>▮▮▮ 64%</span></div>
+        <div style="padding:16px 20px 8px;display:flex;justify-content:space-between;align-items:center">
+          <div style="font-size:22px;font-weight:800;color:#14161F">Выбрано <span style="color:#3D4FDE;font-variant-numeric:tabular-nums">3</span></div>
+          <div style="font-size:13px;font-weight:700;color:#6B7080">Отмена</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;padding:6px 20px">
+          <div style="background:#fff;border-radius:18px;padding:14px 16px;display:flex;gap:12px;align-items:center;border:1.5px solid #3D4FDE;box-shadow:0 2px 8px rgba(20,22,31,0.06)">
+            <div style="width:26px;height:26px;border-radius:9px;background:#3D4FDE;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;flex:none">✓</div>
+            <div style="flex:1">
+              <div style="font-size:14.5px;font-weight:800;color:#14161F">Азамат Ж. · Монолит +32 м³</div>
+              <div style="font-size:12.5px;color:#6B7080;font-variant-numeric:tabular-nums">71,7% · 14 чел · 2 фото · без аномалий</div>
+            </div>
+          </div>
+          <div style="background:#fff;border-radius:18px;padding:14px 16px;display:flex;gap:12px;align-items:center;border:1.5px solid #3D4FDE;box-shadow:0 2px 8px rgba(20,22,31,0.06)">
+            <div style="width:26px;height:26px;border-radius:9px;background:#3D4FDE;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;flex:none">✓</div>
+            <div style="flex:1">
+              <div style="font-size:14.5px;font-weight:800;color:#14161F">Азамат Ж. · Кладка +480 шт</div>
+              <div style="font-size:12.5px;color:#6B7080;font-variant-numeric:tabular-nums">52,5% · 12 чел · 3 фото · без аномалий</div>
+            </div>
+          </div>
+          <div style="background:#fff;border-radius:18px;padding:14px 16px;display:flex;gap:12px;align-items:center;border:1.5px solid #3D4FDE;box-shadow:0 2px 8px rgba(20,22,31,0.06)">
+            <div style="width:26px;height:26px;border-radius:9px;background:#3D4FDE;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;flex:none">✓</div>
+            <div style="flex:1">
+              <div style="font-size:14.5px;font-weight:800;color:#14161F">Эрлан К. · Отделка +260 м²</div>
+              <div style="font-size:12.5px;color:#6B7080;font-variant-numeric:tabular-nums">58,2% · 16 чел · 4 фото · без аномалий</div>
+            </div>
+          </div>
+          <div style="background:#fff;border-radius:18px;padding:14px 16px;display:flex;gap:12px;align-items:center;box-shadow:0 2px 8px rgba(20,22,31,0.06);opacity:0.85">
+            <div style="width:26px;height:26px;border-radius:9px;border:2px solid #C9CCDA;flex:none"></div>
+            <div style="flex:1">
+              <div style="font-size:14.5px;font-weight:800;color:#14161F;display:flex;align-items:center;gap:7px"><span style="width:8px;height:8px;border-radius:4px;background:#B3261E;flex:none"></span>Тилек М. · Кладка +2 600 шт</div>
+              <div style="font-size:12.5px;color:#B3261E;font-weight:700">аномалия +40% — открыть отдельно</div>
+            </div>
+          </div>
+        </div>
+        <div style="margin:8px 20px;background:#EEF0FF;border-radius:14px;padding:11px 14px;font-size:12.5px;color:#2A3AB8;font-weight:600;line-height:1.45">Отчёты с аномалиями не попадают в массовое подтверждение — их нужно открыть и проверить.</div>
+        <div style="margin-top:auto;padding:16px 20px 24px">
+          <div style="height:56px;border-radius:18px;background:#1E9E5A;color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;box-shadow:0 6px 16px rgba(30,158,90,0.35)">✓ Подтвердить 3 отчёта</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- C2 -->
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="font-size:14px;font-weight:800;color:#14161F">C2 · Проверка отчёта <span style="font-weight:600;color:#6B7080">— сравнение с планом и вчерашним днём</span></div>
+      <div style="width:360px;background:#F4F5F9;border-radius:28px;border:1px solid #D8DAE3;overflow:hidden;box-shadow:0 12px 32px rgba(20,22,31,0.10);display:flex;flex-direction:column;min-height:760px">
+        <div style="display:flex;justify-content:space-between;padding:10px 20px 0;font-size:12px;font-weight:700;color:#14161F;font-variant-numeric:tabular-nums"><span>19:05</span><span>▮▮▮ 64%</span></div>
+        <div style="padding:14px 20px 8px;display:flex;align-items:center;gap:12px">
+          <div style="width:40px;height:40px;border-radius:14px;background:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;color:#14161F;box-shadow:0 1px 4px rgba(20,22,31,0.08)">‹</div>
+          <div>
+            <div style="font-size:17px;font-weight:800;color:#14161F">Азамат Ж. · 4 августа</div>
+            <div style="font-size:13px;color:#6B7080">Ак-Орго · отправлен 18:45 · ⏱ 20 мин</div>
+          </div>
+        </div>
+        <div style="margin:6px 20px;background:#fff;border-radius:20px;padding:16px;box-shadow:0 2px 8px rgba(20,22,31,0.06)">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="font-size:15.5px;font-weight:800;color:#14161F">Монолит · Блок Б · 7 эт</div>
+            <div style="font-size:12px;font-weight:700;color:#166B3F;background:#E3F5EB;border-radius:8px;padding:3px 8px">в норме</div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:12px;text-align:center">
+            <div style="background:#F4F5F9;border-radius:12px;padding:8px 4px"><div style="font-size:17px;font-weight:800;color:#14161F;font-variant-numeric:tabular-nums">+32 м³</div><div style="font-size:11px;color:#6B7080">сегодня</div></div>
+            <div style="background:#F4F5F9;border-radius:12px;padding:8px 4px"><div style="font-size:17px;font-weight:800;color:#14161F;font-variant-numeric:tabular-nums">+28 м³</div><div style="font-size:11px;color:#6B7080">вчера</div></div>
+            <div style="background:#F4F5F9;border-radius:12px;padding:8px 4px"><div style="font-size:17px;font-weight:800;color:#3D4FDE;font-variant-numeric:tabular-nums">71,7%</div><div style="font-size:11px;color:#6B7080">от плана 480</div></div>
+          </div>
+          <div style="display:flex;gap:10px;margin-top:12px">
+            <div style="width:104px;height:78px;border-radius:14px;position:relative;background:repeating-linear-gradient(45deg,#D8DAE3 0 8px,#E7E9F0 8px 16px)"><div style="position:absolute;bottom:5px;left:5px;background:rgba(20,22,31,0.75);color:#fff;font-size:9px;font-weight:700;border-radius:6px;padding:2px 5px">📍 18:41</div></div>
+            <div style="width:104px;height:78px;border-radius:14px;position:relative;background:repeating-linear-gradient(45deg,#D8DAE3 0 8px,#E7E9F0 8px 16px)"><div style="position:absolute;bottom:5px;left:5px;background:rgba(20,22,31,0.75);color:#fff;font-size:9px;font-weight:700;border-radius:6px;padding:2px 5px">📍 18:42</div></div>
+            <div style="width:60px;height:78px;border-radius:14px;background:#EEF0F6;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#3D4FDE">все →</div>
+          </div>
+          <div style="display:inline-flex;margin-top:10px;background:#FDEEDD;border-radius:10px;padding:5px 10px;font-size:12.5px;font-weight:700;color:#8A5410">⚠ Нет материала · арматура Ø12</div>
+        </div>
+        <div style="margin:2px 20px;background:#fff;border-radius:20px;padding:16px;box-shadow:0 2px 8px rgba(20,22,31,0.06)">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="font-size:15.5px;font-weight:800;color:#14161F">Кладка · Блок Б · 5 эт</div>
+            <div style="font-size:12px;font-weight:700;color:#166B3F;background:#E3F5EB;border-radius:8px;padding:3px 8px">в норме</div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:12px;text-align:center">
+            <div style="background:#F4F5F9;border-radius:12px;padding:8px 4px"><div style="font-size:17px;font-weight:800;color:#14161F;font-variant-numeric:tabular-nums">+480 шт</div><div style="font-size:11px;color:#6B7080">сегодня</div></div>
+            <div style="background:#F4F5F9;border-radius:12px;padding:8px 4px"><div style="font-size:17px;font-weight:800;color:#14161F;font-variant-numeric:tabular-nums">+445 шт</div><div style="font-size:11px;color:#6B7080">вчера</div></div>
+            <div style="background:#F4F5F9;border-radius:12px;padding:8px 4px"><div style="font-size:17px;font-weight:800;color:#3D4FDE;font-variant-numeric:tabular-nums">52,5%</div><div style="font-size:11px;color:#6B7080">от плана</div></div>
+          </div>
+        </div>
+        <div style="margin-top:auto;padding:14px 20px 24px;display:flex;flex-direction:column;gap:10px;background:#fff;border-top:1px solid #E2E4EE">
+          <div style="height:56px;border-radius:18px;background:#1E9E5A;color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800">✓ Подтвердить</div>
+          <div style="display:flex;gap:10px">
+            <div style="flex:1;height:48px;border-radius:16px;background:#EEF0F6;color:#14161F;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700">✎ Скорректировать</div>
+            <div style="flex:1;height:48px;border-radius:16px;background:#FDEEDD;color:#8A5410;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700">↩ Вернуть</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- C3 -->
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="font-size:14px;font-weight:800;color:#14161F">C3 · Корректировка значения <span style="font-weight:600;color:#6B7080">— bottom sheet, обоснование обязательно</span></div>
+      <div style="width:360px;background:#F4F5F9;border-radius:28px;border:1px solid #D8DAE3;overflow:hidden;box-shadow:0 12px 32px rgba(20,22,31,0.10);display:flex;flex-direction:column;min-height:760px;position:relative">
+        <div style="display:flex;justify-content:space-between;padding:10px 20px 0;font-size:12px;font-weight:700;color:#14161F;font-variant-numeric:tabular-nums;opacity:0.45"><span>19:05</span><span>▮▮▮ 64%</span></div>
+        <div style="padding:14px 20px;opacity:0.45">
+          <div style="font-size:17px;font-weight:800;color:#14161F">Азамат Ж. · 4 августа</div>
+          <div style="margin-top:10px;background:#fff;border-radius:20px;padding:16px;height:150px"></div>
+        </div>
+        <div style="position:absolute;left:0;right:0;top:180px;bottom:0;background:rgba(20,22,31,0.35)"></div>
+        <div style="position:absolute;left:0;right:0;bottom:0;background:#fff;border-radius:28px 28px 0 0;padding:12px 20px 24px;box-shadow:0 -12px 40px rgba(20,22,31,0.25)">
+          <div style="width:44px;height:5px;border-radius:3px;background:#D8DAE3;margin:0 auto"></div>
+          <div style="font-size:18px;font-weight:800;color:#14161F;margin-top:14px">Скорректировать объём</div>
+          <div style="font-size:13.5px;color:#6B7080;margin-top:2px">Монолит · Блок Б · 7 этаж</div>
+          <div style="display:flex;align-items:center;gap:14px;margin-top:16px;justify-content:center">
+            <div style="text-align:center">
+              <div style="font-size:12px;font-weight:700;color:#6B7080">БЫЛО</div>
+              <div style="font-size:30px;font-weight:800;color:#9AA0AE;text-decoration:line-through;font-variant-numeric:tabular-nums">32</div>
+            </div>
+            <div style="font-size:22px;color:#6B7080">→</div>
+            <div style="text-align:center">
+              <div style="font-size:12px;font-weight:700;color:#3D4FDE">СТАЛО</div>
+              <div style="background:#F0F4FF;border:2px solid #3D4FDE;border-radius:14px;padding:2px 16px;font-size:30px;font-weight:800;color:#14161F;font-variant-numeric:tabular-nums">28<span style="font-size:16px;color:#6B7080;font-weight:700"> м³</span></div>
+            </div>
+          </div>
+          <div style="font-size:12.5px;color:#6B7080;text-align:center;margin-top:6px;font-variant-numeric:tabular-nums">Итог изменится: 344 → 340 из 480 м³ · 70,8%</div>
+          <div style="margin-top:14px">
+            <div style="font-size:13px;font-weight:700;color:#14161F">Обоснование <span style="color:#B3261E">*</span></div>
+            <div style="margin-top:6px;background:#F4F5F9;border:1.5px solid #D8DAE3;border-radius:14px;padding:12px 14px;font-size:14px;color:#14161F;line-height:1.5">По фото залито 3 захватки из 4, обмер по опалубке — 28 м³<span style="display:inline-block;width:2px;height:16px;background:#3D4FDE;vertical-align:-3px"></span></div>
+          </div>
+          <div style="margin-top:10px;background:#EEF0FF;border-radius:12px;padding:10px 12px;font-size:12.5px;color:#2A3AB8;font-weight:600;line-height:1.45">Правка сохранится в истории и будет видна прорабу с вашим именем.</div>
+          <div style="display:flex;gap:10px;margin-top:14px">
+            <div style="flex:1;height:52px;border-radius:16px;background:#EEF0F6;color:#14161F;display:flex;align-items:center;justify-content:center;font-size:14.5px;font-weight:700">Отмена</div>
+            <div style="flex:1.4;height:52px;border-radius:16px;background:#3D4FDE;color:#fff;display:flex;align-items:center;justify-content:center;font-size:14.5px;font-weight:800">Сохранить правку</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- E1 -->
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="font-size:14px;font-weight:800;color:#14161F">E1 · Уведомления <span style="font-weight:600;color:#6B7080">— лента прораба</span></div>
+      <div style="width:360px;background:#F4F5F9;border-radius:28px;border:1px solid #D8DAE3;overflow:hidden;box-shadow:0 12px 32px rgba(20,22,31,0.10);display:flex;flex-direction:column;min-height:760px">
+        <div style="display:flex;justify-content:space-between;padding:10px 20px 0;font-size:12px;font-weight:700;color:#14161F;font-variant-numeric:tabular-nums"><span>08:10</span><span>▮▮▮ 94%</span></div>
+        <div style="padding:16px 20px 8px">
+          <div style="font-size:22px;font-weight:800;color:#14161F">Уведомления</div>
+        </div>
+        <div style="padding:2px 20px 4px;font-size:12.5px;font-weight:700;letter-spacing:0.06em;color:#6B7080">СЕГОДНЯ</div>
+        <div style="display:flex;flex-direction:column;gap:8px;padding:0 20px">
+          <div style="background:#fff;border-radius:18px;padding:14px 16px;display:flex;gap:12px;box-shadow:0 2px 8px rgba(20,22,31,0.06);border:1.5px solid #F0C489">
+            <div style="width:40px;height:40px;border-radius:14px;background:#FDEEDD;display:flex;align-items:center;justify-content:center;font-size:18px;flex:none">↩</div>
+            <div>
+              <div style="font-size:14.5px;font-weight:800;color:#14161F">Отчёт за 3 авг возвращён</div>
+              <div style="font-size:13px;color:#4A4F5C;margin-top:2px;line-height:1.45">ПТО: «Объём кладки не сходится с фото» · <b style="color:#3D4FDE">Исправить</b></div>
+              <div style="font-size:12px;color:#9AA0AE;margin-top:3px;font-variant-numeric:tabular-nums">вчера, 21:14</div>
+            </div>
+          </div>
+          <div style="background:#fff;border-radius:18px;padding:14px 16px;display:flex;gap:12px;box-shadow:0 2px 8px rgba(20,22,31,0.06)">
+            <div style="width:40px;height:40px;border-radius:14px;background:#E3F5EB;display:flex;align-items:center;justify-content:center;font-size:18px;flex:none">✓</div>
+            <div>
+              <div style="font-size:14.5px;font-weight:800;color:#14161F">Монолит за 4 авг подтверждён</div>
+              <div style="font-size:13px;color:#4A4F5C;margin-top:2px">ПТО · Гульмира С. · без правок</div>
+              <div style="font-size:12px;color:#9AA0AE;margin-top:3px;font-variant-numeric:tabular-nums">19:12</div>
+            </div>
+          </div>
+          <div style="background:#fff;border-radius:18px;padding:14px 16px;display:flex;gap:12px;box-shadow:0 2px 8px rgba(20,22,31,0.06)">
+            <div style="width:40px;height:40px;border-radius:14px;background:#EEF0FF;display:flex;align-items:center;justify-content:center;font-size:18px;flex:none">✎</div>
+            <div>
+              <div style="font-size:14.5px;font-weight:800;color:#14161F">Кладка за 4 авг: правка ПТО</div>
+              <div style="font-size:13px;color:#4A4F5C;margin-top:2px;font-variant-numeric:tabular-nums">480 → 458 шт · «обмер по осям 3–5» · <b style="color:#3D4FDE">История</b></div>
+              <div style="font-size:12px;color:#9AA0AE;margin-top:3px;font-variant-numeric:tabular-nums">19:15</div>
+            </div>
+          </div>
+        </div>
+        <div style="padding:12px 20px 4px;font-size:12.5px;font-weight:700;letter-spacing:0.06em;color:#6B7080">ВЧЕРА</div>
+        <div style="display:flex;flex-direction:column;gap:8px;padding:0 20px">
+          <div style="background:#fff;border-radius:18px;padding:14px 16px;display:flex;gap:12px;box-shadow:0 2px 8px rgba(20,22,31,0.06);opacity:0.8">
+            <div style="width:40px;height:40px;border-radius:14px;background:#EEF0F6;display:flex;align-items:center;justify-content:center;font-size:18px;flex:none">◔</div>
+            <div>
+              <div style="font-size:14.5px;font-weight:800;color:#14161F">Напоминание: отчёт до 19:00</div>
+              <div style="font-size:13px;color:#4A4F5C;margin-top:2px">Заполнена 1 из 3 работ</div>
+              <div style="font-size:12px;color:#9AA0AE;margin-top:3px;font-variant-numeric:tabular-nums">18:00</div>
+            </div>
+          </div>
+          <div style="background:#fff;border-radius:18px;padding:14px 16px;display:flex;gap:12px;box-shadow:0 2px 8px rgba(20,22,31,0.06);opacity:0.8">
+            <div style="width:40px;height:40px;border-radius:14px;background:#E3F5EB;display:flex;align-items:center;justify-content:center;font-size:18px;flex:none">✓✓</div>
+            <div>
+              <div style="font-size:14.5px;font-weight:800;color:#14161F">Отчёт за 2 авг утверждён</div>
+              <div style="font-size:13px;color:#4A4F5C;margin-top:2px">Главный инженер · Нурлан Т.</div>
+              <div style="font-size:12px;color:#9AA0AE;margin-top:3px;font-variant-numeric:tabular-nums">10:40</div>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:auto;display:flex;border-top:1px solid #E2E4EE;background:#fff;padding:10px 8px 18px">
+          <div style="flex:1;text-align:center;color:#6B7080"><div style="font-size:20px">▣</div><div style="font-size:11.5px;font-weight:600">Сегодня</div></div>
+          <div style="flex:1;text-align:center;color:#6B7080"><div style="font-size:20px">⌂</div><div style="font-size:11.5px;font-weight:600">Объект</div></div>
+          <div style="flex:1;text-align:center;color:#3D4FDE;position:relative"><div style="font-size:20px">◔</div><div style="font-size:11.5px;font-weight:700">Уведомления</div><div style="position:absolute;top:-2px;right:24px;background:#B3261E;color:#fff;font-size:10px;font-weight:800;border-radius:9px;padding:1px 6px">3</div></div>
+          <div style="flex:1;text-align:center;color:#6B7080"><div style="font-size:20px">◉</div><div style="font-size:11.5px;font-weight:600">Профиль</div></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+</x-dc>
+</body>
+</html>

@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#E9EBF2;font-family:'Manrope',sans-serif;-webkit-font-smoothing:antialiased}
+a{color:#3D4FDE}a:hover{color:#2A3AB8}
+</style>
+</helmet>
+<div style="max-width:1280px;margin:0 auto;padding:36px 32px 64px">
+  <div style="font-size:13px;font-weight:700;color:#3D4FDE;letter-spacing:0.08em">BUILD HUB · МОДУЛЬ ПТО · DESKTOP</div>
+  <div style="font-size:30px;font-weight:800;color:#14161F;margin-top:6px">Офис ПТО: ВОР · План-график · Входной контроль ПД</div>
+  <div style="font-size:14.5px;color:#4A4F5C;margin-top:6px;max-width:760px;line-height:1.55">Приоритеты №1 и №2 внедрения: без ведомости объёмов прораб вводит проценты «на глазок», без сроков процессов нет прогноза срыва. Инженер ПТО · Гульмира С. · ЖК «Ак-Орго».</div>
+
+  <!-- D1 ВОР -->
+  <div style="margin-top:28px;background:#fff;border-radius:22px;padding:24px 26px;box-shadow:0 2px 12px rgba(20,22,31,0.07)">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:20px;flex-wrap:wrap">
+      <div>
+        <div style="font-size:12px;font-weight:800;letter-spacing:0.07em;color:#6B7080">D1 · ПРИОРИТЕТ №1</div>
+        <div style="font-size:21px;font-weight:800;color:#14161F;margin-top:3px">Ведомость объёмов работ (ВОР)</div>
+        <div style="font-size:13px;color:#6B7080;margin-top:3px">Смета_АкОрго_БлокБ.xlsx · загружена 28.07 · 412 строк</div>
+      </div>
+      <div style="display:flex;gap:18px;align-items:center">
+        <div style="text-align:right">
+          <div style="font-size:26px;font-weight:800;color:#B7791F;font-variant-numeric:tabular-nums">62%</div>
+          <div style="font-size:12px;color:#6B7080">процессов покрыто ВОР</div>
+        </div>
+        <div style="border:1.5px dashed #B9C1F2;border-radius:14px;padding:12px 18px;font-size:13px;font-weight:800;color:#3D4FDE;cursor:pointer">⬆ Загрузить Excel</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">
+      <sc-for list="{{ vorSecs }}" as="v" hint-placeholder-count="6">
+        <div style="flex:1;min-width:150px;background:#F4F5F9;border-radius:14px;padding:11px 13px">
+          <div style="display:flex;justify-content:space-between;align-items:baseline"><div style="font-size:13px;font-weight:800;color:#14161F">{{ v.n }}</div><div style="{{ v.pctStyle }}">{{ v.pct }}</div></div>
+          <div style="height:6px;border-radius:3px;background:#E2E4EE;margin-top:7px"><div style="{{ v.bar }}"></div></div>
+        </div>
+      </sc-for>
+    </div>
+    <div style="margin-top:18px;font-size:12px;font-weight:800;letter-spacing:0.06em;color:#6B7080">СОПОСТАВЛЕНИЕ: СТРОКА СМЕТЫ → ПРОЦЕСС</div>
+    <div style="margin-top:8px;border:1px solid #E2E4EE;border-radius:14px;overflow:hidden">
+      <div style="display:grid;grid-template-columns:70px 1fr 1fr 130px 120px;gap:0;background:#F4F5F9;padding:9px 14px;font-size:11.5px;font-weight:800;color:#6B7080;letter-spacing:0.04em">
+        <div>№ СМЕТЫ</div><div>СТРОКА СМЕТЫ</div><div>ПРОЦЕСС СИСТЕМЫ</div><div>ОБЪЁМ · ЕД.</div><div>СТАТУС</div>
+      </div>
+      <sc-for list="{{ vorRows }}" as="r" hint-placeholder-count="7">
+        <div style="{{ r.rowStyle }}">
+          <div style="font-size:12.5px;color:#6B7080;font-variant-numeric:tabular-nums">{{ r.num }}</div>
+          <div style="font-size:12.5px;color:#14161F;font-weight:600">{{ r.smeta }}</div>
+          <div style="{{ r.procStyle }}">{{ r.proc }}</div>
+          <div style="font-size:12.5px;color:#14161F;font-weight:700;font-variant-numeric:tabular-nums">{{ r.vol }}</div>
+          <div style="{{ r.stStyle }}">{{ r.st }}</div>
+        </div>
+      </sc-for>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;flex-wrap:wrap;gap:10px">
+      <div style="font-size:12.5px;font-weight:700;color:#B3261E">🔴 Непокрыто 34 процесса — прораб по ним вводит «на глазок»: Вентиляция (12), Крыша (12), Фасад (10)</div>
+      <div style="background:#3D4FDE;color:#fff;border-radius:12px;padding:11px 18px;font-size:13px;font-weight:800;cursor:pointer">Сопоставить непокрытые →</div>
+    </div>
+  </div>
+
+  <!-- D2 ПЛАН-ГРАФИК -->
+  <div style="margin-top:22px;background:#fff;border-radius:22px;padding:24px 26px;box-shadow:0 2px 12px rgba(20,22,31,0.07)">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:20px;flex-wrap:wrap">
+      <div>
+        <div style="font-size:12px;font-weight:800;letter-spacing:0.07em;color:#6B7080">D2 · ПРИОРИТЕТ №2</div>
+        <div style="font-size:21px;font-weight:800;color:#14161F;margin-top:3px">План-график и сроки процессов</div>
+        <div style="font-size:13px;color:#6B7080;margin-top:3px">Блок Б · Монолит · без сроков нет прогноза срыва</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:26px;font-weight:800;color:#B3261E;font-variant-numeric:tabular-nums">3</div>
+        <div style="font-size:12px;color:#6B7080">процесса без срока</div>
+      </div>
+    </div>
+    <div style="margin-top:14px;background:#FDEEDD;border:1px solid #EFC894;border-radius:13px;padding:11px 15px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+      <div style="font-size:12.5px;font-weight:700;color:#8A5410">🔒 Строки 8 этажа заблокированы — <b>открыл Бакыт У. в 14:05</b> · конфликт версий не решается тихо</div>
+      <div style="font-size:12px;font-weight:800;color:#3D4FDE;cursor:pointer;white-space:nowrap">Запросить доступ</div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:12px;align-items:center;flex-wrap:wrap">
+      <div style="font-size:12.5px;font-weight:700;color:#14161F;background:#EEF0FF;border:1px solid #B9C1F2;border-radius:11px;padding:9px 13px">Выделено: этажи 9–12 · Армирование колонн</div>
+      <div style="font-size:12.5px;color:#4A4F5C">задать сроки с шагом:</div>
+      <div style="background:#F4F5F9;border-radius:10px;padding:8px 12px;font-size:12.5px;font-weight:800;color:#14161F">6 раб. дней / этаж ▾</div>
+      <div style="background:#3D4FDE;color:#fff;border-radius:11px;padding:9px 15px;font-size:12.5px;font-weight:800;cursor:pointer">Проставить 4 срока</div>
+    </div>
+    <div style="margin-top:14px;border:1px solid #E2E4EE;border-radius:14px;overflow:hidden">
+      <div style="display:grid;grid-template-columns:60px 1fr 110px 110px 120px 1fr;background:#F4F5F9;padding:9px 14px;font-size:11.5px;font-weight:800;color:#6B7080;letter-spacing:0.04em">
+        <div>ЭТАЖ</div><div>ПРОЦЕСС</div><div>СТАРТ</div><div>СРОК</div><div>СТАТУС</div><div>ПОСЛЕДНЕЕ ИЗМЕНЕНИЕ · ПРИЧИНА</div>
+      </div>
+      <sc-for list="{{ planRows }}" as="p" hint-placeholder-count="7">
+        <div style="{{ p.rowStyle }}">
+          <div style="font-size:12.5px;font-weight:800;color:#14161F;font-variant-numeric:tabular-nums">{{ p.fl }}</div>
+          <div style="font-size:12.5px;color:#14161F;font-weight:600">{{ p.proc }}</div>
+          <div style="font-size:12.5px;color:#4A4F5C;font-variant-numeric:tabular-nums">{{ p.start }}</div>
+          <div style="{{ p.dueStyle }}">{{ p.due }}</div>
+          <div style="{{ p.stStyle }}">{{ p.st }}</div>
+          <div style="font-size:11.5px;color:#6B7080;line-height:1.4">{{ p.hist }}</div>
+        </div>
+      </sc-for>
+    </div>
+    <div style="font-size:11.5px;color:#9AA0AE;margin-top:10px">История изменений срока с причиной обязательна — иначе сроки переставляются задним числом и график теряет смысл · даты фиксируются системой</div>
+  </div>
+
+  <!-- D6 ВХОДНОЙ КОНТРОЛЬ ПД -->
+  <div style="margin-top:22px;display:grid;grid-template-columns:1.4fr 1fr;gap:22px;align-items:start">
+    <div style="background:#fff;border-radius:22px;padding:24px 26px;box-shadow:0 2px 12px rgba(20,22,31,0.07)">
+      <div style="font-size:12px;font-weight:800;letter-spacing:0.07em;color:#6B7080">D6 · ДО НАЧАЛА РАБОТ</div>
+      <div style="font-size:21px;font-weight:800;color:#14161F;margin-top:3px">Входной контроль проектной документации</div>
+      <div style="font-size:13px;color:#6B7080;margin-top:3px">Чек-лист из нормы · СНиП КР 12-02 · реквизиты сверить с действующей редакцией</div>
+      <div style="display:flex;flex-direction:column;gap:6px;margin-top:16px">
+        <sc-for list="{{ pdRows }}" as="c" hint-placeholder-count="7">
+          <div style="{{ c.rowStyle }}">
+            <div style="{{ c.boxStyle }}">{{ c.mark }}</div>
+            <div style="flex:1">
+              <div style="font-size:13.5px;font-weight:700;color:#14161F">{{ c.n }}. {{ c.t }}</div>
+              <sc-if value="{{ c.hasNote }}" hint-placeholder-val="{{ false }}"><div style="font-size:12px;font-weight:700;color:#B3261E;margin-top:2px">{{ c.note }}</div></sc-if>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;flex-wrap:wrap;gap:10px">
+        <div style="font-size:13.5px;font-weight:800;color:#B3261E">Результат: 3 замечания</div>
+        <div style="display:flex;gap:10px;align-items:center">
+          <div style="font-size:12px;color:#6B7080">срок по договору: <b style="color:#14161F">10 раб. дней</b></div>
+          <div style="background:#B3261E;color:#fff;border-radius:12px;padding:11px 18px;font-size:13px;font-weight:800;cursor:pointer">Вернуть на доработку</div>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div style="background:#fff;border-radius:18px;padding:18px 20px;box-shadow:0 2px 12px rgba(20,22,31,0.07)">
+        <div style="font-size:12px;font-weight:800;letter-spacing:0.06em;color:#6B7080">ГЕОДЕЗИЧЕСКАЯ РАЗБИВОЧНАЯ ОСНОВА</div>
+        <div style="font-size:13px;color:#14161F;margin-top:8px;line-height:1.6">Принята от заказчика <b>актом №2 от 14.05</b> · точность проверена · знаки закреплены. Без принятой основы к основным работам приступать нельзя.</div>
+        <div style="display:inline-flex;margin-top:8px;background:#E3F5EB;border-radius:9px;padding:5px 10px;font-size:12px;font-weight:800;color:#166B3F">✓ принята</div>
+      </div>
+      <div style="background:#14161F;border-radius:18px;padding:18px 20px;color:#fff">
+        <div style="font-size:12px;font-weight:800;letter-spacing:0.06em;color:#9AA0AE">ЧЕГО СИСТЕМА НЕ ДЕЛАЕТ</div>
+        <div style="font-size:12.5px;line-height:1.8;margin-top:8px;color:#E2E4EE">✕ Акты задним числом — даты фиксируются<br>✕ Подпись за технадзор<br>✕ Отступление от проекта полем формы — только RFI<br>✕ «Последняя редакция нормы» без проверки</div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const vorSecs = [ ['Монолит',100],['Кладка',100],['Электрика',88],['Сантехника',74],['Штукатурка',52],['Вентиляция',0] ].map(v => ({
+      n:v[0], pct:v[1]+'%',
+      pctStyle:{ fontSize:13, fontWeight:800, color: v[1]>=90?'#166B3F':v[1]>0?'#B7791F':'#B3261E', fontVariantNumeric:'tabular-nums' },
+      bar:{ width:v[1]+'%', height:6, borderRadius:3, background: v[1]>=90?'#1E9E5A':v[1]>0?'#E8960C':'#B3261E' } }));
+    const row = { display:'grid', gridTemplateColumns:'70px 1fr 1fr 130px 120px', padding:'10px 14px', borderTop:'1px solid #F0F1F5', alignItems:'center' };
+    const vorRows = [
+      ['06-01-014','Армирование колонн и стен В25, 7 эт.','Армирование колонн и стен · 7 эт.','7,1 т','ok'],
+      ['06-01-021','Бетон В30 колонны, стены, 7 эт.','Бетонирование колонн и стен · 7 эт.','52 м³','ok'],
+      ['06-01-029','Опалубка колонн щитовая','Монтаж опалубки колонн · 7 эт.','214 м²','ok'],
+      ['08-02-002','Кладка из кирпича КОРПО 1НФ М125','Кладка яруса 1–2 · 5 эт.','24 000 шт','ok'],
+      ['10-04-011','Воздуховоды оцинк. δ=0,7','— не сопоставлено','290 пог. м','no'],
+      ['12-01-007','Кровельный ковёр 2 слоя','— не сопоставлено','1 240 м²','no'],
+      ['09-03-015','Фасад: утеплитель МВ 100 мм','— не сопоставлено','480 м²','no']
+    ].map(r => ({ num:r[0], smeta:r[1], proc:r[2], vol:r[3], st: r[4]==='ok'?'✓ сопоставлено':'сопоставить',
+      rowStyle: r[4]==='ok' ? row : { ...row, background:'#FDF6F5' },
+      procStyle: r[4]==='ok' ? { fontSize:12.5, color:'#14161F', fontWeight:700 } : { fontSize:12.5, color:'#B3261E', fontWeight:700 },
+      stStyle: r[4]==='ok'
+        ? { fontSize:11.5, fontWeight:800, color:'#166B3F' }
+        : { fontSize:11.5, fontWeight:800, color:'#3D4FDE', cursor:'pointer', textDecoration:'underline' } }));
+    const prow = { display:'grid', gridTemplateColumns:'60px 1fr 110px 110px 120px 1fr', padding:'10px 14px', borderTop:'1px solid #F0F1F5', alignItems:'center', gap:4 };
+    const planRows = [
+      { fl:'7', proc:'Армирование колонн и стен', start:'28.07', due:'02.08', st:'просрочен', c:'#B3261E', hist:'02.08 → 02.08 · без переносов' },
+      { fl:'7', proc:'Бетонирование колонн и стен', start:'09.08', due:'11.08', st:'в графике', c:'#166B3F', hist:'11.08 ← 09.08 · Гульмира С., 01.08 · «ожидание АОСР армирования»' },
+      { fl:'7', proc:'Опалубка перекрытия', start:'12.08', due:'15.08', st:'в графике', c:'#166B3F', hist:'—' },
+      { fl:'8', proc:'Армирование колонн и стен', start:'—', due:'нет срока', st:'🔒 Бакыт У.', c:'#8A5410', hist:'строка заблокирована · открыл Бакыт У. в 14:05', lock:true },
+      { fl:'8', proc:'Бетонирование колонн и стен', start:'—', due:'нет срока', st:'без срока', c:'#B3261E', hist:'—', miss:true },
+      { fl:'9', proc:'Армирование колонн и стен', start:'—', due:'нет срока', st:'без срока', c:'#B3261E', hist:'—', miss:true },
+      { fl:'6', proc:'Приёмка этажа (акт отв. конструкций)', start:'26.07', due:'28.07', st:'✓ принят', c:'#166B3F', hist:'акт №21 от 28.07 · подписан' }
+    ].map(p => ({ ...p,
+      rowStyle: p.lock ? { ...prow, background:'#FDF8EF' } : p.miss ? { ...prow, background:'#FDF6F5' } : prow,
+      dueStyle: p.due==='нет срока'
+        ? { fontSize:12.5, fontWeight:800, color:'#B3261E' }
+        : { fontSize:12.5, fontWeight:700, color:'#14161F', fontVariantNumeric:'tabular-nums' },
+      stStyle:{ fontSize:11.5, fontWeight:800, color:p.c } }));
+    const pdRows = [
+      [1,'Комплектность документации', true, ''],
+      [2,'Соответствие проектных осевых размеров и геодезической основы', true, ''],
+      [3,'Наличие согласований и утверждений', false, 'Нет согласования УАиГ на изм. фасада — запрошено у проектировщика'],
+      [4,'Наличие ссылок на материалы и изделия', true, ''],
+      [5,'Соответствие границ стройплощадки на стройгенплане сервитутам', true, ''],
+      [6,'Требования к фактической точности контролируемых параметров', false, 'Нет допусков на отклонения колонн — RFI-0008'],
+      [7,'Указания о методах контроля и измерений', false, 'Отсутствуют для узлов КМ — RFI-0009']
+    ].map(c => ({ n:c[0], t:c[1], mark: c[2] ? '✓' : '', hasNote: !!c[3], note:c[3],
+      rowStyle: c[2]
+        ? { display:'flex', gap:12, alignItems:'flex-start', padding:'9px 12px', borderRadius:12 }
+        : { display:'flex', gap:12, alignItems:'flex-start', padding:'9px 12px', borderRadius:12, background:'#FDF6F5' },
+      boxStyle: c[2]
+        ? { width:22, height:22, borderRadius:7, background:'#1E9E5A', color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13, fontWeight:800, flexShrink:0 }
+        : { width:22, height:22, borderRadius:7, border:'2px solid #B3261E', boxSizing:'border-box', flexShrink:0 } }));
+    return { vorSecs, vorRows, planRows, pdRows };
+  }
+}
+</script>
+</body>
+</html>

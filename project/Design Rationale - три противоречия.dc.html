@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#E9EBF2;font-family:'Manrope',sans-serif;-webkit-font-smoothing:antialiased}
+a{color:#3D4FDE}a:hover{color:#2A3AB8}
+</style>
+</helmet>
+<div style="max-width:1080px;margin:0 auto;padding:40px 32px 64px">
+  <div style="font-size:13px;font-weight:700;color:#3D4FDE;letter-spacing:0.08em">BUILD HUB · DESIGN RATIONALE</div>
+  <div style="font-size:30px;font-weight:800;color:#14161F;margin-top:6px">Три противоречия и как дизайн их разрешает</div>
+  <div style="font-size:14.5px;color:#4A4F5C;margin-top:8px;max-width:720px;line-height:1.6">Каждое решение в прототипе — ответ на конфликт между двумя законными требованиями. Ни одно из них нельзя выкинуть, поэтому дизайн ищет форму, в которой оба выполняются.</div>
+
+  <sc-for list="{{ cards }}" as="c" hint-placeholder-count="3">
+    <div style="margin-top:26px;background:#fff;border-radius:22px;padding:26px 28px;box-shadow:0 2px 12px rgba(20,22,31,0.07)">
+      <div style="display:flex;gap:16px;align-items:baseline">
+        <div style="font-size:34px;font-weight:800;color:#D8DAE3;font-variant-numeric:tabular-nums;flex-shrink:0">{{ c.n }}</div>
+        <div style="font-size:20px;font-weight:800;color:#14161F;line-height:1.3">{{ c.title }}</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px">
+        <div style="background:#EEF0FF;border-radius:14px;padding:14px 16px">
+          <div style="font-size:11px;font-weight:800;letter-spacing:0.07em;color:#2A3AB8">ТРЕБОВАНИЕ А</div>
+          <div style="font-size:13.5px;color:#14161F;margin-top:5px;line-height:1.55;font-weight:600">{{ c.a }}</div>
+        </div>
+        <div style="background:#FDEEDD;border-radius:14px;padding:14px 16px">
+          <div style="font-size:11px;font-weight:800;letter-spacing:0.07em;color:#8A5410">ТРЕБОВАНИЕ Б</div>
+          <div style="font-size:13.5px;color:#14161F;margin-top:5px;line-height:1.55;font-weight:600">{{ c.b }}</div>
+        </div>
+      </div>
+      <div style="margin-top:14px;font-size:12px;font-weight:800;letter-spacing:0.06em;color:#6B7080">РАЗРЕШЕНИЕ В ДИЗАЙНЕ</div>
+      <div style="display:flex;flex-direction:column;gap:7px;margin-top:8px">
+        <sc-for list="{{ c.rows }}" as="r" hint-placeholder-count="4">
+          <div style="display:flex;gap:11px;align-items:flex-start;background:#F4F5F9;border-radius:12px;padding:11px 14px">
+            <div style="width:7px;height:7px;border-radius:4px;background:#3D4FDE;margin-top:6px;flex-shrink:0"></div>
+            <div style="font-size:13.5px;color:#14161F;line-height:1.55">{{ r.t }}</div>
+          </div>
+        </sc-for>
+      </div>
+      <div style="margin-top:12px;font-size:12.5px;color:#6B7080;line-height:1.55"><b style="color:#14161F">Проверка:</b> {{ c.check }}</div>
+    </div>
+  </sc-for>
+
+  <div style="margin-top:26px;background:#14161F;border-radius:20px;padding:22px 26px;color:#fff">
+    <div style="font-size:12px;font-weight:800;letter-spacing:0.07em;color:#9AA0AE">ОБЩИЙ ПРИНЦИП</div>
+    <div style="font-size:16px;font-weight:700;line-height:1.6;margin-top:8px;max-width:820px">Продукт держится на доверии к цифрам. Поэтому любая цифра в интерфейсе либо введена человеком и подписана его именем, либо посчитана системой — и тогда раскладывается по тапу и помечена знаком ≈ с источником расчёта.</div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const cards = [
+      { n:'01',
+        title:'Отчёт за 5 минут — против 15 процессов, заявок и подрядчиков',
+        a:'Главное обещание: прораб сдаёт дневной отчёт за 5 минут вместо 30–40 в WhatsApp. Иначе он вернётся в WhatsApp.',
+        b:'Реальная стройка — это 8 разделов × 16 процессов на этаж, заявки, подрядчики, документы, сроки. Всё это нужно системе.',
+        rows:[
+          { t:'На «Сегодня» — только активные процессы (1–3 карточки), остальная цепочка свёрнута и не мозолит глаза.' },
+          { t:'Заявки и подрядчики — отдельные разделы навигации, не часть ежедневного отчёта.' },
+          { t:'Работы назначает ПТО: прораб подтверждает («Всё верно · начать»), а не настраивает 256 галочек.' },
+          { t:'FAB «+ Внести» всегда под большим пальцем; форма подставляет контекст и единицы из процесса.' } ],
+        check:'полный путь отчёта в прототипе проходится за 2 тапа до формы и ~90 секунд до отправки — таймер встроен в критический сценарий.' },
+      { n:'02',
+        title:'Точные цифры — против ввода в перчатках на солнце',
+        a:'Смысл продукта — точные объёмы вместо «примерно 60%»: ВОР, проценты, деньги, прогнозы строятся на вводе прораба.',
+        b:'Прораб вводит данные в перчатках, на солнце, в конце смены. Жёсткие формы и справочники он заполнять не будет.',
+        rows:[
+          { t:'Свободный ввод материала «как в WhatsApp» + голос; снабженец нормализует, и формулировка «12ка» запоминается как подсказка.' },
+          { t:'Кладка вводится в штуках кирпича — как считает бригадир; система сама пересчитывает в м³ и проценты по коэффициенту спецификации.' },
+          { t:'Чипы вместо клавиатуры везде, где можно: проблемы, единицы, причины, сроки. Тач-цели ≥ 48–56 dp.' },
+          { t:'Аномалии ловит не форма, а ПТО: проверка с фото, корректировка только с обоснованием, история правок видна прорабу.' } ],
+        check:'заявку можно создать, ни разу не открыв справочник; свободный текст нигде не помечается как ошибка.' },
+      { n:'03',
+        title:'Автоматические оценки — против доверия людей к цифрам',
+        a:'Руководству нужны производные показатели: прогноз срыва, CPI, цена простоя, рейтинг подрядчика. Вручную их никто не посчитает.',
+        b:'Директор и прораб не верят цифре, которую не могут проверить. Первое же расхождение с 1С убивает доверие ко всему модулю.',
+        rows:[
+          { t:'Каждая расчётная сумма помечена ≈ и подписью источника: «расчёт по ставкам», «прогноз по темпу за 14 дней».' },
+          { t:'По тапу цифра раскладывается: CPI = 273 / 289 = 0,94; рейтинг 2,8 = (данные 1,9 + оценка прораба 3,7) / 2; вес процессов в проценте раздела.' },
+          { t:'База сравнения всегда названа: «+40% к среднему за 14 дней», а не «+40% за день».' },
+          { t:'Все числа сходятся арифметически: сумма факта / сумма плана, не среднее арифметическое процентов.' } ],
+        check:'любую цифру на дашборде руководителя можно разложить за один тап до исходных чисел из отчётов прораба.' }
+    ];
+    return { cards };
+  }
+}
+</script>
+</body>
+</html>
