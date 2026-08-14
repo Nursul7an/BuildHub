@@ -1188,3 +1188,40 @@ model ContractAct {
   @@unique([objectId, number])
   @@index([objectId, status])
 }
+
+// ─────────────────────────── Маршрутизация решений ───────────────────────────
+// ТЗ §2: «Технические, качественные вопросы и охрана труда — главному инженеру;
+// деньги сверх лимита, сроки контракта и отношения с заказчиком — руководителю.
+// Правило кодируется в таблице issue_routing, а не в клиенте».
+
+/// Кому уходит вопрос данного типа. Правило — данные: на другом объекте
+/// или при смене оргструктуры маршрут меняют настройкой, а не релизом.
+model IssueRouting {
+  id String @id @default(uuid())
+
+  /// Тип вопроса: technical | quality | safety | money | schedule | customer | staffing
+  issueKind String
+  /// Область: company (по умолчанию) или facility (переопределение по объекту).
+  scopeType String @default("company")
+  /// Для company — пустая строка, а не NULL: в Postgres уникальность
+  /// по столбцу с NULL не соблюдается, и правило можно было бы завести дважды.
+  scopeId   String @default("")
+
+  /// Кому адресуется: роль решающего.
+  toRole String
+  /// Нужно ли создавать задачу, или довольно уведомления.
+  createsTask Boolean @default(true)
+
+  /// Порог, выше которого вопрос уходит выше по цепочке (в сомах).
+  /// null — порога нет, решает адресат.
+  escalateAbove Decimal? @db.Decimal(18, 2)
+  /// Кому уходит вопрос выше порога.
+  escalateToRole String?
+
+  /// Чем обосновано правило: приказ, регламент.
+  source String?
+
+  createdAt DateTime @default(now())
+
+  @@unique([issueKind, scopeType, scopeId])
+}

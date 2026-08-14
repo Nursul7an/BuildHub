@@ -269,6 +269,19 @@ export const ROUTES: RouteRule[] = [
     subtitle: (p) => `${p.text ?? ''} · срок ${p.dueDate ?? ''}`,
   },
   {
+    type: 'IssueRaised',
+    // Адресат назначается таблицей issue_routing и приходит в событии,
+    // поэтому здесь получатель — «автор», то есть уже выбранный человек.
+    recipients: [{ kind: 'author' }],
+    urgency: 'immediate',
+    kind: 'task',
+    title: (p) =>
+      p.escalated ? '⬆️ Вопрос выше лимита — на ваше решение' : '❓ Вопрос на решение',
+    subtitle: (p) =>
+      `${p.title ?? ''} · ${p.facilityName ?? ''}${p.amount ? ` · ${new Intl.NumberFormat('ru-RU').format(p.amount)} сом` : ''}`,
+    link: (p) => ({ screen: 'task', params: { id: String(p.taskId ?? '') } }),
+  },
+  {
     type: 'PrecipitationExpected',
     recipients: [{ kind: 'role', role: 'sklad' }],
     // Утром: чек-лист хранения нужен до начала смены, а не ночью.

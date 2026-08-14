@@ -296,19 +296,26 @@ export interface DigestDto {
 export interface FinanceObjectDto {
   objectId: string;
   objectName?: string;
+  /** Суммы приходят в сомах: единица одна на весь API, млн — дело показа. */
   budget: number;
   ev: number;
   ac: number;
-  cpi: number;
-  eac: number;
-  vac: number;
+  /** null, пока по объекту нет затрат: делить на ноль нельзя. */
+  cpi: number | null;
+  eac: number | null;
+  vac: number | null;
   closedByActs: number;
   notClosed: number;
   receivable: number;
+  /** Дата актуальности затрат — показывается рядом с цифрой. */
+  costsAsOf?: string | null;
+  costsStale?: boolean;
 }
 
 export interface FinanceDto {
   objects: FinanceObjectDto[];
+  /** Самая старая дата актуальности по объектам — по ней и судят о свежести. */
+  costsAsOf?: string | null;
   articles: { name: string; amount: number; pct: number; note: string | null }[];
   payments: {
     id: string;

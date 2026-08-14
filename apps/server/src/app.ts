@@ -16,6 +16,7 @@ import { fileRoutes } from './routes/files.js';
 import { syncRoutes } from './routes/sync.js';
 import { sheetRoutes } from './routes/sheets.js';
 import { econRoutes } from './routes/econ.js';
+import { issueRoutes } from './routes/issues.js';
 import { registerIdempotency } from './http.js';
 
 /**
@@ -62,6 +63,7 @@ export async function buildApp(options: { logger?: boolean } = {}): Promise<Fast
   await app.register(syncRoutes);
   await app.register(sheetRoutes);
   await app.register(econRoutes);
+  await app.register(issueRoutes);
 
   app.get('/api/health', async () => ({ ok: true }));
 

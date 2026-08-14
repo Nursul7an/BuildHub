@@ -8,6 +8,7 @@
  */
 import { PrismaClient } from '@prisma/client';
 import { hashPassword } from '../src/password.js';
+import { DEFAULT_ROUTING } from '../src/services/issue-routing.js';
 import {
   ACTIVE_WORK,
   AUTONOMY_LIMITS,
@@ -93,6 +94,7 @@ async function reset() {
     prisma.sectionDef.deleteMany(),
     prisma.session.deleteMany(),
     prisma.notificationSetting.deleteMany(),
+    prisma.issueRouting.deleteMany(),
     prisma.contractAct.deleteMany(),
     prisma.costFact.deleteMany(),
     prisma.costImport.deleteMany(),
@@ -887,6 +889,34 @@ export async function seedDatabase(options: { quiet?: boolean } = {}) {
     },
   });
 
+  /* ── Маршрутизация решений (ТЗ §2) ──
+     Техника, качество и охрана труда — главному инженеру; сроки договора
+     и заказчик — руководителю; деньги до порога решает ГИ, выше — директор. */
+  for (const rule of DEFAULT_ROUTING) {
+    await prisma.issueRouting.create({
+      data: {
+        issueKind: rule.issueKind,
+        scopeType: 'company',
+        toRole: rule.toRole,
+        escalateAbove: rule.escalateAbove ?? null,
+        escalateToRole: rule.escalateToRole ?? null,
+        source: rule.source,
+      },
+    });
+  }
+
+  // На Джал Резиденс отношения с заказчиком ведёт главный инженер:
+  // объект небольшой, и директор в переписку не вовлекается.
+  await prisma.issueRouting.create({
+    data: {
+      issueKind: 'customer',
+      scopeType: 'facility',
+      scopeId: objectIds.get('jal')!,
+      toRole: 'gi',
+      source: 'приказ по объекту',
+    },
+  });
+
   const counts = {
     объектов: await prisma.constructionObject.count(),
     пользователей: await prisma.user.count(),
@@ -900,6 +930,7 @@ export async function seedDatabase(options: { quiet?: boolean } = {}) {
     'позиций ВОР': await prisma.boqItem.count(),
     'строк затрат': await prisma.costFact.count(),
     актов: await prisma.contractAct.count(),
+    'правил маршрутизации': await prisma.issueRouting.count(),
   };
   if (!options.quiet) {
     console.log('Сев завершён:', counts);

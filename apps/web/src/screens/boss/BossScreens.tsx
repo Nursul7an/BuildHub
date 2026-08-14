@@ -37,8 +37,19 @@ import type {
 import { useApp } from '../../store/app';
 
 /** Крупные суммы — в миллионах сомов, как их называют вслух. */
-function mln(value: number): string {
-  return `${formatNumber(value, value % 1 ? 1 : 0)} млн`;
+/**
+ * Деньги приходят с сервера в сомах — единица одна на весь API.
+ * Руководство читает миллионами, поэтому перевод живёт здесь, а не в данных.
+ */
+function mln(value: number | null): string {
+  if (value === null) return '—';
+  const millions = value / 1_000_000;
+  return `${formatNumber(millions, Math.abs(millions) < 100 ? 1 : 0)} млн`;
+}
+
+/** CPI без затрат не существует: показываем прочерк, а не ноль. */
+function cpiLabel(cpi: number | null): string {
+  return cpi === null ? '—' : cpi.toFixed(2).replace('.', ',');
 }
 
 function deltaColor(days: number): string {
@@ -186,7 +197,7 @@ export function BossDigestScreen() {
             </div>
             <div style={{ fontSize: 12, color: color.muted, marginTop: 4, ...tabular }}>
               план {o.pctPlan}%{o.responsible ? ` · ${o.responsible}` : ''}
-              {!isGi && o.cpi !== null ? ` · CPI ${o.cpi.toFixed(2).replace('.', ',')}` : ''}
+              {!isGi && o.cpi !== null ? ` · CPI ${cpiLabel(o.cpi)}` : ''}
             </div>
           </Card>
         ))}
@@ -451,7 +462,7 @@ export function BossObjectsScreen() {
               {me?.role === 'gi'
                 ? `${o.responsible ?? 'ответственный не назначен'}`
                 : o.cpi !== null
-                  ? `CPI ${o.cpi.toFixed(2).replace('.', ',')} · прогноз ${o.eac} млн из ${o.budget} млн`
+                  ? `CPI ${cpiLabel(o.cpi)} · прогноз ${mln(o.eac)} из ${mln(o.budget)}`
                   : 'финансы не заведены'}
             </div>
           </Card>
@@ -514,12 +525,12 @@ export function BossObjectScreen() {
             <Fact
               label="Не закрыто"
               value={mln(finance.notClosed)}
-              tone={finance.notClosed > 20 ? color.warnStrong : undefined}
+              tone={finance.notClosed > 20_000_000 ? color.warnStrong : undefined}
             />
             <Fact
               label="Прогноз (EAC)"
               value={mln(finance.eac)}
-              tone={finance.vac < 0 ? color.danger : color.greenDeep}
+              tone={(finance.vac ?? 0) < 0 ? color.danger : color.greenDeep}
             />
           </div>
         </Card>
@@ -613,7 +624,7 @@ export function BossFinanceScreen() {
       <SectionLabel style={{ padding: '14px 20px 6px' }}>ОБЪЕКТЫ · по величине отклонения</SectionLabel>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '0 20px' }}>
         {[...data.objects]
-          .sort((a, b) => a.vac - b.vac)
+          .sort((a, b) => (a.vac ?? 0) - (b.vac ?? 0))
           .map((o) => (
             <Card
               key={o.objectId}
@@ -626,16 +637,16 @@ export function BossFinanceScreen() {
                   style={{
                     fontSize: 14,
                     fontWeight: 800,
-                    color: o.vac < 0 ? color.danger : color.greenDeep,
+                    color: (o.vac ?? 0) < 0 ? color.danger : color.greenDeep,
                     ...tabular,
                   }}
                 >
-                  {o.vac < 0 ? '' : '+'}
+                  {(o.vac ?? 0) < 0 ? '' : '+'}
                   {mln(o.vac)}
                 </div>
               </div>
               <div style={{ fontSize: 12, color: color.muted, marginTop: 4, ...tabular }}>
-                CPI {o.cpi.toFixed(2).replace('.', ',')} · прогноз {mln(o.eac)} при бюджете {mln(o.budget)}
+                CPI {cpiLabel(o.cpi)} · прогноз {mln(o.eac)} при бюджете {mln(o.budget)}
               </div>
             </Card>
           ))}
@@ -727,15 +738,29 @@ export function BossFinanceObjectScreen() {
         <SectionLabel>ИНДЕКСЫ</SectionLabel>
         <div style={{ display: 'flex', gap: 20, marginTop: 10 }}>
           <div>
-            <div style={{ fontSize: 28, fontWeight: 800, color: o.cpi < 1 ? color.danger : color.greenDeep, ...tabular }}>
-              {o.cpi.toFixed(2).replace('.', ',')}
+            <div
+              style={{
+                fontSize: 28,
+                fontWeight: 800,
+                color: o.cpi !== null && o.cpi < 1 ? color.danger : color.greenDeep,
+                ...tabular,
+              }}
+            >
+              {cpiLabel(o.cpi)}
             </div>
             <div style={{ fontSize: 11.5, color: color.muted }}>CPI · освоено / потрачено</div>
           </div>
           <div>
-            <div style={{ fontSize: 28, fontWeight: 800, color: o.vac < 0 ? color.danger : color.greenDeep, ...tabular }}>
-              {o.vac < 0 ? '' : '+'}
-              {formatNumber(o.vac)}
+            <div
+              style={{
+                fontSize: 28,
+                fontWeight: 800,
+                color: (o.vac ?? 0) < 0 ? color.danger : color.greenDeep,
+                ...tabular,
+              }}
+            >
+              {(o.vac ?? 0) < 0 ? '' : '+'}
+              {formatNumber((o.vac ?? 0) / 1_000_000, 1)}
             </div>
             <div style={{ fontSize: 11.5, color: color.muted }}>млн · отклонение по завершении</div>
           </div>
