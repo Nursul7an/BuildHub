@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { parseJson, prisma } from '../db.js';
 import { checkFrontChecklist } from '../rules.js';
 import { notify } from '../notify.js';
+import { emit } from '../audit.js';
 
 /** Номер вида ЗВ-АКО-26-0184: тип, код объекта, год, счётчик. */
 async function nextNumber(kind: 'material' | 'tech', objectCode: string): Promise<string> {
@@ -206,14 +207,15 @@ export async function zayavkaRoutes(app: FastifyInstance) {
       });
     }
 
-    const target = isMaster ? 'prorab' : body.kind === 'tech' ? 'tech' : 'snab';
-    await notify(
-      target,
-      'zayavka',
-      `📦 Заявка ${number}`,
-      body.items.map((i) => `${i.rawText} · ${i.qty} ${i.unit}`).join(', ') +
-        (body.priority === 'urgent' ? ' · СРОЧНО, люди стоят' : ''),
-    );
+    await emit(isMaster ? 'RequestNeedsForeman' : 'RequestCreated', 'zayavka', zayavka.id, {
+      zayavkaId: zayavka.id,
+      number,
+      kind: body.kind,
+      priority: body.priority,
+      what: body.items.map((i) => `${i.rawText} · ${i.qty} ${i.unit}`).join(', '),
+      idleCost: zayavka.idleCost ? Number(zayavka.idleCost) : null,
+      authorId: req.currentUser.id,
+    });
 
     return { id: zayavka.id, number, status };
   });
@@ -306,14 +308,12 @@ export async function zayavkaRoutes(app: FastifyInstance) {
       include: { author: true },
     });
 
-    await notify(
-      zayavka.author.role as never,
-      'zayavka',
-      `📦 ${zayavka.number}`,
-      body.note ?? `Статус: ${body.status}`,
-      undefined,
-      zayavka.authorId,
-    );
+    await emit('RequestStatusChanged', 'zayavka', zayavka.id, {
+      authorId: zayavka.authorId,
+      number: zayavka.number,
+      status: body.status,
+      note: body.note,
+    });
 
     return { ok: true };
   });
@@ -412,13 +412,11 @@ export async function zayavkaRoutes(app: FastifyInstance) {
     }
 
     if (!body.passportOk) {
-      await notify(
-        'pto',
-        'noPassport',
-        '🔴 Материал без паспорта · партия помечена',
-        `${zayavka.number} · работы с этой партией приостановлены · извещены снабжение и заказчик`,
-      );
-      await notify('snab', 'noPassport', '🔴 Материал без паспорта', `${zayavka.number} · требуется паспорт качества`);
+      // Критическое событие: адресаты — ПТО, снабжение и главный инженер (ТЗ §7).
+      await emit('MaterialWithoutPassport', 'zayavka', zayavka.id, {
+        number: zayavka.number,
+        objectId: zayavka.objectId,
+      });
     } else {
       await notify('pto', 'acceptance', '📥 Приёмка материала', `${zayavka.number} · запись в Журнал входного контроля`);
     }

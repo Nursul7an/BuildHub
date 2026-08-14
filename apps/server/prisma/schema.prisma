@@ -56,6 +56,8 @@ model User {
   payments           Payment[]             @relation("paymentApprover")
   files              FileObject[]
   syncOperations     SyncOperation[]
+  notificationSettings NotificationSetting[]
+  sheetViews           SheetView[]
 
   @@index([role])
 }
@@ -584,7 +586,8 @@ model DrawingSheet {
   changeSummary String?
   fileUrl       String?
 
-  rfis Rfi[]
+  rfis  Rfi[]
+  views SheetView[]
 }
 
 model Rfi {
@@ -951,4 +954,37 @@ model SyncOperation {
 
   @@unique([clientOpId, userId])
   @@index([status])
+}
+
+// ─────────────────────────── Доставка уведомлений ───────────────────────────
+// ТЗ §7. Уведомление адресуется роли в области, а не человеку: при замене
+// прораба на объекте адресация и история сохраняются.
+
+/// Настройка канала. Критические события отключить нельзя (ТЗ §7):
+/// инциденты, отсутствие паспорта, замена листа доходят всегда.
+model NotificationSetting {
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Тип события из таблицы маршрутизации.
+  eventType String
+  /// push | digest | off
+  channel   String @default("push")
+
+  @@unique([userId, eventType])
+}
+
+/// Кто открывал лист проекта. Нужен, чтобы при выпуске новой версии
+/// уведомить именно тех, кто мог уйти работать по старой (критерий приёмки 7).
+model SheetView {
+  id      String       @id @default(uuid())
+  sheetId String
+  sheet   DrawingSheet @relation(fields: [sheetId], references: [id], onDelete: Cascade)
+  userId  String
+  user    User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Какую именно ревизию человек видел.
+  revision String
+  viewedAt DateTime @default(now())
+
+  @@unique([sheetId, userId])
 }

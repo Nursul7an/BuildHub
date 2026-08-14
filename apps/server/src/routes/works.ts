@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { parseJson, prisma } from '../db.js';
 import { checkCanPresent, checkStrengthGate, isValidPresentationDate, recomputeChainBlocks } from '../rules.js';
 import { notify } from '../notify.js';
+import { emit } from '../audit.js';
 import { resolveObjectFilter } from '../scope.js';
 import { withETag } from '../http.js';
 
@@ -261,11 +262,18 @@ export async function worksRoutes(app: FastifyInstance) {
           cost: idleCost,
         },
       });
-      await notify('gi', 'idle', `🔴 Простой · ${body.idleWorkers} чел`, `${state.processDef.name} · ≈ ${idleCost.toLocaleString('ru-RU')} сом`);
+      await emit('IdleReported', 'processState', id, {
+        workers: body.idleWorkers,
+        cost: idleCost,
+        process: `${state.processDef.name} · ${state.block.name}, ${state.floor} эт.`,
+      });
     }
 
     if (body.kind === 'safety') {
-      await notify('gi', 'safety', '⚫ Охрана труда', `${state.processDef.name} · ${state.block.name}, ${state.floor} эт.`);
+      await emit('SafetyViolation', 'processState', id, {
+        detail: body.text || state.processDef.name,
+        location: `${state.block.name}, ${state.floor} эт.`,
+      });
     }
 
     return { id: comment.id, idleCost };
@@ -311,12 +319,11 @@ export async function worksRoutes(app: FastifyInstance) {
       data: { status: 'presented', presentedAt: new Date(), presentedOfDays: 3 },
     });
 
-    await notify(
-      'pto',
-      'presentation',
-      '🔔 Предъявлено к освидетельствованию',
-      `${state.processDef.name} · ${state.block.name} · ${state.floor} эт. · извещение технадзору за 3 раб. дня`,
-    );
+    await emit('InspectionRequested', 'processState', id, {
+      process: `${state.processDef.name} · ${state.block.name} · ${state.floor} эт.`,
+      scheduledFor: body.date,
+      authorId: req.currentUser.id,
+    });
 
     return { ok: true };
   });
@@ -339,12 +346,10 @@ export async function worksRoutes(app: FastifyInstance) {
 
     await recomputeChainBlocks(state.objectId, state.blockId, state.floor, state.processDef.sectionId);
 
-    await notify(
-      'prorab',
-      'document',
-      `✅ АОСР ${body.aosrNumber} подписан`,
-      `${state.processDef.name} · следующий процесс разблокирован`,
-    );
+    await emit('AosrSigned', 'processState', id, {
+      number: body.aosrNumber,
+      process: state.processDef.name,
+    });
 
     return { ok: true };
   });

@@ -9,6 +9,7 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { prisma } from '../db.js';
 import { notify } from '../notify.js';
+import { emit } from '../audit.js';
 import { needsEscalation } from '../rules.js';
 import { KPI } from '../../prisma/fixtures.js';
 
@@ -121,7 +122,10 @@ export async function bossRoutes(app: FastifyInstance) {
 
     const escalate = await needsEscalation(req.currentUser.role, 'payment', payment.amount);
     if (escalate && req.currentUser.role !== 'dir') {
-      await notify('dir', 'task', '💰 Платёж выше лимита автономности', `${payment.name} · ${payment.amount} млн сом`);
+      await emit('LimitExceeded', 'payment', payment.id, {
+        what: payment.name,
+        amount: Number(payment.amount),
+      });
       return reply.code(409).send({ code: 'above_limit',
         message: 'Сумма выше вашего лимита автономности — ушла директору',
       });
@@ -191,14 +195,11 @@ export async function bossRoutes(app: FastifyInstance) {
     }
 
     if (body.assigneeId) {
-      await notify(
-        'prorab',
-        'task',
-        '🗓 Новая задача',
-        `${body.text} · срок ${new Date(body.dueDate).toLocaleDateString('ru-RU')}`,
-        undefined,
-        body.assigneeId,
-      );
+      await emit('TaskAssigned', 'task', task.id, {
+        authorId: body.assigneeId,
+        text: body.text,
+        dueDate: new Date(body.dueDate).toLocaleDateString('ru-RU'),
+      });
     }
 
     return { id: task.id };

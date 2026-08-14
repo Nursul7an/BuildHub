@@ -129,12 +129,11 @@ export async function materialRoutes(app: FastifyInstance) {
       const pct = balance.specRemainder
         ? Math.round(((body.qty - balance.specRemainder) / balance.specRemainder) * 100)
         : 0;
-      await notify(
-        'gi',
-        'zayavka',
-        `🟠 Перерасход по ВОР +${pct}%`,
-        `${balance.catalogItem.name} · выдано ${body.qty} ${balance.unit} при нормативе ${balance.specRemainder} · причина: ${body.overspendReason}`,
-      );
+      await emit('OverspendDetected', 'stockBalance', balance.id, {
+        pct,
+        material: balance.catalogItem.name,
+        reason: body.overspendReason,
+      });
     }
 
     return { ok: true, overspend };

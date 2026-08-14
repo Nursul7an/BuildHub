@@ -4,7 +4,7 @@
  */
 import { after, before, beforeEach, describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { ACCOUNTS, api, closeAll, login, photos, resetDatabase } from './helpers.js';
+import { drain, ACCOUNTS, api, closeAll, login, photos, resetDatabase } from './helpers.js';
 
 let prorab: string;
 let pto: string;
@@ -207,6 +207,7 @@ describe('Дневной отчёт', () => {
         comment: 'Проверьте объём кладки',
       });
 
+      await drain();
       const notifications = await api(prorab, 'GET', '/api/notifications?unread=1');
       const returned = (notifications.body as any[]).find((n) => n.title.includes('возвращён'));
       assert.ok(returned, 'автор должен увидеть возврат в уведомлениях');

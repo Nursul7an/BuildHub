@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { parseJson, prisma } from '../db.js';
 import { checkReportEntry } from '../rules.js';
 import { notify } from '../notify.js';
-import { actorOf, audit, auditChanges, emit } from '../audit.js';
+import { actorOf, audit, auditChanges, emit, eventData } from '../audit.js';
 import { getThreshold } from '../thresholds.js';
 import { checkTransition } from '../transitions.js';
 import { fail, failTransition } from '../http.js';
@@ -189,10 +189,28 @@ export async function reportRoutes(app: FastifyInstance) {
     // Факт по процессам растёт сразу — данные видны руководству со статусом «не подтверждён».
     // Прибавляем только то, что ещё не прибавлено: повторная отправка после возврата
     // должна двигать факт на разницу, а не начислять объём заново.
+    const me = await prisma.user.findUniqueOrThrow({ where: { id: req.currentUser.id } });
+
     await prisma.$transaction([
       prisma.dailyReport.update({
         where: { id },
         data: { status, submittedAt: new Date(), fillSeconds: body.fillSeconds },
+      }),
+      // Событие ложится в ту же транзакцию: изменение без уведомления
+      // и уведомление без изменения одинаково недопустимы (ТЗ §3.3).
+      prisma.domainEvent.create({
+        data: eventData(
+          isMaster ? 'ReportSubmittedToForeman' : 'ReportSubmitted',
+          'dailyReport',
+          id,
+          {
+            authorId: req.currentUser.id,
+            authorName: me.fullName,
+            reportId: id,
+            status,
+            entries: report.entries.length,
+          },
+        ),
       }),
       ...report.entries.flatMap((entry) => {
         const delta = entry.volume - entry.appliedVolume;
@@ -210,7 +228,6 @@ export async function reportRoutes(app: FastifyInstance) {
       }),
     ]);
 
-    const me = await prisma.user.findUniqueOrThrow({ where: { id: req.currentUser.id } });
     await audit(actorOf(req.currentUser, me.fullName), {
       entity: 'dailyReport',
       entityId: id,
@@ -219,18 +236,6 @@ export async function reportRoutes(app: FastifyInstance) {
       oldValue: report.status,
       newValue: status,
     });
-    await emit('ReportSubmitted', 'dailyReport', id, {
-      authorId: req.currentUser.id,
-      status,
-      entries: report.entries.length,
-    });
-
-    await notify(
-      isMaster ? 'prorab' : 'pto',
-      'report',
-      '📤 Дневной отчёт',
-      isMaster ? 'Отчёт мастера ждёт вашего подтверждения' : 'Отчёт с площадки — на проверку',
-    );
 
     return { status, fillSeconds: body.fillSeconds };
   });
@@ -285,6 +290,15 @@ export async function reportRoutes(app: FastifyInstance) {
           where: { id: entry.processStateId },
           data: { doneQty: { increment: delta } },
         }),
+        prisma.domainEvent.create({
+          data: eventData('ReportAdjusted', 'dailyReport', id, {
+            authorId: report.authorId,
+            entryId: entry.id,
+            from: Number(entry.volume),
+            to: body.adjustment.to,
+            reason: body.adjustment.reason,
+          }),
+        }),
       ]);
       await prisma.reportCheck.create({
         data: {
@@ -308,33 +322,27 @@ export async function reportRoutes(app: FastifyInstance) {
         { volume: body.adjustment.to, status: 'adjusted' },
         body.adjustment.reason,
       );
-      await emit('ReportAdjusted', 'dailyReport', id, {
-        entryId: entry.id,
-        from: entry.volume,
-        to: body.adjustment.to,
-        reason: body.adjustment.reason,
-      });
 
-      await notify(
-        'prorab',
-        'report',
-        '✎ ПТО скорректировал отчёт',
-        `${entry.volume} → ${body.adjustment.to} ${entry.unit} · «${body.adjustment.reason}»`,
-        undefined,
-        report.authorId,
-      );
       return { status: 'adjusted' };
     }
 
     if (body.decision === 'return') {
-      await prisma.dailyReport.update({
-        where: { id },
-        data: {
-          status: 'returned',
-          returnComment: body.comment,
-          returnedFields: JSON.stringify(body.returnedFields ?? []),
-        },
-      });
+      await prisma.$transaction([
+        prisma.dailyReport.update({
+          where: { id },
+          data: {
+            status: 'returned',
+            returnComment: body.comment,
+            returnedFields: JSON.stringify(body.returnedFields ?? []),
+          },
+        }),
+        prisma.domainEvent.create({
+          data: eventData('ReportReturned', 'dailyReport', id, {
+            authorId: report.authorId,
+            reason: body.comment,
+          }),
+        }),
+      ]);
       await prisma.reportCheck.create({
         data: { reportId: id, actorId: req.currentUser.id, decision: 'return', comment: body.comment },
       });
@@ -349,20 +357,16 @@ export async function reportRoutes(app: FastifyInstance) {
         newValue: 'returned',
         reason: body.comment,
       });
-      await emit('ReportReturned', 'dailyReport', id, { reason: body.comment, authorId: report.authorId });
 
-      await notify(
-        'prorab',
-        'report',
-        '↩ Отчёт возвращён ПТО',
-        body.comment ?? 'Проверьте данные',
-        undefined,
-        report.authorId,
-      );
       return { status: 'returned' };
     }
 
-    await prisma.dailyReport.update({ where: { id }, data: { status: 'accepted' } });
+    await prisma.$transaction([
+      prisma.dailyReport.update({ where: { id }, data: { status: 'accepted' } }),
+      prisma.domainEvent.create({
+        data: eventData('ReportAccepted', 'dailyReport', id, { authorId: report.authorId }),
+      }),
+    ]);
     await prisma.reportCheck.create({
       data: { reportId: id, actorId: req.currentUser.id, decision: 'accept', comment: body.comment },
     });
@@ -377,8 +381,6 @@ export async function reportRoutes(app: FastifyInstance) {
       newValue: 'accepted',
       reason: body.comment,
     });
-    await emit('ReportAccepted', 'dailyReport', id, { authorId: report.authorId });
-    await notify('prorab', 'report', '✓ Отчёт подтверждён ПТО', 'Данные ушли руководству', undefined, report.authorId);
     return { status: 'accepted' };
   });
 

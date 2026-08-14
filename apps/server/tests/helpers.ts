@@ -63,6 +63,15 @@ export async function login(loginName: string, password: string = DEMO_PASSWORD)
   return res.body.token as string;
 }
 
+/**
+ * Разбор outbox вручную. Уведомления создаются воркером, а не бизнес-логикой,
+ * поэтому тест, который проверяет инбокс, сначала прогоняет очередь.
+ */
+export async function drain(now?: Date) {
+  const { drainOutbox } = await import('../src/events/worker.js');
+  return drainOutbox({ now });
+}
+
 /** Учётки из сева — по ролям, чтобы тесты читались. */
 export const ACCOUNTS = {
   prorab: 'a.zhumabekov',

@@ -87,12 +87,10 @@ export async function syncRoutes(app: FastifyInstance) {
           },
         });
         conflictTaskId = task.id;
-        await notify(
-          'pto',
-          'report',
-          '⚠️ Расхождение при синхронизации',
-          outcome.conflictNote ?? 'Операция с устройства разошлась с данными на сервере',
-        );
+        await emit('SyncConflict', 'syncOperation', op.clientOpId, {
+          note: outcome.conflictNote,
+          taskId: task.id,
+        });
       }
 
       const saved = await prisma.syncOperation.create({
@@ -291,11 +289,11 @@ async function applyOperation(
       reason: 'офлайн-синхронизация',
     });
     await emit('ReportSubmitted', 'dailyReport', report.id, { authorId: me.id, status, offline: true });
-    await notify(
-      currentUser.role === 'master' ? 'prorab' : 'pto',
-      'report',
-      '📤 Дневной отчёт (офлайн)',
-      'Отчёт получен после восстановления связи',
+    await emit(
+      currentUser.role === 'master' ? 'ReportSubmittedToForeman' : 'ReportSubmitted',
+      'dailyReport',
+      report.id,
+      { authorId: me.id, authorName: me.fullName, reportId: report.id, status, offline: true },
     );
 
     return { status: 'applied', result: { reportId: report.id, status } };

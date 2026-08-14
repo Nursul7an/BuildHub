@@ -4,7 +4,7 @@
  */
 import { after, before, describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { ACCOUNTS, api, closeAll, login, photos, resetDatabase, uploadPhoto } from './helpers.js';
+import { drain, ACCOUNTS, api, closeAll, login, photos, resetDatabase, uploadPhoto } from './helpers.js';
 
 const op = (clientOpId: string, type: string, payload: unknown, deviceTime = new Date().toISOString()) => ({
   clientOpId,
@@ -146,6 +146,7 @@ describe('Офлайн-синхронизация', () => {
     assert.ok((conflicts.body as any[]).some((c) => c.clientOpId === 'op-conflict'));
 
     // И получает уведомление.
+    await drain();
     const inbox = await api(pto, 'GET', '/api/notifications?unread=1');
     assert.ok((inbox.body as any[]).some((n) => n.title.includes('Расхождение')));
   });

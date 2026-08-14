@@ -5,7 +5,7 @@
  */
 import { after, before, describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { ACCOUNTS, api, closeAll, login, photos, resetDatabase } from './helpers.js';
+import { drain, ACCOUNTS, api, closeAll, login, photos, resetDatabase } from './helpers.js';
 import { addWorkdays, isValidPresentationDate } from '../src/rules.js';
 
 describe('Правила без обращения к сети', () => {
@@ -135,6 +135,7 @@ describe('Шлюзы через API', () => {
     });
     assert.equal(res.status, 200);
 
+    await drain();
     const ptoInbox = await api(pto, 'GET', '/api/notifications?unread=1');
     const snabInbox = await api(snab, 'GET', '/api/notifications?unread=1');
     assert.ok(
@@ -157,6 +158,7 @@ describe('Шлюзы через API', () => {
     assert.equal(res.body.code, 'above_limit');
 
     const dir = await login(ACCOUNTS.dir);
+    await drain();
     const dirInbox = await api(dir, 'GET', '/api/notifications?unread=1');
     assert.ok((dirInbox.body as any[]).some((n) => n.title.includes('лимита')));
 

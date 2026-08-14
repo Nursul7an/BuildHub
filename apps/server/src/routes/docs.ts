@@ -8,6 +8,7 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { prisma } from '../db.js';
 import { notify } from '../notify.js';
+import { emit } from '../audit.js';
 
 export async function docRoutes(app: FastifyInstance) {
   app.addHook('preHandler', app.authenticate);
@@ -67,6 +68,13 @@ export async function docRoutes(app: FastifyInstance) {
           where: { setId: sheet.setId, number: sheet.supersededBy },
         })
       : null;
+
+    // Кто открывал лист — тому и уходит извещение о новой версии (критерий 7).
+    await prisma.sheetView.upsert({
+      where: { sheetId_userId: { sheetId: sheet.id, userId: req.currentUser.id } },
+      create: { sheetId: sheet.id, userId: req.currentUser.id, revision: sheet.revision },
+      update: { revision: sheet.revision, viewedAt: new Date() },
+    });
 
     return {
       ...serializeSheet(sheet),
@@ -256,7 +264,10 @@ export async function docRoutes(app: FastifyInstance) {
           data: { status: 'idle', blockedReason: null },
         });
       }
-      await notify('prorab', 'document', '✅ Протокол прочности получен', 'Распалубка разблокирована');
+      await emit('StrengthProtocolReady', 'strengthProtocol', id, {
+        strengthPct: body.strengthPct,
+        requiredPct: protocol.requiredPct,
+      });
     }
 
     return { status };

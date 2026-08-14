@@ -9,6 +9,7 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { prisma } from '../db.js';
 import { notify } from '../notify.js';
+import { emit } from '../audit.js';
 
 /** Автоматическая часть весит больше субъективной: её труднее подкрутить. */
 const AUTO_WEIGHT = 0.6;
@@ -109,12 +110,10 @@ export async function contractorRoutes(app: FastifyInstance) {
 
     if (req.currentUser.role === 'master') {
       // Мастер фиксирует — предписание выдаёт прораб.
-      await notify(
-        'prorab',
-        'prescription',
-        '🔔 Нарушение от мастера',
-        `${contractor.name} · ${body.location} · фото приложено · предписание выдаёте вы`,
-      );
+      await emit('ViolationReportedByMaster', 'contractor', id, {
+        contractor: contractor.name,
+        location: body.location,
+      });
       return { ok: true, issued: false };
     }
 
@@ -132,12 +131,13 @@ export async function contractorRoutes(app: FastifyInstance) {
       },
     });
 
-    await notify(
-      'gi',
-      'prescription',
-      `🔔 Предписание ${prescription.number} · ${contractor.name}`,
-      `${body.text} · ${body.location} · срок устранения ${body.dueDays} дн.`,
-    );
+    await emit('PrescriptionIssued', 'contractor', id, {
+      number: prescription.number,
+      contractor: contractor.name,
+      text: body.text,
+      location: body.location,
+      dueDays: body.dueDays,
+    });
 
     return { ok: true, issued: true, number: prescription.number };
   });

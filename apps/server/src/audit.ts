@@ -97,11 +97,21 @@ export function eventData(
   return { type, aggregate, aggregateId, payload: payload as Prisma.InputJsonValue };
 }
 
+/**
+ * Публикация доменного события.
+ *
+ * Принимает клиента транзакции: событие обязано записываться той же транзакцией,
+ * что и само изменение (transactional outbox, ТЗ §3.3). Иначе возможны обе
+ * неприятности сразу — изменение без уведомления и уведомление без изменения.
+ */
+type Db = Pick<typeof prisma, 'domainEvent'>;
+
 export async function emit(
   type: string,
   aggregate: string,
   aggregateId: string,
   payload: Record<string, unknown>,
+  tx: Db = prisma,
 ) {
-  return prisma.domainEvent.create({ data: eventData(type, aggregate, aggregateId, payload) });
+  return tx.domainEvent.create({ data: eventData(type, aggregate, aggregateId, payload) });
 }
