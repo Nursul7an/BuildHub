@@ -21,6 +21,7 @@ import { kpiRoutes } from './routes/kpi.js';
 import { registerIdempotency } from './http.js';
 import { registerRateLimit } from './ratelimit.js';
 import { registerObservability, requestIdOf } from './observability.js';
+import { allowedOrigins } from './config.js';
 import { opsRoutes } from './routes/ops.js';
 
 /**
@@ -87,7 +88,9 @@ export async function buildApp(
   // Замеры включаются раньше всего: считать нужно и то, что упало.
   registerObservability(app);
 
-  await app.register(cors, { origin: true });
+  // В разработке origin отражается как есть. В проде — только заявленные
+  // адреса фронтенда: список задаётся WEB_ORIGIN через запятую.
+  await app.register(cors, { origin: allowedOrigins(), credentials: true });
   await registerAuth(app);
   // Частоту режет и шлюз (ТЗ §3.1), но он не знает, кто именно пришёл.
   if (options.rateLimit !== false) {

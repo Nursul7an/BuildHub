@@ -2,6 +2,11 @@ import { buildApp } from './app.js';
 import { prisma } from './db.js';
 import { startOutboxWorker, stopOutboxWorker } from './events/worker.js';
 import { pruneLoginAttempts } from './ratelimit.js';
+import { assertDeployable } from './config.js';
+
+// Отказ по настройкам — на старте: развёрнутая система с отладочным
+// секретом хуже, чем не запустившаяся.
+assertDeployable();
 
 const app = await buildApp();
 

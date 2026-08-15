@@ -1,0 +1,21 @@
+# Контекст сборки — корень репозитория. Без этого файла в образ уезжают
+# node_modules хоста: собранные под другую платформу двоичные модули
+# (@node-rs/argon2, движок Prisma) ломают образ незаметно.
+node_modules
+**/node_modules
+dist
+**/dist
+.git
+.github
+.vercel
+*.log
+*.tsbuildinfo
+
+# Локальные данные разработчика
+apps/server/.env
+apps/server/prisma/dev.db*
+apps/server/var/
+.verify/
+
+# Веб-часть в образ сервера не нужна — её собирает Vercel.
+apps/web/dist

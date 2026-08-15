@@ -11,6 +11,7 @@
 import { createHmac, randomUUID, timingSafeEqual } from 'node:crypto';
 import { mkdir, readFile, stat, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
+import { fileSigningSecret, fileStorageDir } from './config.js';
 
 /** Срок жизни ссылки. ТЗ §12: 15 минут. */
 export const LINK_TTL_SECONDS = 15 * 60;
@@ -30,10 +31,10 @@ export function isAllowedMime(mime: string): boolean {
   return ALLOWED_MIME.has(mime);
 }
 
-const ROOT = resolve(process.env.FILE_STORAGE_DIR ?? 'var/uploads');
+const ROOT = resolve(fileStorageDir());
 
 function secret(): string {
-  return process.env.FILE_SIGNING_SECRET ?? process.env.JWT_SECRET ?? 'build-hub-dev-secret-change-me';
+  return fileSigningSecret();
 }
 
 function sign(key: string, expiresAt: number, op: 'put' | 'get'): string {

@@ -27,12 +27,13 @@ import {
   recordFailedLogin,
 } from './ratelimit.js';
 import { actorOf, audit } from './audit.js';
+import { jwtSecret } from './config.js';
 
 export { generatePassword };
 
 export async function registerAuth(app: FastifyInstance) {
   await app.register(fastifyJwt, {
-    secret: process.env.JWT_SECRET ?? 'build-hub-dev-secret-change-me',
+    secret: jwtSecret(),
     // Короткий access: отозванный доступ гаснет сам, без похода в базу
     // на каждый запрос (ТЗ §3.1).
     sign: { expiresIn: ACCESS_TTL },

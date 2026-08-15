@@ -5,7 +5,7 @@
     "moduleResolution": "Bundler",
     "lib": ["ES2022"],
     "outDir": "dist",
-    "rootDir": ".",
+    "rootDir": "src",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
@@ -13,5 +13,8 @@
     "types": ["node"],
     "baseUrl": "."
   },
-  "include": ["src", "prisma"]
+  // prisma/ не компилируем: seed и фикстуры запускаются через tsx, а при
+  // rootDir="." вывод уезжал в dist/src/index.js — мимо "start" из
+  // package.json, то есть развёрнутый сервер просто не находил точку входа.
+  "include": ["src"]
 }

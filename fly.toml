@@ -1,0 +1,49 @@
+# Развёртывание сервера на Fly.io — альтернатива Render.
+#
+# Перед первым запуском:
+#   fly launch --no-deploy --copy-config
+#   fly postgres create --name build-hub-db --region fra
+#   fly postgres attach build-hub-db          # выставит DATABASE_URL
+#   fly volumes create uploads --size 10 --region fra
+#   fly secrets set JWT_SECRET=$(openssl rand -hex 32) \
+#                   FILE_SIGNING_SECRET=$(openssl rand -hex 32) \
+#                   WEB_ORIGIN=https://ваш-домен.vercel.app
+#   fly deploy
+
+app = 'build-hub-server'
+primary_region = 'fra'
+
+[build]
+  dockerfile = 'apps/server/Dockerfile'
+
+[env]
+  NODE_ENV = 'production'
+  PORT = '4000'
+  FILE_STORAGE_DIR = '/app/var/uploads'
+  LOG_LEVEL = 'info'
+
+# Фотографии отчётов — доказательная база по скрытым работам.
+# Без тома они лежат на временном диске машины.
+[[mounts]]
+  source = 'uploads'
+  destination = '/app/var/uploads'
+
+[http_service]
+  internal_port = 4000
+  force_https = true
+  # Экземпляр не гасим до нуля: холодный старт на вечерней сдаче
+  # отчётов (ТЗ §11, пик 19:00–20:30) читается как поломка.
+  auto_stop_machines = false
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [[http_service.checks]]
+    interval = '30s'
+    timeout = '5s'
+    grace_period = '20s'
+    method = 'GET'
+    path = '/api/health/ready'
+
+[[vm]]
+  size = 'shared-cpu-1x'
+  memory = '512mb'

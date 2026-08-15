@@ -9,6 +9,19 @@ import { prisma } from '../db.js';
 import { fail } from '../http.js';
 import { prometheus, report, slaSummary } from '../observability.js';
 import { poisonedEvents } from '../events/worker.js';
+import { fileStorageDir } from '../config.js';
+import { resolve } from 'node:path';
+
+/** Куда пишутся файлы и подключён ли под них отдельный том. */
+function storageState() {
+  const dir = resolve(fileStorageDir());
+  return {
+    dir,
+    // Путь внутри дерева приложения на контейнерном хостинге почти всегда
+    // означает временный диск: том монтируют отдельным путём.
+    persistent: !dir.startsWith(resolve(process.cwd())) || Boolean(process.env.FILE_STORAGE_DIR),
+  };
+}
 
 export async function opsRoutes(app: FastifyInstance) {
   /**
@@ -32,14 +45,25 @@ export async function opsRoutes(app: FastifyInstance) {
    * процесс жив, а этот — что система способна обслуживать запросы.
    * Балансировщику нужны оба ответа, и они разные.
    */
-  app.get('/api/health/ready', async (reply) => {
+  app.get('/api/health/ready', async (_req, reply) => {
     const started = Date.now();
     try {
       await prisma.$queryRaw`SELECT 1`;
     } catch {
-      return { ok: false, database: 'unavailable' };
+      // Код ответа обязателен: балансировщик судит по нему, а не по телу.
+      // Ответ 200 со словом «unavailable» внутри оставит сломанный
+      // экземпляр в ротации — то есть проверка готовности не сработает.
+      return reply.code(503).send({ ok: false, database: 'unavailable', storage: storageState() });
     }
-    return { ok: true, database: 'ok', latencyMs: Date.now() - started };
+    return {
+      ok: true,
+      database: 'ok',
+      latencyMs: Date.now() - started,
+      // Каталог загрузок виден снаружи: на контейнерном хостинге том
+      // забывают подключить, и потеря фотографий обнаруживается
+      // только после перезапуска.
+      storage: storageState(),
+    };
   });
 
   /** Соблюдение SLA из §11 — то, о чём спрашивают на приёмке. */
