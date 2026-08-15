@@ -93,7 +93,12 @@ async function send(method: string, path: string, body?: unknown): Promise<Respo
   return fetch(`${API_BASE}${relative}`, {
     method,
     headers: {
-      'content-type': 'application/json',
+      // Заголовок ставим только когда тело есть. Сочетание
+      // «content-type: application/json» с пустым телом Fastify отвергает
+      // как испорченный запрос, и действия без полей — отметить
+      // уведомление прочитанным, сбросить пароль, согласовать платёж —
+      // отваливались с 400 ещё до маршрута.
+      ...(body === undefined ? {} : { 'content-type': 'application/json' }),
       'x-build-hub-client': 'web',
       ...(token ? { authorization: `Bearer ${token}` } : {}),
     },

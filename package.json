@@ -14,7 +14,8 @@
     "typecheck": "npm run typecheck --workspaces --if-present",
     "db:reset": "npm run db:reset --workspace=@build-hub/server",
     "seed": "npm run seed --workspace=@build-hub/server",
-    "verify": "npm run seed && node scripts/sweep.mjs && npm run seed && node scripts/flow.mjs",
+    "verify": "npm run seed && node scripts/sweep.mjs && npm run seed && node scripts/flow.mjs && npm run seed && node scripts/actions.mjs",
+    "verify:actions": "npm run seed && node scripts/actions.mjs",
     "verify:screens": "node scripts/sweep.mjs",
     "verify:flow": "npm run seed && node scripts/flow.mjs",
     "shots": "node scripts/screens.mjs"
