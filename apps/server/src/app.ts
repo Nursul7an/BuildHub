@@ -23,6 +23,7 @@ import { registerIdempotency } from './http.js';
 import { registerRateLimit } from './ratelimit.js';
 import { registerObservability, requestIdOf } from './observability.js';
 import { allowedOrigins } from './config.js';
+import { prismaFailure } from './prisma-errors.js';
 import { opsRoutes } from './routes/ops.js';
 
 /**
@@ -53,6 +54,19 @@ export async function buildApp(
         code: 'bad_request',
         message: 'Проверьте переданные данные',
         details: err.issues ?? err.validation,
+      });
+    }
+
+    // Нарушение ограничений базы — это отказ по данным, а не сбой сервера.
+    // Без разбора здесь любая попытка завести объект с занятым кодом
+    // отвечает «Внутренняя ошибка сервера»: пользователь не понимает,
+    // что исправить, а дежурный идёт разбирать несуществующую аварию.
+    const dbFailure = prismaFailure(error);
+    if (dbFailure) {
+      return reply.code(dbFailure.status).send({
+        code: dbFailure.code,
+        message: dbFailure.message,
+        ...(dbFailure.details === undefined ? {} : { details: dbFailure.details }),
       });
     }
 

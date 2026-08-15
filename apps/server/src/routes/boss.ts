@@ -13,6 +13,7 @@ import { emit } from '../audit.js';
 import { needsEscalation } from '../rules.js';
 import { econSummary } from '../services/econ.js';
 import { computeKpi } from '../services/kpi.js';
+import { fail } from '../http.js';
 
 export async function bossRoutes(app: FastifyInstance) {
   app.addHook('preHandler', app.authenticate);
@@ -359,7 +360,7 @@ export async function bossRoutes(app: FastifyInstance) {
   });
 
   /** Объекты компании: создание и изменение — у главного инженера. */
-  app.post('/api/boss/objects', { preHandler: [app.requirePermission('objects.manage')] }, async (req) => {
+  app.post('/api/boss/objects', { preHandler: [app.requirePermission('objects.manage')] }, async (req, reply) => {
     const body = z
       .object({
         code: z.string().min(1),
@@ -372,6 +373,17 @@ export async function bossRoutes(app: FastifyInstance) {
         responsibleUserId: z.string().optional(),
       })
       .parse(req.body);
+
+    // Код объекта уникален, и занят он обычно не по ошибке, а потому что
+    // объект уже завели. Называем его — иначе главный инженер видит отказ
+    // и не знает, искать ли опечатку или дубль.
+    const clash = await prisma.constructionObject.findUnique({ where: { code: body.code } });
+    if (clash) {
+      return fail(reply, 409, 'already_exists', `Код ${body.code} уже занят объектом «${clash.name}»`, {
+        fields: ['code'],
+        objectId: clash.id,
+      });
+    }
 
     const object = await prisma.constructionObject.create({
       data: {

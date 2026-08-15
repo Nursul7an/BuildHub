@@ -23,7 +23,9 @@ const PLAN = [
   {
     login: 'g.sadykova',
     title: 'ПТО',
-    screens: ['pto-today', 'pto-queue', 'pto-objects', 'pto-lab', 'pto-users', 'pto-more'],
+    // pto-user-new и pto-lab — экраны ввода: без заполнения полей
+    // их главная кнопка недостижима.
+    screens: ['pto-today', 'pto-queue', 'pto-objects', 'pto-lab', 'pto-users', 'pto-user-new', 'pto-more'],
   },
   {
     login: 'e.bakirov',
@@ -54,6 +56,14 @@ const PLAN = [
     login: 't.mamatov',
     title: 'Мастер',
     screens: ['today', 'works', 'zayavki', 'more'],
+  },
+  {
+    login: 'a.zhumabekov',
+    title: 'Прораб · формы',
+    // Экраны ввода прораба: заявка, техника, вопрос проектировщику,
+    // подрядчики. Дневной отчёт проверяется отдельно в flow.mjs —
+    // там своя клавиатура и настоящая загрузка фото.
+    screens: ['zayavka-new', 'zayavka-tech', 'rfi', 'contractors', 'assistant'],
   },
 ];
 
@@ -161,6 +171,148 @@ function inFrame(label) {
   return page.locator(FRAME).getByText(label, { exact: true }).first();
 }
 
+/**
+ * Правдоподобное значение по подписи поля.
+ *
+ * Заполнять всё подряд строкой «тест» бессмысленно: сервер отвергнет её
+ * по типу, и обход соберёт кучу ложных отказов вместо настоящих. Значение
+ * подбираем по тому, что у поля написано — телефон телефоном, объём
+ * числом, причина фразой.
+ */
+function valueFor(hint, type, stamp) {
+  const h = hint.toLowerCase();
+
+  if (type === 'date') {
+    const d = new Date();
+    d.setDate(d.getDate() + 3);
+    return d.toISOString().slice(0, 10);
+  }
+  if (type === 'time') return '09:00';
+
+  if (/телефон|тел\.|phone/.test(h)) return `+996 555 ${String(stamp).slice(-6, -3)} ${String(stamp).slice(-3)}`;
+  if (/логин|login/.test(h)) return `probe.${stamp}`;
+  if (/фамили|фио|имя|сотрудник|человек/.test(h)) return 'Тестов Тест Тестович';
+  if (/причин|коммент|примечан|описан|замечан|текст|вопрос|задач/.test(h)) {
+    return 'Проверка обходом: причина указана для контроля правил.';
+  }
+  if (/должност|роль/.test(h)) return 'прораб';
+  if (/марк|модель|номер|госномер|партия|паспорт|серт/.test(h)) return `ПР-${stamp}`;
+  if (/лимит|сумма|цена|стоим|бюджет/.test(h)) return '15000';
+  if (/объём|объем|количест|кол-во|masse|вес|штук|часов|часы|моточас|смен/.test(h)) return '12';
+  if (/процент|%/.test(h)) return '80';
+  if (/температур/.test(h)) return '18';
+  if (/прочност/.test(h)) return '75';
+  if (type === 'number') return '10';
+
+  return `Проверка ${stamp}`;
+}
+
+/**
+ * Заполнение всех полей на экране.
+ *
+ * Возвращает, сколько полей заполнено: если ноль, форму отправлять
+ * незачем — экран не про ввод.
+ */
+async function fillFields(stamp) {
+  return page.evaluate(
+    ({ sel, stamp, source }) => {
+      // Функцию подбора значения передаём текстом: страница и скрипт
+      // живут в разных мирах, общей области видимости у них нет.
+      const valueFor = new Function(`return ${source}`)();
+
+      const root = document.querySelector(sel);
+      if (!root) return 0;
+
+      /** React слушает событие input, а не присваивание value. */
+      function setNative(el, value) {
+        const proto = el instanceof HTMLTextAreaElement
+          ? HTMLTextAreaElement.prototype
+          : HTMLInputElement.prototype;
+        const setter = Object.getOwnPropertyDescriptor(proto, 'value')?.set;
+        setter?.call(el, value);
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+
+      let filled = 0;
+
+      for (const el of root.querySelectorAll('input, textarea')) {
+        if (el.type === 'file' || el.disabled || el.readOnly) continue;
+        if (el.type === 'checkbox' || el.type === 'radio') {
+          if (!el.checked) {
+            el.click();
+            filled += 1;
+          }
+          continue;
+        }
+        const label = `${el.placeholder || ''} ${el.closest('div')?.textContent || ''}`.slice(0, 120);
+        const existing = (el.value || '').trim();
+
+        if (existing !== '') {
+          // Поле с готовым значением — например, действующий лимит.
+          // Пропустить его значит не отправить форму вовсе: сохранять
+          // то же самое приложение обычно не даёт. Меняем число, чтобы
+          // отправка была осмысленной.
+          const asNumber = Number(existing.replace(/\s/g, '').replace(',', '.'));
+          if (!Number.isFinite(asNumber)) continue;
+          setNative(el, String(Math.round(asNumber) + 1));
+          filled += 1;
+          continue;
+        }
+
+        // Подпись ищем рядом: у Field она лежит соседним узлом.
+        setNative(el, valueFor(label, el.type, stamp));
+        filled += 1;
+      }
+
+      for (const el of root.querySelectorAll('select')) {
+        if (el.disabled || el.options.length === 0) continue;
+        // Первый пункт обычно «выберите» — берём следующий.
+        const index = el.options.length > 1 ? 1 : 0;
+        if (el.selectedIndex === index) continue;
+        el.selectedIndex = index;
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+        filled += 1;
+      }
+
+      return filled;
+    },
+    { sel: FRAME, stamp, source: valueFor.toString() },
+  );
+}
+
+/**
+ * Главное действие экрана — большая кнопка внизу (PrimaryButton).
+ * Отличается ростом 56 и скруглением 18; так её видно без завязки
+ * на подпись, которая на каждом экране своя.
+ */
+async function primaryActions() {
+  const big = await page.evaluate((sel) => {
+    const root = document.querySelector(sel);
+    if (!root) return [];
+    const out = [];
+    for (const el of root.querySelectorAll('div')) {
+      const s = el.getAttribute('style') || '';
+      if (!s.includes('height: 56px') || !s.includes('cursor: pointer')) continue;
+      const t = (el.textContent || '').trim();
+      if (t && t.length <= 40 && !out.includes(t)) out.push(t);
+    }
+    return out;
+  }, FRAME);
+
+  if (big.length > 0) return big;
+
+  // Не на каждом экране отправка — большая кнопка внизу. Тогда ищем
+  // по глаголу: подписи в этом интерфейсе говорят, что произойдёт.
+  return (await actionsOn()).filter((t) => SUBMIT_VERB.test(t));
+}
+
+/** Подписи, за которыми стоит отправка формы. */
+const SUBMIT_VERB = /^(отправить|сохранить|создать|внести|выдать|назначить|согласовать|подтвердить|добавить|записать|провести|заказать|принять)/i;
+
+/** Подписи, за которыми форма открывается. */
+const OPENS_FORM = /^(\+|внести|добавить|создать|нов[аыо]|заявка|поставить задачу|выдать|назначить|записать)/i;
+
 async function currentScreen() {
   return page.evaluate(() => window.buildHub.getState().screen);
 }
@@ -228,7 +380,61 @@ for (const role of PLAN) {
       }
     }
 
-    console.log(`  ${screen}: действий ${clicked}/${actions.length}, карточек открыто ${opened}`);
+    // Третий проход: заполнить поля и отправить. До него не доходили
+    // экраны, где всё интересное спрятано за формой, — заведение
+    // человека, изменение лимита, назначение техники.
+    let filled = 0;
+    let submitted = 0;
+
+    /** Заполнить то, что сейчас на экране, и нажать отправку. */
+    async function fillAndSubmit(context) {
+      const stamp = Date.now() % 1_000_000;
+      const count = await fillFields(stamp);
+      if (count === 0) return 0;
+      filled += count;
+
+      for (const label of await primaryActions()) {
+        where = `${role.login}/${screen}${context}: форма → «${label}»`;
+        try {
+          const button = inFrame(label);
+          if ((await button.count()) === 0) continue;
+          await button.click({ timeout: 3000 });
+          await page.waitForTimeout(1200);
+          submitted += 1;
+          return count;
+        } catch {
+          /* кнопка недоступна */
+        }
+      }
+      return count;
+    }
+
+    await goTo(screen);
+    await fillAndSubmit('');
+
+    // Формы, которые открываются кнопкой: «+ Человек», «Внести»,
+    // «Поставить задачу». Без этого шага они остаются непроверенными —
+    // именно там заводят людей, лимиты и назначают технику.
+    await goTo(screen);
+    for (const label of (await actionsOn()).filter((t) => OPENS_FORM.test(t)).slice(0, 4)) {
+      try {
+        await goTo(screen);
+        const opener = inFrame(label);
+        if ((await opener.count()) === 0) continue;
+        await opener.click({ timeout: 3000 });
+        await page.waitForTimeout(900);
+        await fillAndSubmit(` → «${label}»`);
+      } catch {
+        /* форма не открылась */
+      }
+    }
+
+    console.log(
+      `  ${screen}: действий ${clicked}/${actions.length}` +
+        `, карточек ${opened}` +
+        `, полей ${filled}` +
+        `, отправок ${submitted}`,
+    );
   }
 }
 
