@@ -178,3 +178,43 @@ describe('Refresh в httpOnly cookie', () => {
     assert.equal(res.statusCode, 401);
   });
 });
+
+describe('Проверка, что cookie доходит', () => {
+  beforeEach(resetDatabase);
+  after(closeAll);
+
+  it('cookie вернулась — продление заработает', async () => {
+    const app = await getApp();
+    const session = await loginWeb();
+    const jar = session.cookies.find((c) => c.name === REFRESH_COOKIE)!;
+
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/auth/cookie-check',
+      cookies: { [REFRESH_COOKIE]: jar.value as string },
+    });
+
+    assert.equal(res.statusCode, 200);
+    assert.equal(res.json().cookiePresent, true);
+  });
+
+  it('cookie не пришла — это видно сразу, а не через 15 минут', async () => {
+    // Так выглядит браузер, который выбросил cookie: вход прошёл,
+    // а на следующем запросе её нет. Без этой проверки отказ всплывает
+    // только когда истечёт access — посреди сдачи отчёта.
+    const app = await getApp();
+    await loginWeb();
+
+    const res = await app.inject({ method: 'GET', url: '/api/auth/cookie-check' });
+
+    assert.equal(res.statusCode, 200);
+    assert.equal(res.json().cookiePresent, false);
+    assert.equal(res.json().sameSite, 'lax', 'клиенту видно, какое правило действует');
+  });
+
+  it('проверка не требует входа: её зовут до того, как станет ясно, что сессии нет', async () => {
+    const app = await getApp();
+    const res = await app.inject({ method: 'GET', url: '/api/auth/cookie-check' });
+    assert.equal(res.statusCode, 200);
+  });
+});

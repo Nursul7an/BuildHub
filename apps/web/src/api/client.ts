@@ -145,7 +145,7 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
         'not_json',
         API_BASE
           ? 'Сервер вернул не JSON. Проверьте адрес API'
-          : 'Адрес API не задан: переменная VITE_API_BASE_URL пуста',
+          : 'Запрос к API вернул страницу вместо данных: не настроена переадресация /api на сервер',
       );
     }
   }
@@ -163,8 +163,8 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
     }
     // Пустое тело при 404/405 — тот же случай: до API не дошли.
     const fallback =
-      data === null && !API_BASE
-        ? 'Адрес API не задан: переменная VITE_API_BASE_URL пуста'
+      data === null && response.status === 404
+        ? 'API не отвечает по этому адресу: проверьте переадресацию /api на сервер'
         : `Сервер ответил ${response.status}`;
     throw new ApiError(response.status, err.code ?? 'error', err.message ?? fallback);
   }

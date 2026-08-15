@@ -167,6 +167,29 @@ export function roleGroup(role: Role): RoleGroup {
 
 let toastTimer: ReturnType<typeof setTimeout> | undefined;
 
+/**
+ * Проверка, что cookie с refresh-токеном вернулась.
+ *
+ * Браузер молча выбрасывает cookie, которую не принимает: при SameSite=Lax
+ * она не ходит между разными сайтами, Safari режет сторонние и при None.
+ * Отказ виден не сразу — вход проходит, а через пятнадцать минут человека
+ * выкидывает без объяснений, обычно посреди сдачи отчёта.
+ *
+ * Спрашиваем сразу после входа и говорим прямо. Работать это не мешает:
+ * пятнадцать минут у человека есть.
+ */
+async function warnIfCookieBlocked() {
+  try {
+    const res = await api.get<{ cookiePresent: boolean }>('/auth/cookie-check');
+    if (res.cookiePresent) return;
+    useApp
+      .getState()
+      .notify('Браузер не сохранил сессию — вход придётся повторять каждые 15 минут');
+  } catch {
+    // Проверка необязательная: её отказ сам по себе ничего не ломает.
+  }
+}
+
 export const useApp = create<AppState>((set, get) => ({
   me: null,
   loading: true,
@@ -204,6 +227,7 @@ export const useApp = create<AppState>((set, get) => ({
     }
     const me = await api.get<Me>('/auth/me');
     set({ me, screen: homeScreen(me.role), params: {}, history: [] });
+    void warnIfCookieBlocked();
   },
 
   /**

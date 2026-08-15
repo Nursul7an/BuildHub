@@ -254,6 +254,23 @@ export async function authRoutes(app: FastifyInstance) {
   app.get('/api/auth/registration-open', async () => ({ open: await registrationOpen() }));
 
   /**
+   * Дошла ли cookie с refresh-токеном.
+   *
+   * Браузер молча выбрасывает cookie, которую не принимает: при
+   * SameSite=Lax она не ходит между разными сайтами, а сторонние cookie
+   * Safari режет и при None. Отказ виден не сразу — вход работает, и
+   * только через пятнадцать минут человека выкидывает без объяснений,
+   * причём воспроизвести это на своём браузере разработчик не может.
+   *
+   * Клиент спрашивает сразу после входа: если cookie не вернулась,
+   * значит продление не заработает, и сказать об этом надо сейчас.
+   */
+  app.get('/api/auth/cookie-check', async (req) => ({
+    cookiePresent: Boolean(req.cookies[REFRESH_COOKIE]),
+    sameSite: refreshCookieOptions().sameSite,
+  }));
+
+  /**
    * Регистрация первого руководителя.
    *
    * Обычные учётные записи заводит ПТО, но первого директора завести
