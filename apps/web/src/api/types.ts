@@ -363,19 +363,34 @@ export interface TaskDto {
   origin: string;
 }
 
+/**
+ * KPI. Значение может отсутствовать, и это не ошибка: по ТЗ §9 первый
+ * квартал — только измерение, а по двум отчётам процент не считают.
+ * Тип обязан это допускать, иначе экран падает ровно там, где показатель
+ * честно говорит «пока не знаю».
+ */
+export interface KpiMetricDto {
+  key: string;
+  department: string;
+  label: string;
+  unit: string;
+  value: number | null;
+  state: 'good' | 'warn' | 'bad' | 'measuring' | 'no_data';
+  goodAbove: number | null;
+  goodBelow: number | null;
+  /** Из чего сложилось число — чтобы спор шёл о данных, а не о цифре. */
+  basis: { numerator: number; denominator: number; note: string } | null;
+  /** Почему значения нет. */
+  note: string | null;
+  measuringUntil: string | null;
+  source: string;
+}
+
 export interface KpiDto {
   departments: {
     key: string;
     label: string;
-    metrics: {
-      key: string;
-      label: string;
-      value: number;
-      unit: string;
-      goodAbove?: number;
-      goodBelow?: number;
-      state: 'good' | 'warn' | 'bad' | 'neutral';
-    }[];
+    metrics: KpiMetricDto[];
   }[];
 }
 

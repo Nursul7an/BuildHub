@@ -93,8 +93,19 @@ await page.waitForTimeout(300);
 check('сохранение требует фото', (await page.getByText('Минимум 1 фото').count()) > 0);
 await shot('form-no-photo');
 
-await click('Фото');
-await page.waitForTimeout(400);
+// Фото уходит настоящим файлом через presign и PUT: подставляем
+// однопиксельный PNG, чтобы пройти тот же путь, что и снимок с камеры.
+await page.setInputFiles('[data-testid="photo-input"]', {
+  name: 'kolonny.png',
+  mimeType: 'image/png',
+  buffer: Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+    'base64',
+  ),
+});
+// Ждём загрузку: кнопка сохранения до неё намеренно заблокирована.
+await page.getByText('грузим…').waitFor({ state: 'detached', timeout: 15000 }).catch(() => {});
+await page.waitForTimeout(500);
 await shot('form-ready');
 
 await click('Сохранить и далее');

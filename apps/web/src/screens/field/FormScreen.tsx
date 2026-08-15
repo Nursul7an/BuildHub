@@ -7,12 +7,13 @@
  * блокируется тем, что нельзя восстановить задним числом: фото и зимним
  * методом при морозе.
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { color, radius, shadow } from '../../design/tokens';
 import { Card, Chip, ProgressBar, Stepper, formatNumber, formatPct, tabular } from '../../design/primitives';
 import { BackButton } from '../../design/primitives';
 import { useQuery, useAction } from '../../api/hooks';
-import { api } from '../../api/client';
+import { ApiError, api } from '../../api/client';
+import { type UploadedPhoto, currentPosition, uploadPhoto } from '../../api/uploads';
 import type { ProcessDetail } from '../../api/types';
 import { formatElapsed, useApp } from '../../store/app';
 import { ScreenBody } from '../../shell/PhoneFrame';
@@ -55,7 +56,17 @@ export function FormScreen() {
 
   const [volume, setVolume] = useState('');
   const [workers, setWorkers] = useState(12);
-  const [photos, setPhotos] = useState<{ url: string; takenAt: string; lat: number; lon: number }[]>([]);
+  const [photos, setPhotos] = useState<UploadedPhoto[]>([]);
+  const [uploading, setUploading] = useState(0);
+  const [photoError, setPhotoError] = useState<string | null>(null);
+  const fileInput = useRef<HTMLInputElement>(null);
+  /**
+   * Координаты запрашиваем при открытии формы, а не в момент съёмки.
+   * Определение занимает секунды, и ждать их после нажатия на затвор
+   * значит держать человека перед пустым экраном — пока он набирает
+   * объём, метка успевает приехать сама.
+   */
+  const geo = useRef<{ lat: number; lon: number } | null>(null);
   const [problems, setProblems] = useState<string[]>([]);
   const [tempAir, setTempAir] = useState('21');
   const [tempMix, setTempMix] = useState('');
@@ -66,6 +77,16 @@ export function FormScreen() {
     const id = setInterval(() => setElapsed(formStartedAt ? Date.now() - formStartedAt : 0), 1000);
     return () => clearInterval(id);
   }, [formStartedAt]);
+
+  useEffect(() => {
+    let alive = true;
+    void currentPosition().then((pos) => {
+      if (alive) geo.current = pos;
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   const save = useAction(async (andNext: boolean) => {
     if (!process) return;
@@ -80,7 +101,9 @@ export function FormScreen() {
         tempAir: air,
         tempMix: tempMix ? Number(tempMix.replace(',', '.')) : undefined,
         winterMethod: winterMethod ?? undefined,
-        photos,
+        // В отчёт уходит только ссылка: само фото уже лежит в хранилище
+        // вместе с геометкой и временем съёмки.
+        photos: photos.map((p) => ({ fileId: p.fileId })),
       },
     });
     notify(`Сохранено · ${process.name}`);
@@ -101,9 +124,11 @@ export function FormScreen() {
   const blocker = useMemo(() => {
     if (!parsedVolume) return 'Введите объём за сегодня';
     if (photos.length === 0) return 'Минимум 1 фото — обязательно';
+    // Отправить, пока фото ещё грузится, значит потерять его из отчёта.
+    if (uploading > 0) return 'Фото ещё загружается';
     if (cold && !winterMethod) return `При ${tempAir} °C укажите применённый метод`;
     return null;
-  }, [parsedVolume, photos.length, cold, winterMethod, tempAir]);
+  }, [parsedVolume, photos.length, uploading, cold, winterMethod, tempAir]);
 
   if (!process) {
     return <ScreenBody style={{ padding: 20, color: color.muted }}>Загружаем процесс…</ScreenBody>;
@@ -115,17 +140,37 @@ export function FormScreen() {
     else if (volume.replace(/\D/g, '').length < 6) setVolume((v) => v + key);
   }
 
-  function addPhoto() {
-    // В приложении здесь камера; геометка и время — то, что подделать сложнее подписи.
-    setPhotos((p) => [
-      ...p,
-      {
-        url: `photo-${p.length + 1}.jpg`,
-        takenAt: new Date().toISOString(),
-        lat: 42.8746,
-        lon: 74.5698,
-      },
-    ]);
+  /**
+   * Съёмка. Фото уходит в хранилище сразу, а в отчёт попадает ссылкой:
+   * отправлять двадцать файлов вместе с отчётом по связи, которая рвётся
+   * посреди этажа, — значит не отправить его никогда.
+   */
+  async function onPickPhotos(event: React.ChangeEvent<HTMLInputElement>) {
+    const picked = [...(event.target.files ?? [])];
+    // Значение сбрасываем сразу: иначе повторный выбор того же файла
+    // не вызовет событие, и кнопка будет выглядеть залипшей.
+    event.target.value = '';
+    if (picked.length === 0) return;
+
+    setPhotoError(null);
+    setUploading((n) => n + picked.length);
+
+    for (const file of picked) {
+      try {
+        // Метки может ещё не быть — это не повод задерживать загрузку.
+        // Фото без геометки лучше несданного отчёта, и ПТО увидит, что её нет.
+        const photo = await uploadPhoto(file, geo.current);
+        setPhotos((p) => [...p, photo]);
+      } catch (e: unknown) {
+        setPhotoError(e instanceof ApiError ? e.message : 'Не удалось загрузить фото');
+      } finally {
+        setUploading((n) => Math.max(0, n - 1));
+      }
+    }
+  }
+
+  function removePhoto(fileId: string) {
+    setPhotos((p) => p.filter((x) => x.fileId !== fileId));
   }
 
   return (
@@ -318,8 +363,23 @@ export function FormScreen() {
       </Card>
 
       <div style={{ display: 'flex', gap: 8, padding: '8px 20px', alignItems: 'center', flexWrap: 'wrap' }}>
+        {/*
+          capture="environment" открывает на телефоне сразу заднюю камеру,
+          а на настольном браузере — обычный выбор файла. Отдельная кнопка
+          «снять» и «выбрать» прорабу в перчатках не нужна.
+        */}
+        <input
+          ref={fileInput}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          multiple
+          onChange={onPickPhotos}
+          style={{ display: 'none' }}
+          data-testid="photo-input"
+        />
         <div
-          onClick={addPhoto}
+          onClick={() => fileInput.current?.click()}
           style={{
             cursor: 'pointer',
             width: 64,
@@ -337,18 +397,28 @@ export function FormScreen() {
           <div style={{ fontSize: 19 }}>◉</div>
           <div style={{ fontSize: 10, fontWeight: 700 }}>Фото</div>
         </div>
-        {photos.map((p, i) => (
+
+        {photos.map((p) => (
           <div
-            key={p.url}
+            key={p.fileId}
+            onClick={() => removePhoto(p.fileId)}
+            title="Убрать фото"
             style={{
               width: 64,
               height: 64,
               borderRadius: radius.sm,
               flex: 'none',
               position: 'relative',
+              cursor: 'pointer',
+              overflow: 'hidden',
               background: 'repeating-linear-gradient(45deg,#D8DAE3 0 8px,#E7E9F0 8px 16px)',
             }}
           >
+            <img
+              src={p.previewUrl}
+              alt=""
+              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+            />
             <div
               style={{
                 position: 'absolute',
@@ -362,17 +432,46 @@ export function FormScreen() {
                 padding: '1px 5px',
               }}
             >
-              📍 {new Date(p.takenAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
+              {/* Метки нет — так и показываем: ПТО должно это видеть. */}
+              {p.lat === undefined ? '⌖' : '📍'}{' '}
+              {new Date(p.takenAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
             </div>
           </div>
         ))}
-        {photos.length === 0 ? (
+
+        {uploading > 0 ? (
+          <div
+            style={{
+              width: 64,
+              height: 64,
+              borderRadius: radius.sm,
+              flex: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: color.chip,
+              fontSize: 10.5,
+              fontWeight: 700,
+              color: color.muted,
+              textAlign: 'center',
+            }}
+          >
+            грузим…
+          </div>
+        ) : null}
+        {photos.length === 0 && uploading === 0 ? (
           <div style={{ fontSize: 11.5, color: color.warnText, fontWeight: 700, lineHeight: 1.4 }}>
             мин. 1 фото —<br />
             обязательно
           </div>
         ) : null}
       </div>
+
+      {photoError ? (
+        <div style={{ padding: '0 20px 6px', fontSize: 12, fontWeight: 700, color: color.danger }}>
+          {photoError}
+        </div>
+      ) : null}
 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, padding: '0 20px 4px' }}>
         {PROBLEM_CHIPS.map((p) => (

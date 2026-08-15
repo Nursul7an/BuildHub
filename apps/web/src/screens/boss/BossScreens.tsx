@@ -1062,13 +1062,35 @@ export function BossKpiScreen() {
                           : color.ink,
                 }}
               >
-                {formatNumber(m.value, m.value % 1 ? 1 : 0)} {m.unit}
+                {m.value === null
+                  ? '—'
+                  : `${formatNumber(m.value, m.value % 1 ? 1 : 0)} ${m.unit}`}
               </div>
             </div>
+
+            {/*
+              Показатель без значения — обычное состояние, а не сбой:
+              ТЗ §9 отводит первый квартал на измерение, и по двум отчётам
+              процент не считают. Пишем причину, иначе пустая строка
+              читается как поломка.
+            */}
+            {m.note ? (
+              <div style={{ fontSize: 11.5, color: color.warnText, marginTop: 4, fontWeight: 700 }}>
+                {m.state === 'measuring' ? '⏳ ' : ''}
+                {m.note}
+              </div>
+            ) : null}
+
+            {m.basis ? (
+              <div style={{ fontSize: 11.5, color: color.faint, marginTop: 4 }}>
+                {m.basis.note}
+              </div>
+            ) : null}
+
             <div style={{ fontSize: 11.5, color: color.faint, marginTop: 4 }}>
-              {m.goodAbove !== undefined
+              {m.goodAbove !== null
                 ? `норма — не ниже ${m.goodAbove} ${m.unit}`
-                : m.goodBelow !== undefined
+                : m.goodBelow !== null
                   ? `норма — не выше ${m.goodBelow} ${m.unit}`
                   : ''}
             </div>

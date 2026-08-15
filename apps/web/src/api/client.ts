@@ -105,7 +105,15 @@ async function send(method: string, path: string, body?: unknown): Promise<Respo
 }
 
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
-  let response = await send(method, path, body);
+  let response: Response;
+  try {
+    response = await send(method, path, body);
+  } catch {
+    // fetch падает только на уровне сети: нет соединения, не разрешилось
+    // имя, отказ CORS. «Что-то пошло не так» здесь бесполезно — человек
+    // на объекте должен понять, что дело в связи, а не в пароле.
+    throw new ApiError(0, 'network', 'Нет связи с сервером. Проверьте интернет');
+  }
 
   // Access живёт 15 минут. Истёк — молча обновляем и повторяем один раз:
   // прораб не должен входить заново посреди сдачи отчёта.
@@ -117,7 +125,25 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
   }
 
   const text = await response.text();
-  const data = text ? (JSON.parse(text) as unknown) : null;
+
+  let data: unknown = null;
+  if (text) {
+    try {
+      data = JSON.parse(text) as unknown;
+    } catch {
+      // Пришёл не JSON. Обычно это значит, что запрос к API вообще не
+      // дошёл до сервера: статический хостинг отдал страницу приложения
+      // на путь /api/... Сообщение должно называть причину, иначе
+      // отладка сводится к гаданию по пустому экрану.
+      throw new ApiError(
+        response.status,
+        'not_json',
+        API_BASE
+          ? 'Сервер вернул не JSON. Проверьте адрес API'
+          : 'Адрес API не задан: переменная VITE_API_BASE_URL пуста',
+      );
+    }
+  }
 
   if (!response.ok) {
     // Сервер отвечает {code, message} — ТЗ §6. Прежний разбор читал
@@ -130,7 +156,12 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
     if (err.code === 'password_change_required') {
       listeners.forEach((l) => l('password_required'));
     }
-    throw new ApiError(response.status, err.code ?? 'error', err.message ?? 'Что-то пошло не так');
+    // Пустое тело при 404/405 — тот же случай: до API не дошли.
+    const fallback =
+      data === null && !API_BASE
+        ? 'Адрес API не задан: переменная VITE_API_BASE_URL пуста'
+        : `Сервер ответил ${response.status}`;
+    throw new ApiError(response.status, err.code ?? 'error', err.message ?? fallback);
   }
 
   return data as T;
