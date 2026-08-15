@@ -27,7 +27,12 @@ import {
   recordFailedLogin,
 } from './ratelimit.js';
 import { actorOf, audit } from './audit.js';
-import { jwtSecret } from './config.js';
+import {
+  REFRESH_COOKIE,
+  jwtSecret,
+  refreshCookieOptions,
+  refreshNeedsCsrfHeader,
+} from './config.js';
 
 export { generatePassword };
 
@@ -89,22 +94,68 @@ export async function registerAuth(app: FastifyInstance) {
   });
 }
 
+/**
+ * Чем клиент забирает refresh-токен.
+ *
+ * Браузер — cookie: httpOnly недоступна скриптам, поэтому XSS не уносит
+ * токен, как унёс бы из localStorage. Мобильное приложение — тело ответа:
+ * там нет чужого JavaScript, зато есть хранилище ключей, а cookie между
+ * запусками приложения переживают не все клиенты.
+ *
+ * Тип клиента спрашиваем прямо, а не угадываем по User-Agent: угадывание
+ * ошибается молча, и ошибка выглядит как «вход слетает сам по себе».
+ */
+const clientKind = z.enum(['web', 'mobile']).default('web');
+
 const loginSchema = z.object({
   login: z.string().min(1),
   password: z.string().min(1),
   deviceName: z.string().optional(),
   deviceId: z.string().optional(),
+  client: clientKind,
 });
 
 const passwordSchema = z
   .object({
     newPassword: z.string(),
     repeatPassword: z.string(),
+    client: clientKind,
   })
   .refine((v) => v.newPassword === v.repeatPassword, {
     message: 'Пароли не совпадают',
     path: ['repeatPassword'],
   });
+
+/**
+ * Отдаёт refresh-токен тем способом, который просил клиент.
+ *
+ * Веб получает cookie и не видит токен в теле: то, чего нет в ответе,
+ * нельзя случайно положить в localStorage.
+ */
+function issueRefresh(
+  reply: FastifyReply,
+  session: { refreshToken: string; expiresAt: Date },
+  client: 'web' | 'mobile',
+): { refreshToken?: string; refreshExpiresAt: string } {
+  if (client === 'mobile') {
+    return {
+      refreshToken: session.refreshToken,
+      refreshExpiresAt: session.expiresAt.toISOString(),
+    };
+  }
+
+  reply.setCookie(REFRESH_COOKIE, session.refreshToken, {
+    ...refreshCookieOptions(),
+    expires: session.expiresAt,
+  });
+  // Срок отдаём и вебу: по нему клиент решает, когда пора обновляться,
+  // а саму cookie он прочитать не может — в этом и смысл.
+  return { refreshExpiresAt: session.expiresAt.toISOString() };
+}
+
+function clearRefresh(reply: FastifyReply) {
+  reply.clearCookie(REFRESH_COOKIE, refreshCookieOptions());
+}
 
 function deviceOf(req: FastifyRequest, body?: { deviceName?: string; deviceId?: string }) {
   return {
@@ -157,8 +208,7 @@ export async function authRoutes(app: FastifyInstance) {
     return {
       token,
       expiresIn: ACCESS_TTL_SECONDS,
-      refreshToken: session.refreshToken,
-      refreshExpiresAt: session.expiresAt.toISOString(),
+      ...issueRefresh(reply, session, parsed.data.client),
       mustChangePassword: user.mustChangePassword,
       user: publicUser(user),
     };
@@ -169,10 +219,29 @@ export async function authRoutes(app: FastifyInstance) {
    * признак того, что токен утёк, и тогда гаснет вся цепочка устройства.
    */
   app.post('/api/auth/refresh', async (req, reply) => {
-    const parsed = z.object({ refreshToken: z.string().min(1) }).safeParse(req.body);
-    if (!parsed.success) return fail(reply, 400, 'bad_request', 'Нужен refresh-токен');
+    const fromCookie = req.cookies[REFRESH_COOKIE];
+    const body = z
+      .object({ refreshToken: z.string().min(1).optional(), client: clientKind })
+      .safeParse(req.body ?? {});
+    if (!body.success) return fail(reply, 400, 'bad_request', 'Нужен refresh-токен');
 
-    const outcome = await rotateSession(parsed.data.refreshToken, deviceOf(req));
+    // Cookie важнее тела: если браузер её прислал, это и есть сессия.
+    const presented = fromCookie ?? body.data.refreshToken;
+    if (!presented) return fail(reply, 401, 'unauthorized', 'Нужен refresh-токен');
+
+    // Клиент определяем по тому, откуда пришёл токен, а не по слову в теле:
+    // иначе запрос из браузера с client=mobile увёл бы токен в тело ответа
+    // и вынес его из-под httpOnly.
+    const client: 'web' | 'mobile' = fromCookie ? 'web' : 'mobile';
+
+    // Cookie при sameSite=none уходит и со стороннего сайта. Заголовок,
+    // который нельзя выставить из простой формы, вынуждает предварительный
+    // запрос CORS — а тот упрётся в список разрешённых адресов.
+    if (client === 'web' && refreshNeedsCsrfHeader() && req.headers['x-build-hub-client'] !== 'web') {
+      return fail(reply, 403, 'csrf_required', 'Не хватает заголовка x-build-hub-client');
+    }
+
+    const outcome = await rotateSession(presented, deviceOf(req));
     if (!outcome.ok) {
       const message =
         outcome.code === 'reused'
@@ -180,11 +249,15 @@ export async function authRoutes(app: FastifyInstance) {
           : outcome.code === 'expired'
             ? 'Срок сессии истёк — войдите заново'
             : 'Сессия не найдена';
+      // Негодную cookie убираем, иначе браузер шлёт её снова и снова
+      // и вход выглядит зациклившимся.
+      if (client === 'web') clearRefresh(reply);
       return fail(reply, 401, outcome.code, message);
     }
 
     const user = await prisma.user.findUnique({ where: { id: outcome.userId } });
     if (!user || !user.active) {
+      if (client === 'web') clearRefresh(reply);
       return fail(reply, 401, 'unauthorized', 'Учётная запись отключена');
     }
 
@@ -197,15 +270,17 @@ export async function authRoutes(app: FastifyInstance) {
     return {
       token,
       expiresIn: ACCESS_TTL_SECONDS,
-      refreshToken: outcome.session.refreshToken,
-      refreshExpiresAt: outcome.session.expiresAt.toISOString(),
+      ...issueRefresh(reply, outcome.session, client),
       mustChangePassword: user.mustChangePassword,
     };
   });
 
-  app.post('/api/auth/logout', { preHandler: [app.authenticate] }, async (req) => {
+  app.post('/api/auth/logout', { preHandler: [app.authenticate] }, async (req, reply) => {
     const sid = (req.user as { sid?: string }).sid;
     if (sid) await revokeSession(sid, 'logout');
+    // Cookie гасим всегда: сессия в базе закрыта, и держать в браузере
+    // недействительный токен незачем.
+    clearRefresh(reply);
     return { ok: true };
   });
 
@@ -252,8 +327,9 @@ export async function authRoutes(app: FastifyInstance) {
       ok: true,
       token,
       expiresIn: ACCESS_TTL_SECONDS,
-      refreshToken: session.refreshToken,
-      refreshExpiresAt: session.expiresAt.toISOString(),
+      // Тем же способом, каким клиент вошёл: браузер входил по cookie,
+      // и после смены пароля она же обновляется.
+      ...issueRefresh(reply, session, req.cookies[REFRESH_COOKIE] ? 'web' : parsed.data.client),
     };
   });
 

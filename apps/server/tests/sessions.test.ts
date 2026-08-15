@@ -50,6 +50,7 @@ describe('Access и refresh', () => {
     const res = await api(null, 'POST', '/api/auth/login', {
       login: ACCOUNTS.prorab,
       password: DEMO_PASSWORD,
+      client: 'mobile',
       deviceName: 'Redmi Note 12',
     });
 
@@ -65,6 +66,7 @@ describe('Access и refresh', () => {
     const session = await api(null, 'POST', '/api/auth/login', {
       login: ACCOUNTS.prorab,
       password: DEMO_PASSWORD,
+      client: 'mobile',
     });
     const first = session.body.refreshToken as string;
 
@@ -86,6 +88,7 @@ describe('Access и refresh', () => {
     const session = await api(null, 'POST', '/api/auth/login', {
       login: ACCOUNTS.prorab,
       password: DEMO_PASSWORD,
+      client: 'mobile',
     });
     const first = session.body.refreshToken as string;
 
@@ -120,11 +123,13 @@ describe('Сессии устройств', () => {
     const phone = await api(null, 'POST', '/api/auth/login', {
       login: ACCOUNTS.prorab,
       password: DEMO_PASSWORD,
+      client: 'mobile',
       deviceName: 'Redmi Note 12',
     });
     await api(null, 'POST', '/api/auth/login', {
       login: ACCOUNTS.prorab,
       password: DEMO_PASSWORD,
+      client: 'mobile',
       deviceName: 'Планшет на объекте',
     });
 
@@ -140,11 +145,13 @@ describe('Сессии устройств', () => {
     const phone = await api(null, 'POST', '/api/auth/login', {
       login: ACCOUNTS.prorab,
       password: DEMO_PASSWORD,
+      client: 'mobile',
       deviceName: 'Телефон',
     });
     const tablet = await api(null, 'POST', '/api/auth/login', {
       login: ACCOUNTS.prorab,
       password: DEMO_PASSWORD,
+      client: 'mobile',
       deviceName: 'Планшет',
     });
 
@@ -169,6 +176,7 @@ describe('Сессии устройств', () => {
     const ptoSession = await api(null, 'POST', '/api/auth/login', {
       login: ACCOUNTS.pto,
       password: DEMO_PASSWORD,
+      client: 'mobile',
     });
     const ptoSessions = await api(ptoSession.body.token, 'GET', '/api/auth/sessions');
     const target = (ptoSessions.body as any[])[0];
@@ -181,11 +189,13 @@ describe('Сессии устройств', () => {
     const first = await api(null, 'POST', '/api/auth/login', {
       login: ACCOUNTS.prorab,
       password: DEMO_PASSWORD,
+      client: 'mobile',
       deviceName: 'Первое',
     });
     const second = await api(null, 'POST', '/api/auth/login', {
       login: ACCOUNTS.prorab,
       password: DEMO_PASSWORD,
+      client: 'mobile',
       deviceName: 'Второе',
     });
 
@@ -210,17 +220,20 @@ describe('Смена, сброс и блокировка', () => {
     const oldPhone = await api(null, 'POST', '/api/auth/login', {
       login: ACCOUNTS.prorab,
       password: DEMO_PASSWORD,
+      client: 'mobile',
       deviceName: 'Старое устройство',
     });
     const current = await api(null, 'POST', '/api/auth/login', {
       login: ACCOUNTS.prorab,
       password: DEMO_PASSWORD,
+      client: 'mobile',
       deviceName: 'Текущее',
     });
 
     const changed = await api(current.body.token, 'POST', '/api/auth/password', {
       newPassword: 'novyparol123',
       repeatPassword: 'novyparol123',
+      client: 'mobile',
     });
     assert.equal(changed.status, 200);
     assert.ok(changed.body.refreshToken, 'текущее устройство остаётся в системе');
@@ -264,6 +277,7 @@ describe('Смена, сброс и блокировка', () => {
     const session = await api(null, 'POST', '/api/auth/login', {
       login: created.body.user.login,
       password: created.body.temporaryPassword,
+      client: 'mobile',
     });
     assert.equal(session.status, 200);
 
@@ -281,6 +295,7 @@ describe('Смена, сброс и блокировка', () => {
     const oldPassword = await api(null, 'POST', '/api/auth/login', {
       login: created.body.user.login,
       password: created.body.temporaryPassword,
+      client: 'mobile',
     });
     assert.equal(oldPassword.status, 401);
   });
@@ -295,6 +310,7 @@ describe('Смена, сброс и блокировка', () => {
     const session = await api(null, 'POST', '/api/auth/login', {
       login: created.body.user.login,
       password: created.body.temporaryPassword,
+      client: 'mobile',
     });
 
     await api(pto, 'PATCH', `/api/users/${created.body.user.id}`, { active: false });

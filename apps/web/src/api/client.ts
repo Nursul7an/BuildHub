@@ -40,31 +40,97 @@ export function onAuthEvent(listener: Listener): () => void {
   return () => listeners.delete(listener);
 }
 
-async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
+/**
+ * Обновление доступа.
+ *
+ * Refresh-токен лежит в httpOnly cookie: страница его не видит и послать
+ * сама не может — браузер прикладывает cookie к запросу, потому и нужен
+ * credentials: 'include'.
+ *
+ * Одновременных обновлений быть не должно. Refresh одноразовый, и если три
+ * запроса разом получат 401 и каждый пойдёт обновляться, то второй и третий
+ * предъявят уже погашенный токен. Сервер расценит это как кражу и закроет
+ * все сессии устройства — человека выкинет из системы на ровном месте.
+ * Поэтому обновление одно на всех: остальные ждут его результата.
+ */
+let refreshing: Promise<boolean> | null = null;
+
+async function refreshAccess(): Promise<boolean> {
+  if (refreshing) return refreshing;
+
+  refreshing = (async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/auth/refresh`, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          // Заголовок нельзя выставить из простой формы: он вынуждает
+          // предварительный запрос CORS и тем закрывает подделку
+          // межсайтового запроса, когда cookie идёт с SameSite=None.
+          'x-build-hub-client': 'web',
+        },
+        credentials: 'include',
+        body: '{}',
+      });
+      if (!res.ok) return false;
+      const data = (await res.json()) as { token?: string };
+      if (!data.token) return false;
+      setToken(data.token);
+      return true;
+    } catch {
+      return false;
+    } finally {
+      refreshing = null;
+    }
+  })();
+
+  return refreshing;
+}
+
+async function send(method: string, path: string, body?: unknown): Promise<Response> {
   const token = getToken();
   const relative = path.startsWith('/api') ? path : `/api${path}`;
-  const response = await fetch(`${API_BASE}${relative}`, {
+  return fetch(`${API_BASE}${relative}`, {
     method,
     headers: {
       'content-type': 'application/json',
+      'x-build-hub-client': 'web',
       ...(token ? { authorization: `Bearer ${token}` } : {}),
     },
+    // Cookie с refresh-токеном уходит только на /api/auth — путь задан
+    // на сервере, здесь достаточно разрешить её отправку.
+    credentials: 'include',
     body: body === undefined ? undefined : JSON.stringify(body),
   });
+}
+
+async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
+  let response = await send(method, path, body);
+
+  // Access живёт 15 минут. Истёк — молча обновляем и повторяем один раз:
+  // прораб не должен входить заново посреди сдачи отчёта.
+  const isRefreshCall = path.startsWith('/api/auth/refresh');
+  if (response.status === 401 && !isRefreshCall && getToken() !== null) {
+    if (await refreshAccess()) {
+      response = await send(method, path, body);
+    }
+  }
 
   const text = await response.text();
   const data = text ? (JSON.parse(text) as unknown) : null;
 
   if (!response.ok) {
-    const err = (data ?? {}) as { error?: string; message?: string };
+    // Сервер отвечает {code, message} — ТЗ §6. Прежний разбор читал
+    // err.error, поэтому требование сменить пароль до экрана не доходило.
+    const err = (data ?? {}) as { code?: string; message?: string };
     if (response.status === 401) {
       setToken(null);
       listeners.forEach((l) => l('unauthorized'));
     }
-    if (err.error === 'password_change_required') {
+    if (err.code === 'password_change_required') {
       listeners.forEach((l) => l('password_required'));
     }
-    throw new ApiError(response.status, err.error ?? 'error', err.message ?? 'Что-то пошло не так');
+    throw new ApiError(response.status, err.code ?? 'error', err.message ?? 'Что-то пошло не так');
   }
 
   return data as T;

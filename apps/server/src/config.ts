@@ -87,6 +87,54 @@ export function allowedOrigins(): true | string[] {
   return list.length > 0 ? list : true;
 }
 
+/** Имя cookie с refresh-токеном. */
+export const REFRESH_COOKIE = 'bh_refresh';
+
+/**
+ * Настройки cookie с refresh-токеном.
+ *
+ * httpOnly закрывает токен от JavaScript: даже при XSS его не прочитать
+ * из скрипта, чего нельзя сказать о localStorage.
+ *
+ * `path` сужен до /api/auth: cookie не уезжает с каждым запросом за
+ * отчётами и фотографиями, а ходит только туда, где нужна. Меньше мест,
+ * где токен можно случайно записать в журнал.
+ *
+ * `sameSite` — главная тонкость развёртывания. При фронтенде на vercel.app
+ * и API на onrender.com это разные сайты, и cookie со Strict/Lax браузер
+ * просто не пошлёт. Значение берётся из REFRESH_COOKIE_SAMESITE, а рядом
+ * в assertDeployable проверяется, что none идёт вместе с secure —
+ * иначе браузер отвергнет cookie молча, и вход перестанет продлеваться
+ * без единой ошибки в журнале.
+ */
+export function refreshCookieOptions() {
+  const sameSite = (process.env.REFRESH_COOKIE_SAMESITE ?? 'lax').toLowerCase() as
+    | 'strict'
+    | 'lax'
+    | 'none';
+
+  return {
+    httpOnly: true,
+    // По HTTP cookie с secure не ставится — в разработке это помешало бы.
+    secure: isProduction(),
+    sameSite,
+    path: '/api/auth',
+    domain: process.env.REFRESH_COOKIE_DOMAIN || undefined,
+  } as const;
+}
+
+/**
+ * Нужна ли защита от подделки межсайтового запроса.
+ *
+ * При sameSite=none браузер шлёт cookie и на запрос со стороннего сайта,
+ * поэтому обновление токена требует заголовка, который нельзя выставить
+ * из простой формы: он вынуждает предварительный запрос CORS, а тот
+ * упирается в список разрешённых адресов.
+ */
+export function refreshNeedsCsrfHeader(): boolean {
+  return refreshCookieOptions().sameSite === 'none';
+}
+
 /** Проверка настроек на старте — чтобы отказ был при запуске, а не в первом запросе. */
 export function assertDeployable() {
   jwtSecret();
@@ -94,5 +142,17 @@ export function assertDeployable() {
 
   if (isProduction() && !process.env.DATABASE_URL) {
     throw new Error('DATABASE_URL не задан');
+  }
+
+  const cookie = refreshCookieOptions();
+  if (!['strict', 'lax', 'none'].includes(cookie.sameSite)) {
+    throw new Error(
+      `REFRESH_COOKIE_SAMESITE=${cookie.sameSite} — допустимо strict, lax или none`,
+    );
+  }
+  if (cookie.sameSite === 'none' && !cookie.secure) {
+    // Браузер отвергает такую cookie молча: вход просто перестаёт
+    // продлеваться, и в журнале сервера об этом ничего нет.
+    throw new Error('REFRESH_COOKIE_SAMESITE=none требует HTTPS (NODE_ENV=production)');
   }
 }

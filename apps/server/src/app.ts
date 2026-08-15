@@ -1,5 +1,6 @@
 import Fastify, { type FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
+import cookie from '@fastify/cookie';
 import { authRoutes, registerAuth } from './auth.js';
 import { worksRoutes } from './routes/works.js';
 import { reportRoutes } from './routes/reports.js';
@@ -91,6 +92,8 @@ export async function buildApp(
   // В разработке origin отражается как есть. В проде — только заявленные
   // адреса фронтенда: список задаётся WEB_ORIGIN через запятую.
   await app.register(cors, { origin: allowedOrigins(), credentials: true });
+  // Refresh-токен живёт в httpOnly cookie — её надо разобрать до маршрутов.
+  await app.register(cookie);
   await registerAuth(app);
   // Частоту режет и шлюз (ТЗ §3.1), но он не знает, кто именно пришёл.
   if (options.rateLimit !== false) {
