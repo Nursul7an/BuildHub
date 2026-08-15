@@ -1,6 +1,14 @@
 node_modules/
 dist/
 *.log
+.vercel/
+
+# Скомпилированный вывод рядом с исходниками. Vite разрешает .js раньше .ts,
+# поэтому такой файл незаметно подменяет собой исходник: сборка уходит
+# в прод из устаревшего кода, а исходник правится вхолостую.
+apps/web/src/**/*.js
+apps/web/vite.config.js
+*.tsbuildinfo
 apps/server/.env
 apps/server/prisma/dev.db
 apps/server/prisma/dev.db-journal

@@ -4,6 +4,14 @@
  */
 const TOKEN_KEY = 'build-hub.token';
 
+/**
+ * Адрес API. В разработке пусто — запросы идут на тот же адрес, и их
+ * переставляет прокси Vite. В развёрнутой сборке фронтенд и сервер живут
+ * на разных хостах, поэтому адрес задаётся переменной VITE_API_BASE_URL
+ * на этапе сборки. Без неё запросы уйдут в никуда на статическом хостинге.
+ */
+const API_BASE = (import.meta.env.VITE_API_BASE_URL ?? '').replace(/\/+$/, '');
+
 export class ApiError extends Error {
   constructor(
     public status: number,
@@ -34,7 +42,8 @@ export function onAuthEvent(listener: Listener): () => void {
 
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
   const token = getToken();
-  const response = await fetch(path.startsWith('/api') ? path : `/api${path}`, {
+  const relative = path.startsWith('/api') ? path : `/api${path}`;
+  const response = await fetch(`${API_BASE}${relative}`, {
     method,
     headers: {
       'content-type': 'application/json',
