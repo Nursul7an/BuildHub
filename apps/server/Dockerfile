@@ -23,7 +23,12 @@ COPY apps/web/package.json apps/web/
 
 # Веб-часть в образ сервера не нужна, но npm ci ставит дерево целиком:
 # lock-файл один на все рабочие пространства.
-RUN npm ci
+#
+# --include=dev указан явно: при NODE_ENV=production npm молча пропускает
+# отладочные зависимости, а сборка стоит на них — tsc и prisma. Собирающая
+# среда это значение выставляет сама (так упала сборка на Vercel), и
+# полагаться на то, что здесь она его не выставит, не стоит.
+RUN npm ci --include=dev
 
 COPY packages/shared packages/shared
 COPY apps/server apps/server
