@@ -9,6 +9,7 @@ import type { Screen, ScreenParams } from '../store/app';
 
 import { LoginScreen } from './auth/LoginScreen';
 import { PasswordScreen } from './auth/PasswordScreen';
+import { RegisterScreen } from './auth/RegisterScreen';
 
 import { TodayScreen } from './field/TodayScreen';
 import { FormScreen } from './field/FormScreen';
@@ -99,6 +100,7 @@ import {
 const SCREENS: Partial<Record<Screen, () => ReactNode>> = {
   // вход
   login: LoginScreen,
+  register: RegisterScreen,
   password: PasswordScreen,
 
   // онбординг

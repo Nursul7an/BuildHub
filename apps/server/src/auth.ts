@@ -115,6 +115,35 @@ const loginSchema = z.object({
   client: clientKind,
 });
 
+/**
+ * Регистрация открыта, пока в системе нет действующего руководителя.
+ *
+ * Отключённый директор не считается: если единственного руководителя
+ * заблокировали, войти станет некому, и запереть систему навсегда —
+ * худший из возможных исходов.
+ */
+async function registrationOpen(): Promise<boolean> {
+  return (await prisma.user.count({ where: { role: 'dir', active: true } })) === 0;
+}
+
+const registerSchema = z.object({
+  fullName: z.string().trim().min(3, 'Укажите фамилию, имя и отчество'),
+  login: z
+    .string()
+    .trim()
+    .min(3, 'Логин короче трёх символов')
+    .regex(/^[a-zA-Z0-9._-]+$/, 'Логин — латиница, цифры, точка, дефис'),
+  phone: z.string().trim().min(6, 'Укажите телефон'),
+  password: z.string(),
+  repeatPassword: z.string(),
+  deviceName: z.string().optional(),
+  deviceId: z.string().optional(),
+  client: clientKind,
+}).refine((v) => v.password === v.repeatPassword, {
+  message: 'Пароли не совпадают',
+  path: ['repeatPassword'],
+});
+
 const passwordSchema = z
   .object({
     newPassword: z.string(),
@@ -211,6 +240,110 @@ export async function authRoutes(app: FastifyInstance) {
       ...issueRefresh(reply, session, parsed.data.client),
       mustChangePassword: user.mustChangePassword,
       user: publicUser(user),
+    };
+  });
+
+  /**
+   * Открыта ли регистрация.
+   *
+   * Экран входа спрашивает это, чтобы не показывать ссылку, которая
+   * всё равно ответит отказом. Ответ намеренно скупой — «да» или «нет»,
+   * без числа заведённых людей: незачем сообщать постороннему, обжита
+   * система или пуста.
+   */
+  app.get('/api/auth/registration-open', async () => ({ open: await registrationOpen() }));
+
+  /**
+   * Регистрация первого руководителя.
+   *
+   * Обычные учётные записи заводит ПТО, но первого директора завести
+   * некому: система приходит пустой. Пока руководителя нет, вход в неё
+   * открыт; как только он появился — закрыт навсегда, иначе любой
+   * желающий заведёт себе директорский доступ к бюджетам и платежам.
+   */
+  app.post('/api/auth/register', async (req, reply) => {
+    const parsed = registerSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return fail(reply, 400, 'bad_request', parsed.error.issues[0]?.message ?? 'Проверьте данные');
+    }
+
+    const strength = checkPasswordStrength(parsed.data.password);
+    if (!strength.ok) return fail(reply, 400, 'weak_password', strength.message);
+
+    if (!(await registrationOpen())) {
+      return fail(
+        reply,
+        403,
+        'registration_closed',
+        'Руководитель уже зарегистрирован. Учётную запись выдаёт ПТО',
+      );
+    }
+
+    const login = parsed.data.login.trim().toLowerCase();
+    const taken = await prisma.user.findUnique({ where: { login } });
+    if (taken) return fail(reply, 409, 'already_exists', 'Такой логин уже занят');
+
+    const passwordHash = await hashPassword(parsed.data.password);
+
+    let user: { id: string; role: string; fullName: string } | null = null;
+    try {
+      /**
+       * Проверка и создание — в одной сериализуемой транзакции.
+       *
+       * Иначе две отправки формы, разошедшиеся на миллисекунды, обе
+       * увидят «руководителя нет» и заведут по директору. Уникальность
+       * логина от этого не спасает: логины у них разные.
+       */
+      user = await prisma.$transaction(
+        async (tx) => {
+          const existing = await tx.user.count({ where: { role: 'dir', active: true } });
+          if (existing > 0) return null;
+
+          return tx.user.create({
+            data: {
+              fullName: parsed.data.fullName.trim(),
+              login,
+              phone: parsed.data.phone.trim(),
+              role: 'dir',
+              passwordHash,
+              // Пароль человек задал сам — менять его не с чего.
+              mustChangePassword: false,
+            },
+            select: { id: true, role: true, fullName: true },
+          });
+        },
+        { isolationLevel: 'Serializable' },
+      );
+    } catch {
+      // Столкновение сериализуемых транзакций: второй регистрирующийся
+      // опоздал. Для него это то же самое, что закрытая регистрация.
+      return fail(reply, 403, 'registration_closed', 'Руководитель уже зарегистрирован');
+    }
+
+    if (!user) {
+      return fail(reply, 403, 'registration_closed', 'Руководитель уже зарегистрирован');
+    }
+
+    await audit(
+      actorOf({ id: user.id, role: user.role }, user.fullName),
+      {
+        entity: 'user',
+        entityId: user.id,
+        action: 'create',
+        field: 'registration',
+        newValue: 'первый руководитель зарегистрирован самостоятельно',
+      },
+    );
+
+    const session = await createSession(user.id, deviceOf(req, parsed.data));
+    const token = app.jwt.sign({ sub: user.id, role: user.role as Role, sid: session.sessionId });
+
+    return {
+      token,
+      expiresIn: ACCESS_TTL_SECONDS,
+      ...issueRefresh(reply, session, parsed.data.client),
+      mustChangePassword: false,
+      user: publicUser(await prisma.user.findUniqueOrThrow({ where: { id: user.id } })),
     };
   });
 

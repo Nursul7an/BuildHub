@@ -1,17 +1,40 @@
 /** A1 · Вход. */
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { color, radius, shadow } from '../../design/tokens';
 import { Field, PrimaryButton } from '../../design/primitives';
 import { useApp } from '../../store/app';
-import { ApiError } from '../../api/client';
+import { ApiError, api } from '../../api/client';
 
 export function LoginScreen() {
   const login = useApp((s) => s.login);
-  const [user, setUser] = useState('a.zhumabekov');
-  const [pass, setPass] = useState('buildhub2026');
+  const go = useApp((s) => s.go);
+  const [user, setUser] = useState('');
+  const [pass, setPass] = useState('');
   const [show, setShow] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  /**
+   * Открыта ли регистрация. Спрашиваем сервер: показывать ссылку,
+   * которая всё равно ответит отказом, — значит звать человека в тупик.
+   */
+  const [canRegister, setCanRegister] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    void api
+      .get<{ open: boolean }>('/auth/registration-open')
+      .then((r) => {
+        if (alive) setCanRegister(r.open);
+      })
+      .catch(() => {
+        // Сервер недоступен — ссылку не показываем. О связи скажет
+        // сама попытка входа, а не пустая догадка на экране.
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   async function submit() {
     setBusy(true);
@@ -146,6 +169,27 @@ export function LoginScreen() {
         >
           Забыли пароль?
         </div>
+
+        {/*
+          Ссылка живёт ровно до появления первого руководителя. Дальше
+          учётные записи выдаёт ПТО, и звать сюда посторонних незачем.
+        */}
+        {canRegister ? (
+          <div
+            onClick={() => go('register')}
+            style={{
+              textAlign: 'center',
+              fontSize: 14,
+              fontWeight: 800,
+              color: color.primary,
+              padding: 10,
+              minHeight: 44,
+              cursor: 'pointer',
+            }}
+          >
+            Зарегистрировать руководителя
+          </div>
+        ) : null}
       </div>
 
       <div
@@ -158,7 +202,9 @@ export function LoginScreen() {
           lineHeight: 1.5,
         }}
       >
-        Нет аккаунта? Обратитесь к администратору вашей компании.
+        {canRegister
+          ? 'Система пуста. Первым входит руководитель — остальных заводит ПТО.'
+          : 'Нет доступа? Обратитесь к инженеру ПТО вашей компании.'}
       </div>
     </div>
   );

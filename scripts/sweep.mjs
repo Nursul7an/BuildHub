@@ -106,11 +106,11 @@ async function resolveParams(kind) {
         return d[0] ? { contractorId: d[0].id } : {};
       }
       case 'firstSet': {
-        const d = await get('/api/project/sets');
+        const d = await get('/api/v1/doc-sets');
         return d[0] ? { setId: d[0].id } : {};
       }
       case 'firstSheet': {
-        const d = await get('/api/project/current-sheets');
+        const d = await get('/api/v1/sheets/active');
         return d[0] ? { sheetId: d[0].id } : {};
       }
       case 'firstObject': {

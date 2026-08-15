@@ -34,11 +34,29 @@ function check(label, ok) {
   if (!ok) errors.push(`проверка не прошла: ${label}`);
 }
 
+/**
+ * Смена роли. Раньше сценарий нажимал на переключатель демонстрационного
+ * стенда; стенда больше нет, поэтому входим по-настоящему — через тот же
+ * маршрут, которым пользуется приложение.
+ */
+async function loginAs(login) {
+  await page.evaluate(async (l) => {
+    const r = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ login: l, password: 'buildhub2026' }),
+    });
+    localStorage.setItem('build-hub.token', (await r.json()).token);
+  }, login);
+  await page.reload({ waitUntil: 'networkidle' });
+  await page.waitForTimeout(900);
+}
+
 await page.goto('http://127.0.0.1:5173/', { waitUntil: 'networkidle' });
 
 console.log('Прораб · путь «нехватка материала → заявка»');
-await click('Войти', { exact: true });
-await page.waitForTimeout(1200);
+await loginAs('a.zhumabekov');
+await page.waitForTimeout(600);
 await shot('today');
 
 // «Горит» ведёт в карточку процесса с причиной задержки.
@@ -120,8 +138,7 @@ check('после отправки видна цепочка согласова�
 check('показано время заполнения', (await page.getByText('Заполнение заняло').count()) > 0);
 
 console.log('ПТО · проверка отчёта');
-await click('Инженер ПТО · Гульмира С.');
-await page.waitForTimeout(1400);
+await loginAs('g.sadykova');
 await page.evaluate(() => window.buildHub.getState().go('pto-queue'));
 await page.waitForTimeout(900);
 await shot('pto-queue');
@@ -141,8 +158,9 @@ check(
 );
 
 console.log('Руководство · простой с ценой');
-await click('Директор · Нурлан Т.');
-await page.waitForTimeout(1400);
+await loginAs('n.toktomatov');
+await page.evaluate(() => window.buildHub.getState().go('boss-digest'));
+await page.waitForTimeout(900);
 await shot('boss-digest');
 check('простой попал в ленту руководства с ценой', (await page.getByText('сом').count()) > 0);
 

@@ -2,7 +2,6 @@ import { useEffect } from 'react';
 import { color } from './design/tokens';
 import { PhoneFrame, ScreenBody } from './shell/PhoneFrame';
 import { BottomNav, showsNav, tabsFor } from './shell/navigation';
-import { DemoPanel } from './shell/DemoPanel';
 import { useApp, roleGroup } from './store/app';
 import { onAuthEvent } from './api/client';
 import { useQuery } from './api/hooks';
@@ -48,8 +47,6 @@ export default function App() {
         fontFamily: 'Manrope, sans-serif',
       }}
     >
-      <DemoPanel />
-
       <PhoneFrame
         clock={clock}
         toast={toast}

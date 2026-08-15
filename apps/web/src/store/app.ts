@@ -12,6 +12,7 @@ import { ROLE_GROUP_OF, type Role, type RoleGroup } from '@build-hub/shared';
 export type Screen =
   // вход и онбординг
   | 'login'
+  | 'register'
   | 'password'
   | 'assigned-works'
   | 'onboarding-blocks'
@@ -123,6 +124,13 @@ interface AppState {
 
   init: () => Promise<void>;
   login: (login: string, password: string) => Promise<void>;
+  register: (form: {
+    fullName: string;
+    login: string;
+    phone: string;
+    password: string;
+    repeatPassword: string;
+  }) => Promise<void>;
   logout: () => void;
   refreshMe: () => Promise<void>;
   go: (screen: Screen, params?: ScreenParams) => void;
@@ -194,6 +202,17 @@ export const useApp = create<AppState>((set, get) => ({
       set({ screen: 'password', params: {}, history: [] });
       return;
     }
+    const me = await api.get<Me>('/auth/me');
+    set({ me, screen: homeScreen(me.role), params: {}, history: [] });
+  },
+
+  /**
+   * Регистрация первого руководителя. Пароль он задаёт сам, поэтому
+   * экрана смены пароля после неё нет — сразу внутрь.
+   */
+  register: async (form) => {
+    const res = await api.post<{ token: string }>('/auth/register', form);
+    setToken(res.token);
     const me = await api.get<Me>('/auth/me');
     set({ me, screen: homeScreen(me.role), params: {}, history: [] });
   },

@@ -715,10 +715,25 @@ function Tile({ label, value, tone, hint }: { label: string; value: string; tone
 export function BossFinanceObjectScreen() {
   const params = useApp((s) => s.params);
   const back = useApp((s) => s.back);
-  const { data } = useQuery<FinanceDto>('/boss/finance');
+  const { data, loading } = useQuery<FinanceDto>('/boss/finance');
   const o = data?.objects.find((x) => x.objectId === params.objectId);
 
-  if (!o) return <ScreenBody style={{ padding: 20, color: color.muted }}>Загружаем…</ScreenBody>;
+  if (loading) return <ScreenBody style={{ padding: 20, color: color.muted }}>Загружаем…</ScreenBody>;
+
+  // Данные пришли, а объекта в них нет: бюджет по нему ещё не заведён.
+  // Показывать «Загружаем…» вечно нельзя — от зависшего экрана это
+  // неотличимо, и человек ждёт того, чего не будет.
+  if (!o) {
+    return (
+      <ScreenBody style={{ padding: 20 }}>
+        <ScreenHeader title="Экономика объекта" onBack={back} />
+        <div style={{ padding: '20px 0', fontSize: 14, color: color.muted, lineHeight: 1.6 }}>
+          По этому объекту бюджет ещё не заведён. Экономику считать не из чего:
+          нужна ведомость объёмов и договорная цена.
+        </div>
+      </ScreenBody>
+    );
+  }
 
   return (
     <ScreenBody>
