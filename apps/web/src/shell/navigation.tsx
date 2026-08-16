@@ -7,7 +7,7 @@
  * и точка для «есть новое».
  */
 import type { ReactNode } from 'react';
-import { color } from '../design/tokens';
+import { SIDEBAR_ICON_W, SIDEBAR_W, TOUCH_MIN, color, radius } from '../design/tokens';
 import { CountBadge } from '../design/primitives';
 import {
   IconBuilding,
@@ -248,7 +248,9 @@ export function BottomNav({
         display: 'flex',
         borderTop: `1px solid ${color.track}`,
         background: color.surface,
-        padding: '8px 4px 16px',
+        // Нижний отступ учитывает вырез под экраном: без него последняя
+        // строка вкладок попадает под системную полосу жестов.
+        padding: '8px 4px calc(16px + env(safe-area-inset-bottom))',
         flex: 'none',
       }}
     >
@@ -262,6 +264,8 @@ export function BottomNav({
             style={{
               cursor: 'pointer',
               flex: 1,
+              // Палец в перчатке: 48 px — пол, а не цель.
+              minHeight: TOUCH_MIN,
               textAlign: 'center',
               // Три признака активности сразу: цвет, вес и полоска.
               color: active ? color.primary : color.muted,
@@ -289,5 +293,79 @@ export function BottomNav({
         );
       })}
     </div>
+  );
+}
+
+/**
+ * Боковая навигация для планшета и настольного экрана.
+ *
+ * Те же вкладки и те же признаки активности, что внизу на телефоне, —
+ * набор берётся из того же tabsFor(). На планшете подписи скрыты: место
+ * дороже, а иконки к этому моменту уже знакомы по телефону.
+ */
+export function SideNav({
+  tabs,
+  current,
+  badges,
+  onNavigate,
+  collapsed,
+}: {
+  tabs: Tab[];
+  current: Screen;
+  badges: Record<string, number>;
+  onNavigate: (screen: Screen) => void;
+  collapsed: boolean;
+}) {
+  return (
+    <nav
+      style={{
+        width: collapsed ? SIDEBAR_ICON_W : SIDEBAR_W,
+        flex: 'none',
+        background: color.surface,
+        borderRight: `1px solid ${color.track}`,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 4,
+        padding: '16px 8px',
+        position: 'sticky',
+        top: 0,
+        alignSelf: 'flex-start',
+        height: '100dvh',
+        overflowY: 'auto',
+      }}
+    >
+      {tabs.map((tab) => {
+        const active = tab.owns.includes(current);
+        const count = tab.badge ? (badges[tab.badge] ?? 0) : 0;
+        return (
+          <div
+            key={tab.key}
+            onClick={() => onNavigate(tab.screen)}
+            title={collapsed ? tab.label : undefined}
+            style={{
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 12,
+              // Та же нижняя граница касания, что и на телефоне.
+              minHeight: TOUCH_MIN,
+              padding: collapsed ? '10px 0' : '10px 12px',
+              justifyContent: collapsed ? 'center' : 'flex-start',
+              borderRadius: radius.sm,
+              background: active ? color.chip : 'transparent',
+              color: active ? color.primary : color.muted,
+              fontWeight: active ? 800 : 500,
+              fontSize: 14,
+            }}
+          >
+            <div style={{ position: 'relative', display: 'flex' }}>
+              {tab.icon({ size: 24, color: 'currentColor' })}
+              <CountBadge count={count} />
+            </div>
+            {collapsed ? null : <div>{tab.label}</div>}
+          </div>
+        );
+      })}
+    </nav>
   );
 }

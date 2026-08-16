@@ -63,7 +63,6 @@ export const shadow = {
 } as const;
 
 export const radius = {
-  phone: 32,
   sheet: 28,
   xl: 24,
   lg: 20,
@@ -85,12 +84,24 @@ export const font = {
   tabular: 'tabular-nums' as const,
 } as const;
 
-/** Минимальная площадь касания. Перчатки на объекте — 44 px это пол, а не цель. */
-export const TOUCH_MIN = 44;
+/**
+ * Минимальная площадь касания. Перчатки на объекте — это пол, а не цель.
+ * 48 px: нижняя граница Material и то же значение в --tap-min (см. main.tsx).
+ */
+export const TOUCH_MIN = 48;
 
-/** Ширина экрана телефона в макете. */
-export const PHONE_WIDTH = 376;
-export const PHONE_MIN_HEIGHT = 800;
+/**
+ * Брейкпоинты. Те же значения объявлены переменными в :root (см. main.tsx):
+ * в CSS ими пользуются медиазапросы, здесь — переключение раскладки.
+ */
+export const BP_TABLET = 768;
+export const BP_DESKTOP = 1024;
+
+/** Ширина области содержимого и постоянной боковой навигации. */
+export const CONTENT_MAX = 1280;
+export const SIDEBAR_W = 240;
+/** Свёрнутая боковая навигация: только иконки. */
+export const SIDEBAR_ICON_W = 72;
 
 export const layout = {
   /** Горизонтальные поля большинства экранов. */

@@ -1,55 +1,39 @@
 /**
- * Корпус телефона из макета: 376 px содержимого, рамка 8 px, скругление 32 px.
- * Строка состояния и вкладка помощника живут здесь, а не в экранах.
+ * Область экрана приложения.
+ *
+ * Раньше здесь был корпус телефона из макета — фиксированная ширина,
+ * рамка, скругление и нарисованная строка состояния с временем и зарядом.
+ * В макете это показывало, как приложение будет выглядеть на телефоне;
+ * в работающем приложении такая рамка занимает место и врёт: время и
+ * заряд рисует система, а не мы.
  */
 import type { ReactNode } from 'react';
-import { PHONE_MIN_HEIGHT, PHONE_WIDTH, color, radius, shadow } from '../design/tokens';
+import { color, radius, shadow } from '../design/tokens';
 import { IconAssistant } from '../design/icons';
 
 export function PhoneFrame({
   children,
-  clock,
   onAssistant,
   toast,
 }: {
   children: ReactNode;
-  clock: string;
   onAssistant?: () => void;
   toast?: string | null;
 }) {
   return (
     <div
       style={{
-        width: PHONE_WIDTH,
+        width: '100%',
         background: color.screen,
-        borderRadius: radius.phone,
-        border: `8px solid ${color.ink}`,
-        overflow: 'hidden',
-        boxShadow: shadow.phone,
         display: 'flex',
         flexDirection: 'column',
-        minHeight: PHONE_MIN_HEIGHT,
-        maxHeight: '92vh',
+        // Высоту задаёт внешний контейнер: экран заполняет доступное место,
+        // а не выдуманные 800 px из макета.
+        flex: 1,
+        minHeight: 0,
         position: 'relative',
-        flex: 'none',
       }}
     >
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          padding: '12px 22px 0',
-          fontSize: 12,
-          fontWeight: 700,
-          color: color.ink,
-          fontVariantNumeric: 'tabular-nums',
-          flex: 'none',
-        }}
-      >
-        <span>{clock}</span>
-        <span>▮▮▮ 78%</span>
-      </div>
-
       {onAssistant ? (
         <div
           onClick={onAssistant}

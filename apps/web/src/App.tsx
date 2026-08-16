@@ -1,7 +1,9 @@
 import { useEffect } from 'react';
 import { color } from './design/tokens';
 import { PhoneFrame, ScreenBody } from './shell/PhoneFrame';
-import { BottomNav, showsNav, tabsFor } from './shell/navigation';
+import { BottomNav, SideNav, showsNav, tabsFor } from './shell/navigation';
+import { useBreakpoint } from './shell/useBreakpoint';
+import { CONTENT_MAX } from './design/tokens';
 import { useApp, roleGroup } from './store/app';
 import { onAuthEvent } from './api/client';
 import { useQuery } from './api/hooks';
@@ -28,47 +30,77 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [screen]);
 
-  const authScreen = screen === 'login' || screen === 'password';
+  const authScreen = screen === 'login' || screen === 'password' || screen === 'register';
   const tabs = me && !authScreen ? tabsFor(me.role, roleGroup(me.role)) : [];
   const showNav = showsNav(screen);
 
-  const clock = new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+  const viewport = useBreakpoint();
+  /**
+   * Ниже планшета навигация внизу — там её достаёт большой палец.
+   * От планшета и выше она уходит вбок: на широком экране нижняя полоса
+   * отъезжает от глаз и от курсора, а место по краям есть.
+   */
+  const sideNav = viewport !== 'mobile' && showNav && me;
+  const bottomNav = viewport === 'mobile' && showNav && me;
 
   return (
     <div
       style={{
-        minHeight: '100vh',
+        // dvh, а не vh: на телефоне адресная строка скрывается и появляется,
+        // и вычисленные из vh 100 % оказываются выше видимой области.
+        minHeight: '100dvh',
+        width: '100%',
         display: 'flex',
-        gap: 40,
-        alignItems: 'flex-start',
-        justifyContent: 'center',
-        padding: '36px 24px',
         background: color.page,
         fontFamily: 'Manrope, sans-serif',
       }}
     >
-      <PhoneFrame
-        clock={clock}
-        toast={toast}
-        onAssistant={me && !authScreen ? () => go('assistant') : undefined}
-      >
-        {loading ? (
-          <ScreenBody style={{ padding: 20, color: color.muted }}>Загружаем…</ScreenBody>
-        ) : (
-          <ErrorBoundary resetKey={screen} onBack={back}>
-            {renderScreen(screen, params)}
-          </ErrorBoundary>
-        )}
+      {sideNav ? (
+        <SideNav
+          tabs={tabs}
+          current={screen}
+          badges={(badges as unknown as Record<string, number>) ?? {}}
+          onNavigate={(s) => go(s)}
+          collapsed={viewport === 'tablet'}
+        />
+      ) : null}
 
-        {showNav && me ? (
-          <BottomNav
-            tabs={tabs}
-            current={screen}
-            badges={(badges as unknown as Record<string, number>) ?? {}}
-            onNavigate={(s) => go(s)}
-          />
-        ) : null}
-      </PhoneFrame>
+      <div
+        style={{
+          flex: 1,
+          minWidth: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          // Содержимое не растягиваем на всю ширину монитора: строка
+          // длиннее ~1280 px читается хуже, чем короче.
+          maxWidth: CONTENT_MAX,
+          width: '100%',
+          margin: '0 auto',
+          minHeight: '100dvh',
+        }}
+      >
+        <PhoneFrame
+          toast={toast}
+          onAssistant={me && !authScreen ? () => go('assistant') : undefined}
+        >
+          {loading ? (
+            <ScreenBody style={{ padding: 20, color: color.muted }}>Загружаем…</ScreenBody>
+          ) : (
+            <ErrorBoundary resetKey={screen} onBack={back}>
+              {renderScreen(screen, params)}
+            </ErrorBoundary>
+          )}
+
+          {bottomNav ? (
+            <BottomNav
+              tabs={tabs}
+              current={screen}
+              badges={(badges as unknown as Record<string, number>) ?? {}}
+              onNavigate={(s) => go(s)}
+            />
+          ) : null}
+        </PhoneFrame>
+      </div>
     </div>
   );
 }

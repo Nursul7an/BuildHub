@@ -49,7 +49,18 @@ export function LoginScreen() {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        flex: 1,
+        // На телефоне форма занимает всю ширину, на широком экране
+        // растягивать её незачем — поля длиной в монитор набирать неудобно.
+        width: '100%',
+        maxWidth: 400,
+        margin: '0 auto',
+      }}
+    >
       <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '12px 20px 0' }}>
         <div style={{ display: 'flex', background: color.chip, borderRadius: radius.smAlt, padding: 3 }}>
           <div
