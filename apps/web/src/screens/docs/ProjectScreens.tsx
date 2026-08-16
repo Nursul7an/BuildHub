@@ -14,6 +14,8 @@ import { useAction, useQuery } from '../../api/hooks';
 import { api } from '../../api/client';
 import type { DocumentDto, DrawingSetDto, ProtocolDto, RfiDto, SheetDetailDto, SheetDto } from '../../api/types';
 import { useApp } from '../../store/app';
+import { DataState } from '../../design/DataState';
+import { DataRows, type Column } from '../../design/DataRows';
 
 /* ───────────────────────────── PR1 · Марки комплектов ───────────────────────────── */
 
@@ -422,28 +424,51 @@ export function DocumentsScreen() {
 
 export function ActsScreen() {
   const back = useApp((s) => s.back);
-  const { data } = useQuery<DocumentDto[]>('/documents?kind=aosr');
+  const { data, loading, error, reload } = useQuery<DocumentDto[]>('/documents?kind=aosr');
+  const acts = data ?? [];
+
+  const columns: Column<DocumentDto>[] = [
+    {
+      key: 'number',
+      title: 'Номер',
+      primary: true,
+      cell: (d) => <span style={{ ...tabular }}>{d.number}</span>,
+    },
+    { key: 'name', title: 'Работы', cell: (d) => d.name },
+    {
+      key: 'status',
+      title: 'Статус',
+      cell: (d) => (
+        <Badge tone={d.status === 'signed' ? 'green' : d.status === 'pending' ? 'primary' : 'warn'}>
+          {d.status === 'signed' ? 'подписан' : d.status === 'pending' ? 'на подписи' : 'черновик'}
+        </Badge>
+      ),
+    },
+    {
+      key: 'signedAt',
+      title: 'Подписан',
+      align: 'right',
+      cell: (d) => (
+        <span style={{ ...tabular }}>
+          {d.signedAt ? new Date(d.signedAt).toLocaleDateString('ru-RU') : '—'}
+        </span>
+      ),
+    },
+  ];
 
   return (
     <ScreenBody>
       <ScreenHeader title="Мои акты" subtitle="АОСР по вашим процессам" onBack={back} />
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '4px 20px 20px' }}>
-        {(data ?? []).map((d) => (
-          <Card key={d.id} style={{ borderRadius: radius.md, padding: '14px 16px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
-              <div style={{ fontSize: 15, fontWeight: 800, color: color.ink, ...tabular }}>{d.number}</div>
-              <Badge tone={d.status === 'signed' ? 'green' : d.status === 'pending' ? 'primary' : 'warn'}>
-                {d.status === 'signed' ? 'подписан' : d.status === 'pending' ? 'на подписи' : 'черновик'}
-              </Badge>
-            </div>
-            <div style={{ fontSize: 13, color: color.inkMuted, marginTop: 4 }}>{d.name}</div>
-            {d.signedAt ? (
-              <div style={{ fontSize: 11.5, color: color.faint, marginTop: 4 }}>
-                подписан {new Date(d.signedAt).toLocaleDateString('ru-RU')}
-              </div>
-            ) : null}
-          </Card>
-        ))}
+      <div style={{ padding: '4px 20px 20px' }}>
+        <DataState
+          loading={loading}
+          error={error}
+          empty={acts.length === 0}
+          emptyText="Актов пока нет. Они появляются после приёмки скрытых работ."
+          onRetry={reload}
+        >
+          <DataRows items={acts} columns={columns} keyOf={(d) => d.id} />
+        </DataState>
       </div>
     </ScreenBody>
   );

@@ -35,6 +35,8 @@ import type {
   UserDto,
 } from '../../api/types';
 import { useApp } from '../../store/app';
+import { DataState } from '../../design/DataState';
+import { DataRows, type Column } from '../../design/DataRows';
 
 /** Крупные суммы — в миллионах сомов, как их называют вслух. */
 /**
@@ -433,40 +435,67 @@ export function BossInboxScreen() {
 export function BossObjectsScreen() {
   const go = useApp((s) => s.go);
   const me = useApp((s) => s.me);
-  const { data } = useQuery<DigestDto>('/boss/digest');
+  const { data, loading, error, reload } = useQuery<DigestDto>('/boss/digest');
+  const objects = data?.objects ?? [];
+
+  /**
+   * Одно описание на карточку и на таблицу. Вторая строка метрик разная:
+   * директору деньги, главному инженеру — кто отвечает за объект.
+   */
+  const columns: Column<(typeof objects)[number]>[] = [
+    { key: 'name', title: 'Объект', primary: true, cell: (o) => o.name },
+    {
+      key: 'pct',
+      title: 'Готовность',
+      align: 'right',
+      cell: (o) => (
+        <span style={{ ...tabular }}>{o.pctFact.toFixed(1).replace('.', ',')}%</span>
+      ),
+    },
+    {
+      key: 'delta',
+      title: 'График',
+      align: 'right',
+      cell: (o) => (
+        <span style={{ color: deltaColor(o.deltaDays), fontWeight: 800, ...tabular }}>
+          {o.deltaDays === 0 ? 'по графику' : `${o.deltaDays} дн.`}
+        </span>
+      ),
+    },
+    {
+      key: 'econ',
+      title: me?.role === 'gi' ? 'Ответственный' : 'Экономика',
+      cell: (o) =>
+        me?.role === 'gi' ? (
+          (o.responsible ?? 'не назначен')
+        ) : (
+          <span style={{ ...tabular }}>
+            {o.cpi !== null
+              ? `CPI ${cpiLabel(o.cpi)} · прогноз ${mln(o.eac)} из ${mln(o.budget)}`
+              : 'финансы не заведены'}
+          </span>
+        ),
+    },
+  ];
 
   return (
     <ScreenBody>
       <RootHeader title="Объекты" right={<BossHeaderRight />} />
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '8px 20px 20px' }}>
-        {(data?.objects ?? []).map((o) => (
-          <Card
-            key={o.id}
-            onClick={() => go('boss-object', { objectId: o.id })}
-            style={{ borderRadius: radius.md, padding: '14px 16px' }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
-              <div style={{ fontSize: 15.5, fontWeight: 800, color: color.ink }}>{o.name}</div>
-              <div style={{ fontSize: 13, fontWeight: 800, color: deltaColor(o.deltaDays), ...tabular }}>
-                {o.deltaDays === 0 ? 'по графику' : `${o.deltaDays} дн.`}
-              </div>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 8 }}>
-              <ProgressBar pct={o.pctFact} />
-              <div style={{ fontSize: 13, fontWeight: 800, color: color.ink, ...tabular }}>
-                {o.pctFact.toFixed(1).replace('.', ',')}%
-              </div>
-            </div>
-            {/* Вторая строка метрик разная: директору деньги, ГИ — документация. */}
-            <div style={{ fontSize: 12, color: color.muted, marginTop: 5, ...tabular }}>
-              {me?.role === 'gi'
-                ? `${o.responsible ?? 'ответственный не назначен'}`
-                : o.cpi !== null
-                  ? `CPI ${cpiLabel(o.cpi)} · прогноз ${mln(o.eac)} из ${mln(o.budget)}`
-                  : 'финансы не заведены'}
-            </div>
-          </Card>
-        ))}
+      <div style={{ padding: '8px 20px 20px' }}>
+        <DataState
+          loading={loading}
+          error={error}
+          empty={objects.length === 0}
+          emptyText="Объектов пока нет. Их заводит главный инженер."
+          onRetry={reload}
+        >
+          <DataRows
+            items={objects}
+            columns={columns}
+            keyOf={(o) => o.id}
+            onRowClick={(o) => go('boss-object', { objectId: o.id })}
+          />
+        </DataState>
       </div>
     </ScreenBody>
   );

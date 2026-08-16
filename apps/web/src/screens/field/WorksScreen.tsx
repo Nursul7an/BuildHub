@@ -23,6 +23,7 @@ import { ScreenBody } from '../../shell/PhoneFrame';
 import { useQuery } from '../../api/hooks';
 import type { ProcessSummary } from '../../api/types';
 import { useApp } from '../../store/app';
+import { DataState } from '../../design/DataState';
 import { dueStyle, dueText } from './TodayScreen';
 
 type Grouping = 'floor' | 'section';
@@ -46,7 +47,7 @@ export function WorksScreen() {
   const go = useApp((s) => s.go);
   const [grouping, setGrouping] = useState<Grouping>('floor');
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
-  const { data, loading } = useQuery<ProcessSummary[]>('/works?mine=1');
+  const { data, loading, error, reload } = useQuery<ProcessSummary[]>('/works?mine=1');
 
   const groups = useMemo<Group[]>(() => {
     if (!data) return [];
@@ -81,7 +82,6 @@ export function WorksScreen() {
     return [...byKey.values()].sort((a, b) => a.label.localeCompare(b.label, 'ru'));
   }, [data, grouping]);
 
-  if (loading) return <ScreenBody style={{ padding: 20, color: color.muted }}>Загружаем работы…</ScreenBody>;
 
   const count = data?.length ?? 0;
 
@@ -121,6 +121,13 @@ export function WorksScreen() {
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '12px 20px 20px' }}>
+        <DataState
+          loading={loading}
+          error={error}
+          empty={groups.length === 0}
+          emptyText="ПТО пока не назначил вам работы. Как только назначат — они появятся здесь и на «Сегодня»."
+          onRetry={reload}
+        >
         {groups.map((group) => (
           <div key={group.key} style={{ display: 'contents' }}>
             <div
@@ -259,16 +266,7 @@ export function WorksScreen() {
           </div>
         ))}
 
-        {groups.length === 0 ? (
-          <Card style={{ textAlign: 'center', padding: 24 }}>
-            <div style={{ fontSize: 14.5, fontWeight: 800, color: color.ink }}>
-              ПТО пока не назначил вам работы
-            </div>
-            <div style={{ fontSize: 13, color: color.muted, marginTop: 6 }}>
-              Как только назначат — они появятся здесь и на «Сегодня».
-            </div>
-          </Card>
-        ) : null}
+        </DataState>
       </div>
     </ScreenBody>
   );

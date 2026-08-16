@@ -24,6 +24,11 @@ style.textContent = `
   a { color: #3D4FDE; text-decoration: none; }
   a:hover { color: #2A3AB8; }
   input, textarea, button { font-family: inherit; }
+  /* Пульсация скелетона загрузки. */
+  @keyframes bh-pulse { 0%, 100% { opacity: 1 } 50% { opacity: 0.45 } }
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  }
   ::-webkit-scrollbar { width: 6px; height: 6px; }
   ::-webkit-scrollbar-thumb { background: #D8DAE3; border-radius: 3px; }
 `;
