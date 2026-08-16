@@ -1,0 +1,37 @@
+# Фронтенд и раздающий его Caddy одним образом.
+#
+# Контекст сборки — корень репозитория:
+#   docker build -f deploy/Dockerfile.web -t build-hub-web .
+
+FROM node:20-slim AS build
+
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+COPY packages/shared/package.json packages/shared/
+COPY apps/web/package.json apps/web/
+COPY apps/server/package.json apps/server/
+
+# Только рабочие пространства фронтенда: серверные зависимости здесь ни к
+# чему. --include=dev указан явно — при NODE_ENV=production npm молча
+# пропускает отладочные пакеты, а сборка стоит на них.
+RUN npm ci --include=dev \
+    --workspace=@build-hub/web \
+    --workspace=@build-hub/shared \
+    --include-workspace-root
+
+COPY packages/shared packages/shared
+COPY apps/web apps/web
+
+# VITE_API_BASE_URL намеренно не задаётся: фронтенд обращается к /api на
+# своём же адресе, а Caddy переадресует это на сервер. Один домен —
+# ради этого вся схема и выбрана.
+RUN npm run build --workspace=@build-hub/shared \
+    && npm run build --workspace=@build-hub/web
+
+FROM caddy:2-alpine AS runtime
+
+COPY --from=build /app/apps/web/dist /srv
+COPY deploy/Caddyfile /etc/caddy/Caddyfile
+
+EXPOSE 80 443

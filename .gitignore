@@ -20,3 +20,7 @@ apps/server/test.db-journal
 
 # Локальное файловое хранилище
 apps/server/var/
+
+# Развёртывание на своём сервере: секреты и копии
+deploy/.env
+deploy/backups/

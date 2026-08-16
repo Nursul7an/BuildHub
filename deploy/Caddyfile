@@ -1,0 +1,48 @@
+# Один домен на фронтенд и API.
+#
+# Ради этого всё и затевалось: браузер видит одно происхождение, поэтому
+# cookie с refresh-токеном остаётся своей, SameSite=Lax работает без
+# оговорок, а CORS не нужен вовсе — межсайтовых запросов просто нет.
+#
+# Сертификат Caddy получает и продлевает сам. HTTPS здесь не украшение:
+# без него браузер не отдаст ни камеру, ни геолокацию, а без фотографии
+# с геометкой отчёт по ТЗ не сдать.
+
+{$DOMAIN} {
+	encode zstd gzip
+
+	# API уходит на сервер во внутренней сети compose. Наружу порт 4000
+	# не выставлен — снаружи в него не постучаться.
+	handle /api/* {
+		reverse_proxy server:4000 {
+			header_up X-Forwarded-Proto {scheme}
+			# Загрузка фотографии в 10 МБ по мобильной связи идёт долго;
+			# ответа сервера ждём дольше обычного.
+			transport http {
+				read_timeout 300s
+				write_timeout 300s
+			}
+		}
+	}
+
+	# Остальное — собранный фронтенд. Пути приложения обслуживаются
+	# одним index.html: маршрутизация живёт в браузере.
+	handle {
+		root * /srv
+		try_files {path} /index.html
+		file_server
+
+		# Файлы со случайным именем в названии кешируются надолго,
+		# сам index.html — никогда, иначе выкладка не доедет до людей.
+		@hashed path /assets/*
+		header @hashed Cache-Control "public, max-age=31536000, immutable"
+		header /index.html Cache-Control "no-cache"
+	}
+
+	header {
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy same-origin
+		-Server
+	}
+}

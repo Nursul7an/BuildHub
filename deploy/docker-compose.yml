@@ -1,0 +1,82 @@
+# Развёртывание на своём сервере (Hetzner и любой другой).
+#
+#   cd deploy && cp .env.example .env && ${EDITOR} .env
+#   docker compose up -d --build
+#
+# Три службы: база, сервер, раздача фронтенда с TLS. Наружу смотрит
+# только последняя — у базы и сервера портов на хосте нет.
+
+name: build-hub
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-buildhub}
+      POSTGRES_USER: ${POSTGRES_USER:-buildhub}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?нужен пароль базы}
+      # Русские названия и сортировка: фамилии в списках должны идти
+      # по алфавиту, а не по кодам символов.
+      LANG: ru_RU.utf8
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./backups:/backups
+    healthcheck:
+      # Сервер не должен стартовать раньше базы: миграции при запуске
+      # упрутся в отказ соединения и контейнер уйдёт в перезапуск.
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-buildhub} -d ${POSTGRES_DB:-buildhub}']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  server:
+    build:
+      context: ..
+      dockerfile: apps/server/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER:-buildhub}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-buildhub}?schema=public
+      JWT_SECRET: ${JWT_SECRET:?нужен секрет подписи токенов}
+      FILE_SIGNING_SECRET: ${FILE_SIGNING_SECRET:-}
+      METRICS_TOKEN: ${METRICS_TOKEN:-}
+      FILE_STORAGE_DIR: /app/var/uploads
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      # WEB_ORIGIN и REFRESH_COOKIE_SAMESITE не заданы намеренно:
+      # фронтенд и API на одном домене, межсайтовых запросов нет.
+    volumes:
+      # Фотографии отчётов — доказательная база по скрытым работам.
+      # Том обязателен: без него они живут до первого перезапуска.
+      - uploads:/app/var/uploads
+    # Портов на хосте нет: сервер доступен только Caddy по внутренней сети.
+    expose:
+      - '4000'
+
+  web:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.web
+    restart: unless-stopped
+    depends_on:
+      - server
+    environment:
+      DOMAIN: ${DOMAIN:?нужен домен, иначе Caddy не выпустит сертификат}
+    ports:
+      - '80:80'
+      - '443:443'
+      - '443:443/udp'
+    volumes:
+      # Выданные сертификаты переживают пересборку: Let's Encrypt
+      # ограничивает частоту выпуска, и терять их нельзя.
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  pgdata:
+  uploads:
+  caddy_data:
+  caddy_config:
