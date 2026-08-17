@@ -9,6 +9,7 @@ import { useState } from 'react';
 import { color, radius } from '../../design/tokens';
 import {
   Badge,
+  BottomSheet,
   Card,
   Chip,
   PrimaryButton,
@@ -26,6 +27,7 @@ import { useApp } from '../../store/app';
 import { DataState } from '../../design/DataState';
 import { DataRows, type Column } from '../../design/DataRows';
 import { ZAYAVKA_STATUS } from '../field/TodayScreen';
+import { can } from '@build-hub/shared';
 
 /* ───────────────────────────── M1 · Сегодня ───────────────────────────── */
 
@@ -313,8 +315,60 @@ export function MaterialsZayavkiScreen() {
 export function StockScreen() {
   const go = useApp((s) => s.go);
   const me = useApp((s) => s.me);
+  const notify = useApp((s) => s.notify);
   const { data, loading, error, reload } = useQuery<StockDto[]>('/stock');
   const stock = data ?? [];
+
+  /**
+   * Остатки ведутся здесь, а не в 1С, поэтому расхождение с реальным
+   * складом исправляет тот, кто на этом складе стоит. Право проверяем
+   * до показа: у снабжения его нет, и предлагать ему нечего.
+   */
+  const mayAdjust = me ? can(me.role, 'material.adjust') : false;
+
+  const [adjusting, setAdjusting] = useState<StockDto | null>(null);
+  const [countedQty, setCountedQty] = useState('');
+  const [reason, setReason] = useState('');
+  const [passport, setPassport] = useState(false);
+
+  function openAdjust(item: StockDto) {
+    setAdjusting(item);
+    // Подставляем учётное количество: чаще всего пересчёт его подтверждает,
+    // а правится одна цифра.
+    setCountedQty(String(item.qty).replace('.', ','));
+    setReason('');
+    setPassport(item.hasPassport);
+  }
+
+  const save = useAction(async () => {
+    if (!adjusting) return;
+    const res = await api.post<{ before: number; after: number }>('/stock/adjust', {
+      objectId: adjusting.objectId,
+      catalogItemId: adjusting.catalogItemId,
+      qty: Number(countedQty.replace(',', '.')),
+      reason: reason.trim(),
+      ...(passport === adjusting.hasPassport ? {} : { hasPassport: passport }),
+    });
+    const delta = res.after - res.before;
+    notify(
+      `${adjusting.name}: ${formatNumber(res.after, res.after % 1 ? 1 : 0)} ${adjusting.unit}` +
+        ` · ${delta > 0 ? '+' : ''}${formatNumber(delta, Math.abs(delta) % 1 ? 1 : 0)}`,
+    );
+    setAdjusting(null);
+    reload();
+  });
+
+  const parsedQty = Number(countedQty.replace(',', '.'));
+  /** Что мешает сохранить — пишем текстом, а не гасим кнопку молча. */
+  const blocker = !countedQty.trim()
+    ? 'Укажите пересчитанное количество'
+    : !Number.isFinite(parsedQty) || parsedQty < 0
+      ? 'Количество не может быть отрицательным'
+      : reason.trim().length < 5
+        ? 'Причина обязательна — её увидят в журнале'
+        : adjusting && parsedQty === adjusting.qty && passport === adjusting.hasPassport
+          ? 'Количество не изменилось'
+          : null;
 
   /** Завсклад сверяет позиции между собой: остаток против спецификации. */
   const columns: Column<StockDto>[] = [
@@ -357,7 +411,14 @@ export function StockScreen() {
 
   return (
     <ScreenBody>
-      <RootHeader title="Склад" subtitle={`${stock.length} позиций на объекте`} />
+      <RootHeader
+        title="Склад"
+        subtitle={
+          mayAdjust
+            ? `${stock.length} позиций · нажмите позицию, чтобы внести пересчёт`
+            : `${stock.length} позиций на объекте`
+        }
+      />
       <div style={{ padding: '8px 20px 20px' }}>
         <DataState
           loading={loading}
@@ -366,9 +427,107 @@ export function StockScreen() {
           emptyText="На складе объекта пусто"
           onRetry={reload}
         >
-          <DataRows items={stock} columns={columns} keyOf={(s) => s.id} />
+          <DataRows
+            items={stock}
+            columns={columns}
+            keyOf={(s) => s.id}
+            onRowClick={mayAdjust ? openAdjust : undefined}
+          />
         </DataState>
       </div>
+
+      {adjusting ? (
+        <BottomSheet onClose={() => setAdjusting(null)}>
+          <div style={{ fontSize: 16, fontWeight: 800, color: color.ink }}>
+            Пересчёт · {adjusting.name}
+          </div>
+          <div style={{ fontSize: 12.5, color: color.muted, marginTop: 4, ...tabular }}>
+            по учёту {formatNumber(adjusting.qty, adjusting.qty % 1 ? 1 : 0)} {adjusting.unit}
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 14 }}>
+            <input
+              value={countedQty}
+              onChange={(e) => setCountedQty(e.target.value)}
+              inputMode="decimal"
+              style={{
+                width: 120,
+                boxSizing: 'border-box',
+                border: `1.5px solid ${color.border}`,
+                outline: 'none',
+                background: color.screen,
+                borderRadius: radius.xs,
+                padding: '12px 14px',
+                fontSize: 18,
+                fontWeight: 800,
+                textAlign: 'center',
+                color: color.ink,
+                fontFamily: 'inherit',
+                ...tabular,
+              }}
+            />
+            <div style={{ fontSize: 15, color: color.muted }}>{adjusting.unit} по факту</div>
+          </div>
+
+          <input
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder="Причина — её увидят в журнале"
+            style={{
+              width: '100%',
+              boxSizing: 'border-box',
+              border: `1.5px solid ${color.border}`,
+              outline: 'none',
+              background: color.screen,
+              borderRadius: radius.xs,
+              padding: '12px 14px',
+              fontSize: 15,
+              color: color.ink,
+              fontFamily: 'inherit',
+              marginTop: 10,
+            }}
+          />
+
+          {/* Партия без паспорта останавливает работы — снять метку вправе
+              тот же человек, что стоит на складе. */}
+          <div
+            onClick={() => setPassport((v) => !v)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              marginTop: 12,
+              minHeight: 48,
+              cursor: 'pointer',
+              fontSize: 14,
+              fontWeight: 700,
+              color: passport ? color.greenDeep : color.warnText,
+            }}
+          >
+            <span style={{ fontSize: 18 }}>{passport ? '☑' : '☐'}</span>
+            Паспорт партии получен
+          </div>
+
+          {blocker || save.error ? (
+            <div
+              style={{
+                marginTop: 8,
+                fontSize: 12.5,
+                fontWeight: 800,
+                color: save.error ? color.danger : color.warnText,
+              }}
+            >
+              {save.error ?? blocker}
+            </div>
+          ) : null}
+
+          <div style={{ marginTop: 14 }}>
+            <PrimaryButton onClick={() => save.run()} disabled={Boolean(blocker) || save.busy}>
+              {save.busy ? 'Сохраняем…' : 'Внести пересчёт'}
+            </PrimaryButton>
+          </div>
+        </BottomSheet>
+      ) : null}
     </ScreenBody>
   );
 }
