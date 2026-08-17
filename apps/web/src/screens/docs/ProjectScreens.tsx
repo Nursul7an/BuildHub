@@ -119,7 +119,8 @@ export function ProjectSetScreen() {
 export function CurrentSheetsScreen() {
   const back = useApp((s) => s.back);
   const go = useApp((s) => s.go);
-  const { data } = useQuery<SheetDto[]>('/v1/sheets/active');
+  const { data, loading, error, reload } = useQuery<SheetDto[]>('/v1/sheets/active');
+  const sheets = data ?? [];
 
   return (
     <ScreenBody>
@@ -129,9 +130,17 @@ export function CurrentSheetsScreen() {
         onBack={back}
       />
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '4px 20px 20px' }}>
-        {(data ?? []).map((sheet) => (
-          <SheetRow key={sheet.id} sheet={sheet} onOpen={() => go('project-sheet', { sheetId: sheet.id })} />
-        ))}
+        <DataState
+          loading={loading}
+          error={error}
+          empty={sheets.length === 0}
+          emptyText="Действующих листов нет"
+          onRetry={reload}
+        >
+  {(data ?? []).map((sheet) => (
+            <SheetRow key={sheet.id} sheet={sheet} onOpen={() => go('project-sheet', { sheetId: sheet.id })} />
+          ))}
+        </DataState>
       </div>
     </ScreenBody>
   );
@@ -270,7 +279,8 @@ export function RfiScreen() {
   const me = useApp((s) => s.me);
   const [question, setQuestion] = useState('');
 
-  const { data, reload } = useQuery<RfiDto[]>('/rfi');
+  const { data, loading, error, reload } = useQuery<RfiDto[]>('/rfi');
+  const rfis = data ?? [];
 
   const create = useAction(async () => {
     if (!me?.objectId) return;
@@ -322,36 +332,44 @@ export function RfiScreen() {
 
       <SectionLabel style={{ padding: '12px 20px 6px' }}>ОТКРЫТЫЕ ЗАПРОСЫ</SectionLabel>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '0 20px 20px' }}>
-        {(data ?? []).map((r) => (
-          <Card key={r.id} style={{ borderRadius: radius.md, padding: '14px 16px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
-              <div style={{ fontSize: 14, fontWeight: 800, color: color.primary, ...tabular }}>{r.number}</div>
-              <Badge tone={r.overdue ? 'warn' : r.status === 'answered' ? 'green' : 'neutral'}>
-                {r.overdue ? 'просрочен ответ' : r.status === 'answered' ? 'есть ответ' : 'ждём ответ'}
-              </Badge>
-            </div>
-            <div style={{ fontSize: 13, color: color.ink, marginTop: 5, lineHeight: 1.45 }}>{r.question}</div>
-            {r.answer ? (
-              <div
-                style={{
-                  marginTop: 8,
-                  background: color.greenBg,
-                  borderRadius: radius.xs,
-                  padding: '9px 11px',
-                  fontSize: 12.5,
-                  color: color.greenDeep,
-                  lineHeight: 1.45,
-                }}
-              >
-                {r.answer}
+        <DataState
+          loading={loading}
+          error={error}
+          empty={rfis.length === 0}
+          emptyText="Запросов проектировщику пока нет"
+          onRetry={reload}
+        >
+  {(data ?? []).map((r) => (
+            <Card key={r.id} style={{ borderRadius: radius.md, padding: '14px 16px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+                <div style={{ fontSize: 14, fontWeight: 800, color: color.primary, ...tabular }}>{r.number}</div>
+                <Badge tone={r.overdue ? 'warn' : r.status === 'answered' ? 'green' : 'neutral'}>
+                  {r.overdue ? 'просрочен ответ' : r.status === 'answered' ? 'есть ответ' : 'ждём ответ'}
+                </Badge>
               </div>
-            ) : null}
-            <div style={{ fontSize: 11.5, color: color.faint, marginTop: 6 }}>
-              {r.author} · {new Date(r.createdAt).toLocaleDateString('ru-RU')}
-              {r.dueAt ? ` · ответ до ${new Date(r.dueAt).toLocaleDateString('ru-RU')}` : ''}
-            </div>
-          </Card>
-        ))}
+              <div style={{ fontSize: 13, color: color.ink, marginTop: 5, lineHeight: 1.45 }}>{r.question}</div>
+              {r.answer ? (
+                <div
+                  style={{
+                    marginTop: 8,
+                    background: color.greenBg,
+                    borderRadius: radius.xs,
+                    padding: '9px 11px',
+                    fontSize: 12.5,
+                    color: color.greenDeep,
+                    lineHeight: 1.45,
+                  }}
+                >
+                  {r.answer}
+                </div>
+              ) : null}
+              <div style={{ fontSize: 11.5, color: color.faint, marginTop: 6 }}>
+                {r.author} · {new Date(r.createdAt).toLocaleDateString('ru-RU')}
+                {r.dueAt ? ` · ответ до ${new Date(r.dueAt).toLocaleDateString('ru-RU')}` : ''}
+              </div>
+            </Card>
+          ))}
+        </DataState>
       </div>
     </ScreenBody>
   );

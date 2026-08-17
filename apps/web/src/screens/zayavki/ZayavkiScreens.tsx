@@ -23,6 +23,7 @@ import { useAction, useQuery } from '../../api/hooks';
 import { api } from '../../api/client';
 import type { CatalogItemDto, ProcessDetail, StockDto, ZayavkaDto } from '../../api/types';
 import { useApp } from '../../store/app';
+import { DataState } from '../../design/DataState';
 import { ZAYAVKA_STATUS } from '../field/TodayScreen';
 
 /** Порядок статусов в таймлайне карточки. */
@@ -50,7 +51,7 @@ export function ZayavkiScreen() {
   const go = useApp((s) => s.go);
   const me = useApp((s) => s.me);
   const scope = me && ['snab', 'sklad', 'tech'].includes(me.role) ? 'department' : 'mine';
-  const { data, loading } = useQuery<ZayavkaDto[]>(`/zayavki?scope=${scope}`);
+  const { data, loading, error, reload } = useQuery<ZayavkaDto[]>(`/zayavki?scope=${scope}`);
   const [showClosed, setShowClosed] = useState(false);
 
   const { open, closed } = useMemo(() => {
@@ -90,48 +91,55 @@ export function ZayavkiScreen() {
         }
       />
 
-      {open.length === 0 && closed.length === 0 ? (
-        <EmptyState
-          icon="📦"
-          title="Заявок пока нет"
-          text="Заявка создаётся из карточки процесса, когда нужен материал или техника."
-          action={{ label: 'Создать заявку', onClick: () => go('zayavka-new') }}
-        />
-      ) : null}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '8px 20px 20px' }}>
-        {open.map((z) => (
-          <ZayavkaRow key={z.id} zayavka={z} onOpen={() => go('zayavka', { zayavkaId: z.id })} />
-        ))}
+<DataState
+          loading={loading}
+          error={error}
+          empty={open.length === 0 && closed.length === 0}
+          emptyNode={
+            <EmptyState
+              icon="📦"
+              title="Заявок пока нет"
+              text="Заявка создаётся из карточки процесса, когда нужен материал или техника."
+              action={{ label: 'Создать заявку', onClick: () => go('zayavka-new') }}
+            />
+          }
+          onRetry={reload}
+        >
+          {open.map((z) => (
+            <ZayavkaRow key={z.id} zayavka={z} onOpen={() => go('zayavka', { zayavkaId: z.id })} />
+          ))}
 
-        {closed.length > 0 ? (
-          <div
-            onClick={() => setShowClosed((v) => !v)}
-            style={{
-              cursor: 'pointer',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              background: color.surface,
-              borderRadius: radius.sm,
-              padding: '12px 16px',
-              boxShadow: '0 1px 4px rgba(20,22,31,0.05)',
-              minHeight: 48,
-              marginTop: 4,
-            }}
-          >
-            <SectionLabel tone="green" style={{ fontSize: 12, fontWeight: 800 }}>
-              ЗАКРЫТЫЕ · {closed.length}
-            </SectionLabel>
-            <div style={{ color: color.faint, fontSize: 12 }}>{showClosed ? '▾' : '▸'}</div>
-          </div>
-        ) : null}
+          {closed.length > 0 ? (
+            <div
+              onClick={() => setShowClosed((v) => !v)}
+              style={{
+                cursor: 'pointer',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                background: color.surface,
+                borderRadius: radius.sm,
+                padding: '12px 16px',
+                boxShadow: '0 1px 4px rgba(20,22,31,0.05)',
+                minHeight: 48,
+                marginTop: 4,
+              }}
+            >
+              <SectionLabel tone="green" style={{ fontSize: 12, fontWeight: 800 }}>
+                ЗАКРЫТЫЕ · {closed.length}
+              </SectionLabel>
+              <div style={{ color: color.faint, fontSize: 12 }}>{showClosed ? '▾' : '▸'}</div>
+            </div>
+          ) : null}
 
-        {showClosed
-          ? closed.map((z) => (
-              <ZayavkaRow key={z.id} zayavka={z} onOpen={() => go('zayavka', { zayavkaId: z.id })} />
-            ))
-          : null}
+          {showClosed
+            ? closed.map((z) => (
+                <ZayavkaRow key={z.id} zayavka={z} onOpen={() => go('zayavka', { zayavkaId: z.id })} />
+              ))
+            : null}
+        </DataState>
       </div>
     </ScreenBody>
   );

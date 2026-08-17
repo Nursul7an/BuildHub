@@ -1148,7 +1148,7 @@ export function BossKpiScreen() {
 export function BossLimitsScreen() {
   const back = useApp((s) => s.back);
   const notify = useApp((s) => s.notify);
-  const { data, reload } = useQuery<{ id: string; role: string; scope: string; limit: number }[]>(
+  const { data, loading, error, reload } = useQuery<{ id: string; role: string; scope: string; limit: number }[]>(
     '/boss/limits',
   );
   const [edits, setEdits] = useState<Record<string, string>>({});
@@ -1173,55 +1173,63 @@ export function BossLimitsScreen() {
         отчёт.
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '12px 20px 20px' }}>
-        {(data ?? []).map((l) => {
-          const key = `${l.role}:${l.scope}`;
-          const value = edits[key] ?? String(l.limit);
-          return (
-            <Card key={l.id} style={{ borderRadius: radius.md, padding: '14px 16px' }}>
-              <div style={{ fontSize: 14.5, fontWeight: 800, color: color.ink }}>
-                {l.role === 'gi' ? 'Главный инженер' : l.role === 'pto' ? 'ПТО' : 'Снабжение'} ·{' '}
-                {SCOPE_LABEL[l.scope] ?? l.scope}
-              </div>
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 10 }}>
-                <input
-                  value={value}
-                  onChange={(e) => setEdits((s) => ({ ...s, [key]: e.target.value }))}
-                  style={{
-                    width: 92,
-                    boxSizing: 'border-box',
-                    border: 'none',
-                    outline: 'none',
-                    background: color.screen,
-                    borderRadius: radius.xs,
-                    padding: '10px 12px',
-                    fontSize: 16,
-                    fontWeight: 800,
-                    textAlign: 'center',
-                    color: color.ink,
-                    fontFamily: 'inherit',
-                    ...tabular,
-                  }}
-                />
-                <div style={{ fontSize: 14, color: color.muted }}>млн сом</div>
-                <div
-                  onClick={() => save.run(l.role, l.scope, Number(value.replace(',', '.')) || 0)}
-                  style={{
-                    cursor: 'pointer',
-                    marginLeft: 'auto',
-                    background: color.primary,
-                    color: '#fff',
-                    borderRadius: radius.xs,
-                    padding: '10px 14px',
-                    fontSize: 13,
-                    fontWeight: 800,
-                  }}
-                >
-                  Сохранить
+        <DataState
+          loading={loading}
+          error={error}
+          empty={(data ?? []).length === 0}
+          emptyText="Лимиты не заданы"
+          onRetry={reload}
+        >
+  {(data ?? []).map((l) => {
+            const key = `${l.role}:${l.scope}`;
+            const value = edits[key] ?? String(l.limit);
+            return (
+              <Card key={l.id} style={{ borderRadius: radius.md, padding: '14px 16px' }}>
+                <div style={{ fontSize: 14.5, fontWeight: 800, color: color.ink }}>
+                  {l.role === 'gi' ? 'Главный инженер' : l.role === 'pto' ? 'ПТО' : 'Снабжение'} ·{' '}
+                  {SCOPE_LABEL[l.scope] ?? l.scope}
                 </div>
-              </div>
-            </Card>
-          );
-        })}
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 10 }}>
+                  <input
+                    value={value}
+                    onChange={(e) => setEdits((s) => ({ ...s, [key]: e.target.value }))}
+                    style={{
+                      width: 92,
+                      boxSizing: 'border-box',
+                      border: 'none',
+                      outline: 'none',
+                      background: color.screen,
+                      borderRadius: radius.xs,
+                      padding: '10px 12px',
+                      fontSize: 16,
+                      fontWeight: 800,
+                      textAlign: 'center',
+                      color: color.ink,
+                      fontFamily: 'inherit',
+                      ...tabular,
+                    }}
+                  />
+                  <div style={{ fontSize: 14, color: color.muted }}>млн сом</div>
+                  <div
+                    onClick={() => save.run(l.role, l.scope, Number(value.replace(',', '.')) || 0)}
+                    style={{
+                      cursor: 'pointer',
+                      marginLeft: 'auto',
+                      background: color.primary,
+                      color: '#fff',
+                      borderRadius: radius.xs,
+                      padding: '10px 14px',
+                      fontSize: 13,
+                      fontWeight: 800,
+                    }}
+                  >
+                    Сохранить
+                  </div>
+                </div>
+              </Card>
+            );
+          })}
+        </DataState>
       </div>
     </ScreenBody>
   );

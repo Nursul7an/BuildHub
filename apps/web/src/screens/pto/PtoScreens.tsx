@@ -32,6 +32,8 @@ import type {
 } from '../../api/types';
 import { ROLE_TITLE, ROLES, type Role } from '@build-hub/shared';
 import { useApp } from '../../store/app';
+import { DataState } from '../../design/DataState';
+import { DataRows, type Column } from '../../design/DataRows';
 
 /* ───────────────────────────── T1 · Сегодня ───────────────────────────── */
 
@@ -144,46 +146,66 @@ export function PtoTodayScreen() {
 
 export function PtoQueueScreen() {
   const go = useApp((s) => s.go);
-  const { data: queue, loading } = useQuery<ReportDto[]>('/reports/queue');
+  const { data: queue, loading, error, reload } = useQuery<ReportDto[]>('/reports/queue');
+  const reports = queue ?? [];
 
-  if (loading) return <ScreenBody style={{ padding: 20, color: color.muted }}>Загружаем очередь…</ScreenBody>;
+  /**
+   * Очередь приёмки — тот самый случай, ради которого таблица и нужна:
+   * ПТО сравнивает отчёты между собой, а не читает каждый по отдельности.
+   */
+  const columns: Column<ReportDto>[] = [
+    { key: 'author', title: 'Прораб', primary: true, cell: (r) => r.authorName },
+    { key: 'object', title: 'Объект', cell: (r) => r.objectName },
+    {
+      key: 'date',
+      title: 'Дата',
+      align: 'right',
+      cell: (r) => <span style={{ ...tabular }}>{new Date(r.date).toLocaleDateString('ru-RU')}</span>,
+    },
+    {
+      key: 'entries',
+      title: 'Записей',
+      align: 'right',
+      cell: (r) => <span style={{ ...tabular }}>{r.entries.length}</span>,
+    },
+    {
+      key: 'photos',
+      title: 'Фото',
+      align: 'right',
+      cell: (r) => (
+        <span style={{ ...tabular }}>{r.entries.reduce((n, e) => n + e.photos.length, 0)}</span>
+      ),
+    },
+    {
+      key: 'fill',
+      title: 'Заполнял',
+      align: 'right',
+      desktopOnly: true,
+      cell: (r) => (
+        <span style={{ ...tabular }}>{r.fillSeconds ? `${Math.round(r.fillSeconds / 60)} мин` : '—'}</span>
+      ),
+    },
+  ];
 
   return (
     <ScreenBody>
-      <RootHeader title="Приёмка" subtitle={`${(queue ?? []).length} отчётов ждут проверки`} />
+      <RootHeader title="Приёмка" subtitle={`${reports.length} отчётов ждут проверки`} />
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '8px 20px 20px' }}>
-        {(queue ?? []).map((r) => (
-          <Card
-            key={r.id}
-            onClick={() => go('pto-check', { reportId: r.id })}
-            style={{ borderRadius: radius.md, padding: '14px 16px' }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
-              <div style={{ fontSize: 15, fontWeight: 800, color: color.ink }}>{r.authorName}</div>
-              <div style={{ fontSize: 12, color: color.muted, ...tabular }}>
-                {new Date(r.date).toLocaleDateString('ru-RU')}
-              </div>
-            </div>
-            <div style={{ fontSize: 12.5, color: color.muted, marginTop: 3 }}>
-              {r.objectName} · {r.entries.length} записей
-              {r.fillSeconds ? ` · заполнял ${Math.round(r.fillSeconds / 60)} мин` : ''}
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 3, marginTop: 8 }}>
-              {r.entries.slice(0, 3).map((e) => (
-                <div key={e.id} style={{ fontSize: 12.5, color: color.inkMuted, ...tabular }}>
-                  {e.title} · +{formatNumber(e.volume, e.unit === 'т' ? 2 : 0)} {e.unit} · {e.photos.length} фото
-                </div>
-              ))}
-            </div>
-          </Card>
-        ))}
-
-        {(queue ?? []).length === 0 ? (
-          <div style={{ padding: 24, textAlign: 'center', color: color.muted, fontSize: 13.5 }}>
-            Очередь пуста — все отчёты проверены
-          </div>
-        ) : null}
+      <div style={{ padding: '8px 20px 20px' }}>
+        <DataState
+          loading={loading}
+          error={error}
+          empty={reports.length === 0}
+          emptyText="Очередь пуста — все отчёты проверены"
+          onRetry={reload}
+        >
+          <DataRows
+            items={reports}
+            columns={columns}
+            keyOf={(r) => r.id}
+            onRowClick={(r) => go('pto-check', { reportId: r.id })}
+          />
+        </DataState>
       </div>
     </ScreenBody>
   );
@@ -504,42 +526,69 @@ export function PtoCheckScreen() {
 
 export function PtoObjectsScreen() {
   const go = useApp((s) => s.go);
-  const { data } = useQuery<ObjectDto[]>('/objects');
+  const { data, loading, error, reload } = useQuery<ObjectDto[]>('/objects');
+  const objects = data ?? [];
+
+  const columns: Column<ObjectDto>[] = [
+    { key: 'name', title: 'Объект', primary: true, cell: (o) => o.name },
+    {
+      key: 'delta',
+      title: 'График',
+      align: 'right',
+      cell: (o) => (
+        <span
+          style={{
+            fontWeight: 800,
+            ...tabular,
+            color: o.deltaDays < -5 ? color.danger : o.deltaDays < 0 ? color.warnStrong : color.greenDeep,
+          }}
+        >
+          {o.deltaDays === 0 ? 'по графику' : `${o.deltaDays} дн.`}
+        </span>
+      ),
+    },
+    {
+      key: 'pct',
+      title: 'План / факт',
+      align: 'right',
+      cell: (o) => (
+        <span style={{ ...tabular }}>
+          {o.pctPlan}% / {o.pctFact.toFixed(1).replace('.', ',')}%
+        </span>
+      ),
+    },
+    {
+      key: 'size',
+      title: 'Состав',
+      desktopOnly: true,
+      cell: (o) => <span style={{ ...tabular }}>{o.blocks.length} бл. · {o.floorsTotal} эт.</span>,
+    },
+    {
+      key: 'resp',
+      title: 'Ответственный',
+      desktopOnly: true,
+      cell: (o) => o.responsible?.fullName ?? '—',
+    },
+  ];
 
   return (
     <ScreenBody>
-      <RootHeader title="Объекты" subtitle={`${data?.length ?? 0} объектов компании`} />
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '8px 20px 20px' }}>
-        {(data ?? []).map((o) => (
-          <Card
-            key={o.id}
-            onClick={() => go('pto-object', { objectId: o.id })}
-            style={{ borderRadius: radius.md, padding: '14px 16px' }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
-              <div style={{ fontSize: 15.5, fontWeight: 800, color: color.ink }}>{o.name}</div>
-              <div
-                style={{
-                  fontSize: 13,
-                  fontWeight: 800,
-                  ...tabular,
-                  color: o.deltaDays < -5 ? color.danger : o.deltaDays < 0 ? color.warnStrong : color.greenDeep,
-                }}
-              >
-                {o.deltaDays === 0 ? 'по графику' : `${o.deltaDays} дн.`}
-              </div>
-            </div>
-            <div style={{ fontSize: 12.5, color: color.muted, marginTop: 3, ...tabular }}>
-              {o.blocks.length} блоков · {o.floorsTotal} этажей · план {o.pctPlan}% / факт{' '}
-              {o.pctFact.toFixed(1).replace('.', ',')}%
-            </div>
-            {o.responsible ? (
-              <div style={{ fontSize: 12, color: color.faint, marginTop: 3 }}>
-                ответственный: {o.responsible.fullName}
-              </div>
-            ) : null}
-          </Card>
-        ))}
+      <RootHeader title="Объекты" subtitle={`${objects.length} объектов компании`} />
+      <div style={{ padding: '8px 20px 20px' }}>
+        <DataState
+          loading={loading}
+          error={error}
+          empty={objects.length === 0}
+          emptyText="Объектов пока нет"
+          onRetry={reload}
+        >
+          <DataRows
+            items={objects}
+            columns={columns}
+            keyOf={(o) => o.id}
+            onRowClick={(o) => go('pto-object', { objectId: o.id })}
+          />
+        </DataState>
       </div>
     </ScreenBody>
   );
@@ -767,7 +816,48 @@ export function PtoUsersScreen() {
   const go = useApp((s) => s.go);
   const back = useApp((s) => s.back);
   const notify = useApp((s) => s.notify);
-  const { data, reload } = useQuery<UserDto[]>('/users');
+  const { data, loading, error, reload } = useQuery<UserDto[]>('/users');
+  const users = data ?? [];
+
+  /** ПТО ведёт доступы списком: кто, какая роль, сменил ли пароль. */
+  const columns: Column<UserDto>[] = [
+    { key: 'name', title: 'Сотрудник', primary: true, cell: (u) => u.fullName },
+    { key: 'role', title: 'Роль', cell: (u) => <Badge tone={u.active ? 'neutral' : 'warn'}>{ROLE_TITLE[u.role]}</Badge> },
+    { key: 'login', title: 'Логин', cell: (u) => <span style={{ ...tabular }}>{u.login}</span> },
+    { key: 'phone', title: 'Телефон', desktopOnly: true, cell: (u) => <span style={{ ...tabular }}>{u.phone}</span> },
+    {
+      key: 'scope',
+      title: 'Объект',
+      desktopOnly: true,
+      cell: (u) => [u.objectName, u.blockName, u.scopeLabel].filter(Boolean).join(' · ') || '—',
+    },
+    {
+      key: 'pwd',
+      title: 'Пароль',
+      cell: (u) =>
+        u.mustChangePassword ? (
+          <span style={{ color: color.warnText, fontWeight: 700 }}>⏳ временный</span>
+        ) : (
+          <span style={{ color: color.faint }}>свой</span>
+        ),
+    },
+    {
+      key: 'reset',
+      title: '',
+      align: 'right',
+      cell: (u) => (
+        <span
+          onClick={(e) => {
+            e.stopPropagation();
+            void reset.run(u.id);
+          }}
+          style={{ cursor: 'pointer', fontWeight: 700, color: color.primary, whiteSpace: 'nowrap' }}
+        >
+          Сбросить пароль
+        </span>
+      ),
+    },
+  ];
 
   const reset = useAction(async (id: string) => {
     const res = await api.post<{ temporaryPassword: string }>(`/users/${id}/reset-password`);
@@ -780,7 +870,7 @@ export function PtoUsersScreen() {
     <ScreenBody>
       <ScreenHeader
         title="Пользователи и доступы"
-        subtitle={`${data?.length ?? 0} учётных записей`}
+        subtitle={`${users.length} учётных записей`}
         onBack={back}
         right={
           <div
@@ -802,36 +892,16 @@ export function PtoUsersScreen() {
         }
       />
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '4px 20px 20px' }}>
-        {(data ?? []).map((u) => (
-          <Card key={u.id} style={{ borderRadius: radius.md, padding: '14px 16px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
-              <div style={{ fontSize: 15, fontWeight: 800, color: color.ink, minWidth: 0 }}>{u.fullName}</div>
-              <Badge tone={u.active ? 'neutral' : 'warn'} style={{ flexShrink: 0 }}>
-                {ROLE_TITLE[u.role]}
-              </Badge>
-            </div>
-            <div style={{ fontSize: 12.5, color: color.muted, marginTop: 3, ...tabular }}>
-              {u.login} · {u.phone}
-            </div>
-            {u.objectName ? (
-              <div style={{ fontSize: 12, color: color.faint, marginTop: 2 }}>
-                {[u.objectName, u.blockName, u.scopeLabel].filter(Boolean).join(' · ')}
-              </div>
-            ) : null}
-            {u.mustChangePassword ? (
-              <div style={{ fontSize: 12, fontWeight: 700, color: color.warnText, marginTop: 4 }}>
-                ⏳ ещё не сменил временный пароль
-              </div>
-            ) : null}
-            <div
-              onClick={() => reset.run(u.id)}
-              style={{ cursor: 'pointer', fontSize: 12.5, fontWeight: 700, color: color.primary, marginTop: 8 }}
-            >
-              Сбросить пароль
-            </div>
-          </Card>
-        ))}
+      <div style={{ padding: '4px 20px 20px' }}>
+        <DataState
+          loading={loading}
+          error={error}
+          empty={users.length === 0}
+          emptyText="Учётных записей пока нет"
+          onRetry={reload}
+        >
+          <DataRows items={users} columns={columns} keyOf={(u) => u.id} />
+        </DataState>
       </div>
     </ScreenBody>
   );
@@ -978,7 +1048,8 @@ export function PtoUserNewScreen() {
 export function PtoLabScreen() {
   const back = useApp((s) => s.back);
   const notify = useApp((s) => s.notify);
-  const { data, reload } = useQuery<ProtocolDto[]>('/strength-protocols');
+  const { data, loading, error, reload } = useQuery<ProtocolDto[]>('/strength-protocols');
+  const protocols = data ?? [];
   const [values, setValues] = useState<Record<string, string>>({});
 
   const submit = useAction(async (id: string) => {
@@ -997,52 +1068,60 @@ export function PtoLabScreen() {
     <ScreenBody>
       <ScreenHeader title="Лаборатория" subtitle="протоколы прочности бетона" onBack={back} />
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '4px 20px 20px' }}>
-        {(data ?? []).map((p) => (
-          <Card key={p.id} style={{ borderRadius: radius.md, padding: '14px 16px' }}>
-            <div style={{ fontSize: 14.5, fontWeight: 800, color: color.ink }}>{p.process}</div>
-            <div style={{ fontSize: 12.5, color: color.muted, marginTop: 3, ...tabular }}>
-              залито {new Date(p.pouredAt).toLocaleDateString('ru-RU')} · требуется {p.requiredPct}% ·{' '}
-              {p.labName}
-            </div>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 10 }}>
-              <input
-                value={values[p.id] ?? String(p.strengthPct)}
-                onChange={(e) => setValues((v) => ({ ...v, [p.id]: e.target.value }))}
-                style={{
-                  width: 84,
-                  boxSizing: 'border-box',
-                  border: 'none',
-                  outline: 'none',
-                  background: color.screen,
-                  borderRadius: radius.xs,
-                  padding: '10px 12px',
-                  fontSize: 16,
-                  fontWeight: 800,
-                  textAlign: 'center',
-                  color: color.ink,
-                  fontFamily: 'inherit',
-                  ...tabular,
-                }}
-              />
-              <div style={{ fontSize: 14, color: color.muted }}>%</div>
-              <div
-                onClick={() => submit.run(p.id)}
-                style={{
-                  cursor: 'pointer',
-                  marginLeft: 'auto',
-                  background: color.primary,
-                  color: '#fff',
-                  borderRadius: radius.xs,
-                  padding: '10px 14px',
-                  fontSize: 13,
-                  fontWeight: 800,
-                }}
-              >
-                Внести
+        <DataState
+          loading={loading}
+          error={error}
+          empty={protocols.length === 0}
+          emptyText="Протоколов прочности пока нет"
+          onRetry={reload}
+        >
+  {(data ?? []).map((p) => (
+            <Card key={p.id} style={{ borderRadius: radius.md, padding: '14px 16px' }}>
+              <div style={{ fontSize: 14.5, fontWeight: 800, color: color.ink }}>{p.process}</div>
+              <div style={{ fontSize: 12.5, color: color.muted, marginTop: 3, ...tabular }}>
+                залито {new Date(p.pouredAt).toLocaleDateString('ru-RU')} · требуется {p.requiredPct}% ·{' '}
+                {p.labName}
               </div>
-            </div>
-          </Card>
-        ))}
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 10 }}>
+                <input
+                  value={values[p.id] ?? String(p.strengthPct)}
+                  onChange={(e) => setValues((v) => ({ ...v, [p.id]: e.target.value }))}
+                  style={{
+                    width: 84,
+                    boxSizing: 'border-box',
+                    border: 'none',
+                    outline: 'none',
+                    background: color.screen,
+                    borderRadius: radius.xs,
+                    padding: '10px 12px',
+                    fontSize: 16,
+                    fontWeight: 800,
+                    textAlign: 'center',
+                    color: color.ink,
+                    fontFamily: 'inherit',
+                    ...tabular,
+                  }}
+                />
+                <div style={{ fontSize: 14, color: color.muted }}>%</div>
+                <div
+                  onClick={() => submit.run(p.id)}
+                  style={{
+                    cursor: 'pointer',
+                    marginLeft: 'auto',
+                    background: color.primary,
+                    color: '#fff',
+                    borderRadius: radius.xs,
+                    padding: '10px 14px',
+                    fontSize: 13,
+                    fontWeight: 800,
+                  }}
+                >
+                  Внести
+                </div>
+              </div>
+            </Card>
+          ))}
+        </DataState>
       </div>
     </ScreenBody>
   );

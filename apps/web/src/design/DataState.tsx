@@ -32,6 +32,7 @@ export function DataState({
   error,
   empty,
   emptyText,
+  emptyNode,
   onRetry,
   skeletonRows = 4,
   children,
@@ -40,7 +41,9 @@ export function DataState({
   error: string | null;
   /** Считает вызывающий: только он знает, что для него «пусто». */
   empty: boolean;
-  emptyText: string;
+  emptyText?: string;
+  /** Своё пустое состояние — когда одной строки мало и нужна кнопка. */
+  emptyNode?: ReactNode;
   onRetry?: () => void;
   skeletonRows?: number;
   children: ReactNode;
@@ -94,6 +97,7 @@ export function DataState({
   }
 
   if (empty) {
+    if (emptyNode) return <>{emptyNode}</>;
     return (
       <div
         style={{

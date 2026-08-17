@@ -13,11 +13,12 @@ import { useQuery } from '../../api/hooks';
 import { api } from '../../api/client';
 import type { TaskDto } from '../../api/types';
 import { useApp } from '../../store/app';
+import { DataState } from '../../design/DataState';
 
 export function BossTasksScreen() {
   const back = useApp((s) => s.back);
   const [filter, setFilter] = useState<'open' | 'done'>('open');
-  const { data, reload } = useQuery<TaskDto[]>('/boss/tasks');
+  const { data, loading, error, reload } = useQuery<TaskDto[]>('/boss/tasks');
 
   const list = (data ?? []).filter((t) => (filter === 'open' ? t.status !== 'done' : t.status === 'done'));
   const overdue = list.filter((t) => t.overdue);
@@ -53,9 +54,17 @@ export function BossTasksScreen() {
 
       <SectionLabel style={{ padding: '14px 20px 6px' }}>ОСТАЛЬНЫЕ · {rest.length}</SectionLabel>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '0 20px 20px' }}>
-        {rest.map((t) => (
-          <TaskRow key={t.id} task={t} onDone={reload} />
-        ))}
+        <DataState
+          loading={loading}
+          error={error}
+          empty={rest.length === 0 && overdue.length === 0}
+          emptyText="Задач нет"
+          onRetry={reload}
+        >
+  {rest.map((t) => (
+            <TaskRow key={t.id} task={t} onDone={reload} />
+          ))}
+        </DataState>
       </div>
     </ScreenBody>
   );

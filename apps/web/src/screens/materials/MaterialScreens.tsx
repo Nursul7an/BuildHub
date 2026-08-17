@@ -23,6 +23,8 @@ import { useAction, useQuery } from '../../api/hooks';
 import { api } from '../../api/client';
 import type { CatalogItemDto, StockDto, UserDto, ZayavkaDto } from '../../api/types';
 import { useApp } from '../../store/app';
+import { DataState } from '../../design/DataState';
+import { DataRows, type Column } from '../../design/DataRows';
 import { ZAYAVKA_STATUS } from '../field/TodayScreen';
 
 /* ───────────────────────────── M1 · Сегодня ───────────────────────────── */
@@ -311,41 +313,61 @@ export function MaterialsZayavkiScreen() {
 export function StockScreen() {
   const go = useApp((s) => s.go);
   const me = useApp((s) => s.me);
-  const { data } = useQuery<StockDto[]>('/stock');
+  const { data, loading, error, reload } = useQuery<StockDto[]>('/stock');
+  const stock = data ?? [];
+
+  /** Завсклад сверяет позиции между собой: остаток против спецификации. */
+  const columns: Column<StockDto>[] = [
+    { key: 'name', title: 'Позиция', primary: true, cell: (s) => s.name },
+    {
+      key: 'qty',
+      title: 'Остаток',
+      align: 'right',
+      cell: (s) => (
+        <span style={{ fontWeight: 800, ...tabular }}>
+          {formatNumber(s.qty, s.qty % 1 ? 1 : 0)} {s.unit}
+        </span>
+      ),
+    },
+    {
+      key: 'spec',
+      title: 'По спецификации',
+      align: 'right',
+      cell: (s) =>
+        s.specRemainder === null ? (
+          '—'
+        ) : (
+          <span style={{ color: s.overSpec ? color.warnStrong : color.muted, ...tabular }}>
+            {formatNumber(s.specRemainder, 1)} {s.unit}
+            {s.overSpec ? ' · перерасход' : ''}
+          </span>
+        ),
+    },
+    {
+      key: 'passport',
+      title: 'Паспорт',
+      cell: (s) =>
+        s.hasPassport ? (
+          <span style={{ color: color.faint }}>есть</span>
+        ) : (
+          <span style={{ color: color.danger, fontWeight: 800 }}>🔴 нет — работы стоят</span>
+        ),
+    },
+  ];
 
   return (
     <ScreenBody>
-      <RootHeader title="Склад" subtitle={`${data?.length ?? 0} позиций на объекте`} />
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '8px 20px 20px' }}>
-        {(data ?? []).map((s) => (
-          <Card
-            key={s.id}
-            onClick={me?.role === 'sklad' ? () => go('mat-issue', { objectId: s.objectId }) : undefined}
-            style={{
-              borderRadius: radius.md,
-              padding: '14px 16px',
-              ...(!s.hasPassport ? { border: '1.5px solid #F0B4B0' } : null),
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
-              <div style={{ fontSize: 15, fontWeight: 800, color: color.ink, minWidth: 0 }}>{s.name}</div>
-              <div style={{ fontSize: 16, fontWeight: 800, color: color.ink, flexShrink: 0, ...tabular }}>
-                {formatNumber(s.qty, s.qty % 1 ? 1 : 0)} {s.unit}
-              </div>
-            </div>
-            {s.specRemainder !== null ? (
-              <div style={{ fontSize: 12.5, color: s.overSpec ? color.warnStrong : color.muted, marginTop: 3, ...tabular }}>
-                по спецификации осталось {formatNumber(s.specRemainder, 1)} {s.unit}
-                {s.overSpec ? ' · перерасход' : ''}
-              </div>
-            ) : null}
-            {!s.hasPassport ? (
-              <div style={{ fontSize: 12.5, fontWeight: 800, color: color.danger, marginTop: 5 }}>
-                🔴 Партия без паспорта — работы с ней приостановлены
-              </div>
-            ) : null}
-          </Card>
-        ))}
+      <RootHeader title="Склад" subtitle={`${stock.length} позиций на объекте`} />
+      <div style={{ padding: '8px 20px 20px' }}>
+        <DataState
+          loading={loading}
+          error={error}
+          empty={stock.length === 0}
+          emptyText="На складе объекта пусто"
+          onRetry={reload}
+        >
+          <DataRows items={stock} columns={columns} keyOf={(s) => s.id} />
+        </DataState>
       </div>
     </ScreenBody>
   );

@@ -14,6 +14,8 @@ import { useAction, useQuery } from '../../api/hooks';
 import { api } from '../../api/client';
 import type { MachineDto, ZayavkaDto } from '../../api/types';
 import { useApp } from '../../store/app';
+import { DataState } from '../../design/DataState';
+import { DataRows, type Column } from '../../design/DataRows';
 
 const MACHINE_TYPES = ['Кран', 'Экскаватор', 'Автобетононасос', 'Самосвал', 'Погрузчик'];
 
@@ -250,48 +252,72 @@ export function TechReportScreen() {
 /* ───────────────────────────── СТ3 · Парк и график ───────────────────────────── */
 
 export function FleetScreen() {
-  const { data } = useQuery<MachineDto[]>('/machines');
+  const { data, loading, error, reload } = useQuery<MachineDto[]>('/machines');
+  const machines = data ?? [];
+
+  /** Диспетчер выбирает машину, сравнивая занятость, ТО и допуск построчно. */
+  const columns: Column<MachineDto>[] = [
+    { key: 'name', title: 'Машина', primary: true, cell: (m) => m.name },
+    { key: 'kind', title: 'Тип', cell: (m) => m.kind },
+    {
+      key: 'status',
+      title: 'Состояние',
+      cell: (m) => (
+        <span
+          style={{
+            fontWeight: 800,
+            ...(m.status === 'free'
+              ? { color: color.greenDeep }
+              : m.status === 'busy'
+                ? { color: color.primary }
+                : { color: color.warnText }),
+          }}
+        >
+          {m.status === 'free' ? 'свободна' : m.status === 'busy' ? 'занята' : 'в ремонте'}
+        </span>
+      ),
+    },
+    {
+      key: 'service',
+      title: 'ТО',
+      align: 'right',
+      cell: (m) =>
+        m.nextServiceAt ? (
+          <span style={{ color: m.serviceSoon ? color.warnText : color.muted, ...tabular }}>
+            {new Date(m.nextServiceAt).toLocaleDateString('ru-RU')}
+          </span>
+        ) : (
+          '—'
+        ),
+    },
+    {
+      key: 'permit',
+      title: 'Допуск до',
+      align: 'right',
+      cell: (m) =>
+        m.permitUntil ? (
+          <span style={{ color: m.permitExpiring ? color.danger : color.muted, ...tabular }}>
+            {new Date(m.permitUntil).toLocaleDateString('ru-RU')}
+          </span>
+        ) : (
+          '—'
+        ),
+    },
+  ];
 
   return (
     <ScreenBody>
-      <ScreenHeader title="Парк техники" subtitle={`${data?.length ?? 0} единиц`} padding="16px 20px 8px" />
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '4px 20px 20px' }}>
-        {(data ?? []).map((m) => (
-          <Card key={m.id} style={{ borderRadius: radius.md, padding: '14px 16px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
-              <div style={{ fontSize: 15, fontWeight: 800, color: color.ink, minWidth: 0 }}>{m.name}</div>
-              <div
-                style={{
-                  fontSize: 12,
-                  fontWeight: 800,
-                  borderRadius: radius.tag,
-                  padding: '3px 8px',
-                  whiteSpace: 'nowrap',
-                  ...(m.status === 'free'
-                    ? { color: color.greenDeep, background: color.greenBg }
-                    : m.status === 'busy'
-                      ? { color: color.primary, background: color.primaryBg }
-                      : { color: color.warnText, background: color.warnBg }),
-                }}
-              >
-                {m.status === 'free' ? 'свободна' : m.status === 'busy' ? 'занята' : 'в ремонте'}
-              </div>
-            </div>
-            <div style={{ fontSize: 12.5, color: color.muted, marginTop: 3 }}>{m.kind}</div>
-
-            {/* Система обязана предупреждать о ТО и допуске заранее, а не в день истечения. */}
-            {m.serviceSoon ? (
-              <div style={{ fontSize: 12, fontWeight: 700, color: color.warnText, marginTop: 6 }}>
-                🔧 ТО {new Date(m.nextServiceAt!).toLocaleDateString('ru-RU')} — меньше двух недель
-              </div>
-            ) : null}
-            {m.permitExpiring ? (
-              <div style={{ fontSize: 12, fontWeight: 700, color: color.danger, marginTop: 4 }}>
-                📄 Допуск до {new Date(m.permitUntil!).toLocaleDateString('ru-RU')} — истекает
-              </div>
-            ) : null}
-          </Card>
-        ))}
+      <ScreenHeader title="Парк техники" subtitle={`${machines.length} единиц`} padding="16px 20px 8px" />
+      <div style={{ padding: '4px 20px 20px' }}>
+        <DataState
+          loading={loading}
+          error={error}
+          empty={machines.length === 0}
+          emptyText="Машин в парке пока нет"
+          onRetry={reload}
+        >
+          <DataRows items={machines} columns={columns} keyOf={(m) => m.id} />
+        </DataState>
       </div>
     </ScreenBody>
   );

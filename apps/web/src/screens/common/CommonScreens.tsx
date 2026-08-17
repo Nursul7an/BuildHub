@@ -14,6 +14,7 @@ import { api } from '../../api/client';
 import type { AssistantAnswer, NotificationDto } from '../../api/types';
 import { ROLE_TITLE, type Role } from '@build-hub/shared';
 import { useApp, type Screen } from '../../store/app';
+import { DataState } from '../../design/DataState';
 
 interface MenuItem {
   label: string;
@@ -127,7 +128,8 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 
 export function NotificationsScreen() {
   const back = useApp((s) => s.back);
-  const { data, reload } = useQuery<NotificationDto[]>('/notifications');
+  const { data, loading, error, reload } = useQuery<NotificationDto[]>('/notifications');
+  const items = data ?? [];
 
   const markAll = useAction(async () => {
     await api.post('/notifications/read-all');
@@ -155,32 +157,40 @@ export function NotificationsScreen() {
       />
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '4px 20px 20px' }}>
-        {(data ?? []).map((n) => (
-          <Card
-            key={n.id}
-            onClick={async () => {
-              if (!n.read) {
-                await api.post(`/notifications/${n.id}/read`);
-                reload();
-              }
-            }}
-            style={{
-              borderRadius: radius.md,
-              padding: '14px 16px',
-              ...(n.read ? { opacity: 0.65 } : { border: `1px solid ${color.primaryBorder}` }),
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
-              <div style={{ fontSize: 14, fontWeight: 800, color: color.ink, minWidth: 0 }}>{n.title}</div>
-              <div style={{ fontSize: 11.5, color: color.faint, whiteSpace: 'nowrap', flexShrink: 0 }}>
-                {new Date(n.at).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' })}
+        <DataState
+          loading={loading}
+          error={error}
+          empty={items.length === 0}
+          emptyText="Уведомлений нет"
+          onRetry={reload}
+        >
+  {(data ?? []).map((n) => (
+            <Card
+              key={n.id}
+              onClick={async () => {
+                if (!n.read) {
+                  await api.post(`/notifications/${n.id}/read`);
+                  reload();
+                }
+              }}
+              style={{
+                borderRadius: radius.md,
+                padding: '14px 16px',
+                ...(n.read ? { opacity: 0.65 } : { border: `1px solid ${color.primaryBorder}` }),
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+                <div style={{ fontSize: 14, fontWeight: 800, color: color.ink, minWidth: 0 }}>{n.title}</div>
+                <div style={{ fontSize: 11.5, color: color.faint, whiteSpace: 'nowrap', flexShrink: 0 }}>
+                  {new Date(n.at).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' })}
+                </div>
               </div>
-            </div>
-            <div style={{ fontSize: 12.5, color: color.inkSoft, marginTop: 3, lineHeight: 1.45 }}>
-              {n.subtitle}
-            </div>
-          </Card>
-        ))}
+              <div style={{ fontSize: 12.5, color: color.inkSoft, marginTop: 3, lineHeight: 1.45 }}>
+                {n.subtitle}
+              </div>
+            </Card>
+          ))}
+        </DataState>
 
         {(data ?? []).length === 0 ? (
           <div style={{ padding: 24, textAlign: 'center', color: color.muted, fontSize: 13.5 }}>

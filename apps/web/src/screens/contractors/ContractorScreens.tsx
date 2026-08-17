@@ -14,6 +14,8 @@ import { useAction, useQuery } from '../../api/hooks';
 import { api } from '../../api/client';
 import type { ContractorDto } from '../../api/types';
 import { useApp } from '../../store/app';
+import { DataState } from '../../design/DataState';
+import { DataRows, type Column } from '../../design/DataRows';
 
 function ratingColor(rating: number): string {
   if (rating >= 4) return color.greenDeep;
@@ -29,49 +31,70 @@ function ratingLabel(rating: number): string {
 
 export function ContractorsScreen() {
   const go = useApp((s) => s.go);
-  const { data } = useQuery<ContractorDto[]>('/contractors');
+  const { data, loading, error, reload } = useQuery<ContractorDto[]>('/contractors');
+  const contractors = data ?? [];
+
+  /** Подрядчиков сравнивают между собой: рейтинг, люди, предписания. */
+  const columns: Column<ContractorDto>[] = [
+    { key: 'name', title: 'Подрядчик', primary: true, cell: (c) => c.name },
+    { key: 'scope', title: 'Вид работ', cell: (c) => c.scope },
+    {
+      key: 'rating',
+      title: 'Рейтинг',
+      align: 'right',
+      cell: (c) => (
+        <span style={{ fontWeight: 800, color: ratingColor(c.rating), ...tabular }}>
+          {c.rating.toFixed(1).replace('.', ',')} / 5
+        </span>
+      ),
+    },
+    {
+      key: 'workers',
+      title: 'Людей',
+      align: 'right',
+      cell: (c) => <span style={{ ...tabular }}>{c.activeWorkers}</span>,
+    },
+    {
+      key: 'presc',
+      title: 'Предписания',
+      align: 'right',
+      desktopOnly: true,
+      cell: (c) => (
+        <span style={{ ...tabular }}>
+          {c.prescriptionsOpen} из {c.prescriptionsTotal}
+        </span>
+      ),
+    },
+    {
+      key: 'stop',
+      title: 'Статус',
+      cell: (c) =>
+        c.stopped ? (
+          <span style={{ color: color.danger, fontWeight: 800 }}>⛔ приостановлен</span>
+        ) : (
+          <span style={{ color: color.faint }}>работает</span>
+        ),
+    },
+  ];
 
   return (
     <ScreenBody>
-      <RootHeader title="Подрядчики" subtitle={`${data?.length ?? 0} на объекте`} />
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '8px 20px 20px' }}>
-        {(data ?? []).map((c) => (
-          <Card
-            key={c.id}
-            onClick={() => go('contractor', { contractorId: c.id })}
-            style={{
-              borderRadius: radius.md,
-              padding: '14px 16px',
-              ...(c.stopped ? { border: '1.5px solid #F0B4B0' } : null),
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
-              <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: 15.5, fontWeight: 800, color: color.ink }}>{c.name}</div>
-                <div style={{ fontSize: 12.5, color: color.muted, marginTop: 2 }}>{c.scope}</div>
-              </div>
-              <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                <div style={{ fontSize: 17, fontWeight: 800, color: ratingColor(c.rating), ...tabular }}>
-                  {c.rating.toFixed(1).replace('.', ',')} / 5
-                </div>
-                <div style={{ fontSize: 11, fontWeight: 800, color: ratingColor(c.rating) }}>
-                  {ratingLabel(c.rating)}
-                </div>
-              </div>
-            </div>
-
-            <div style={{ fontSize: 12.5, color: color.muted, marginTop: 6, ...tabular }}>
-              {c.activeWorkers} чел сегодня · предписания: открытых {c.prescriptionsOpen} · всего{' '}
-              {c.prescriptionsTotal}
-            </div>
-
-            {c.stopped ? (
-              <div style={{ fontSize: 12.5, fontWeight: 800, color: color.danger, marginTop: 6, lineHeight: 1.4 }}>
-                ⛔ Работы приостановлены · {c.stopReason}
-              </div>
-            ) : null}
-          </Card>
-        ))}
+      <RootHeader title="Подрядчики" subtitle={`${contractors.length} на объекте`} />
+      <div style={{ padding: '8px 20px 20px' }}>
+        <DataState
+          loading={loading}
+          error={error}
+          empty={contractors.length === 0}
+          emptyText="Подрядчиков на объекте пока нет"
+          onRetry={reload}
+        >
+          <DataRows
+            items={contractors}
+            columns={columns}
+            keyOf={(c) => c.id}
+            onRowClick={(c) => go('contractor', { contractorId: c.id })}
+          />
+        </DataState>
       </div>
     </ScreenBody>
   );

@@ -24,3 +24,6 @@ apps/server/var/
 # Развёртывание на своём сервере: секреты и копии
 deploy/.env
 deploy/backups/
+
+# Мусор от служебных скриптов
+__pycache__/
