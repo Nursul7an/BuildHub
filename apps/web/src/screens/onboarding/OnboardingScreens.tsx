@@ -21,6 +21,7 @@ import { useAction, useQuery } from '../../api/hooks';
 import { api } from '../../api/client';
 import type { ObjectDto, ProcessSummary, SectionDto } from '../../api/types';
 import { useApp } from '../../store/app';
+import { ScreenState } from '../../design/DataState';
 import { dueStyle, dueText } from '../field/TodayScreen';
 
 /* ─────────────────────── Экран 1 · «Вот ваши работы» ─────────────────────── */
@@ -31,7 +32,7 @@ export function AssignedWorksScreen() {
   const notify = useApp((s) => s.notify);
   const [wrongOpen, setWrongOpen] = useState(false);
 
-  const { data, loading } = useQuery<ProcessSummary[]>('/works?mine=1');
+  const { data, loading, error, reload } = useQuery<ProcessSummary[]>('/works?mine=1');
 
   const groups = useMemo(() => {
     const map = new Map<string, ProcessSummary[]>();
@@ -42,7 +43,11 @@ export function AssignedWorksScreen() {
     return [...map.entries()];
   }, [data]);
 
-  if (loading) return <ScreenBody style={{ padding: 20, color: color.muted }}>Загружаем…</ScreenBody>;
+  // Отказ не равен «назначений нет»: во втором случае прораб размечает
+  // работы сам, в первом — ждёт связи.
+  if (loading || error) {
+    return <ScreenState loading={loading} error={error} missing={false} onRetry={reload} />;
+  }
 
   // Назначения нет — уводим на самостоятельную разметку, а не в пустой экран.
   if ((data ?? []).length === 0) {

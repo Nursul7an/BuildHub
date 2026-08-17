@@ -24,6 +24,7 @@ import { useQuery } from '../../api/hooks';
 import { api } from '../../api/client';
 import type { TodayDto } from '../../api/types';
 import { useApp } from '../../store/app';
+import { ScreenState } from '../../design/DataState';
 import { ScreenBody } from '../../shell/PhoneFrame';
 
 const WEEKDAY = ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота'];
@@ -35,13 +36,21 @@ export function formatDay(iso: string): string {
 }
 
 export function TodayScreen() {
-  const { data, loading, reload } = useQuery<TodayDto>('/today');
+  const { data, loading, reload, error } = useQuery<TodayDto>('/today');
   const me = useApp((s) => s.me);
   const go = useApp((s) => s.go);
   const startTimer = useApp((s) => s.startTimer);
 
-  if (loading || !data || !me) {
-    return <ScreenBody style={{ padding: 20, color: color.muted }}>Загружаем день…</ScreenBody>;
+  if (loading || error || !data || !me) {
+    return (
+      <ScreenState
+        loading={loading}
+        error={error}
+        missing={!data || !me}
+        missingText="Данных за день нет"
+        onRetry={reload}
+      />
+    );
   }
 
   // Заблокированные уже стоят в «Горит» с причиной — второй раз их не показываем.

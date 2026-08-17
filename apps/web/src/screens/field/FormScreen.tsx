@@ -16,6 +16,7 @@ import { ApiError, api } from '../../api/client';
 import { type UploadedPhoto, currentPosition, uploadPhoto } from '../../api/uploads';
 import type { ProcessDetail } from '../../api/types';
 import { formatElapsed, useApp } from '../../store/app';
+import { ScreenState } from '../../design/DataState';
 import { ScreenBody } from '../../shell/PhoneFrame';
 
 /** Ниже +5 °C метод зимнего бетонирования обязателен — это правило ППР, не подсказка. */
@@ -50,7 +51,7 @@ export function FormScreen() {
   const notify = useApp((s) => s.notify);
   const formStartedAt = useApp((s) => s.formStartedAt);
 
-  const { data: process } = useQuery<ProcessDetail>(
+  const { data: process, loading, error, reload } = useQuery<ProcessDetail>(
     params.processStateId ? `/process/${params.processStateId}` : null,
   );
 
@@ -130,8 +131,16 @@ export function FormScreen() {
     return null;
   }, [parsedVolume, photos.length, uploading, cold, winterMethod, tempAir]);
 
-  if (!process) {
-    return <ScreenBody style={{ padding: 20, color: color.muted }}>Загружаем процесс…</ScreenBody>;
+  if (loading || error || !process) {
+    return (
+      <ScreenState
+        loading={loading}
+        error={error}
+        missing={!process}
+        missingText="Процесс не найден"
+        onRetry={reload}
+      />
+    );
   }
 
   function press(key: string) {

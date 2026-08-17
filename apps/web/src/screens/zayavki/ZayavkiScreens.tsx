@@ -62,7 +62,6 @@ export function ZayavkiScreen() {
     };
   }, [data]);
 
-  if (loading) return <ScreenBody style={{ padding: 20, color: color.muted }}>Загружаем заявки…</ScreenBody>;
 
   return (
     <ScreenBody>

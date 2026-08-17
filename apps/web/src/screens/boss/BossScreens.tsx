@@ -774,10 +774,14 @@ function Tile({ label, value, tone, hint }: { label: string; value: string; tone
 export function BossFinanceObjectScreen() {
   const params = useApp((s) => s.params);
   const back = useApp((s) => s.back);
-  const { data, loading } = useQuery<FinanceDto>('/boss/finance');
+  const { data, loading, error, reload } = useQuery<FinanceDto>('/boss/finance');
   const o = data?.objects.find((x) => x.objectId === params.objectId);
 
-  if (loading) return <ScreenBody style={{ padding: 20, color: color.muted }}>Загружаем…</ScreenBody>;
+  // Отказ сервера нельзя показывать как «бюджет не заведён»: это разные
+  // вещи и разные следующие действия.
+  if (loading || error) {
+    return <ScreenState loading={loading} error={error} missing={false} onRetry={reload} />;
+  }
 
   // Данные пришли, а объекта в них нет: бюджет по нему ещё не заведён.
   // Показывать «Загружаем…» вечно нельзя — от зависшего экрана это
