@@ -81,6 +81,7 @@ export default function App() {
       >
         <PhoneFrame
           toast={toast}
+          bottomNav={Boolean(bottomNav)}
           onAssistant={me && !authScreen ? () => go('assistant') : undefined}
         >
           {loading ? (

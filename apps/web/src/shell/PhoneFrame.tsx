@@ -15,10 +15,17 @@ export function PhoneFrame({
   children,
   onAssistant,
   toast,
+  bottomNav = false,
 }: {
   children: ReactNode;
   onAssistant?: () => void;
   toast?: string | null;
+  /**
+   * Есть ли внизу панель навигации. Тост поднимается над ней, а когда
+   * панели нет — на широком экране она уходит вбок — висеть на её высоте
+   * незачем: тост отрывается от нижнего края без причины.
+   */
+  bottomNav?: boolean;
 }) {
   return (
     <div
@@ -72,7 +79,9 @@ export function PhoneFrame({
             position: 'absolute',
             left: 16,
             right: 16,
-            bottom: 92,
+            // Над навигацией, если она внизу; иначе у самого края,
+            // с поправкой на вырез под экраном телефона.
+            bottom: bottomNav ? 92 : 'calc(16px + env(safe-area-inset-bottom))',
             background: color.ink,
             color: '#fff',
             borderRadius: radius.sm,
