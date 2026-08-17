@@ -45,6 +45,7 @@ export type Permission =
   | 'zayavka.purchase'
   | 'material.accept' // приёмка на объекте
   | 'material.issue' // выдача под роспись (завсклад)
+  | 'material.adjust' // коррекция остатка по инвентаризации (завсклад)
   | 'contractor.rate'
   | 'contractor.prescription' // выдать предписание (прораб; мастер только фиксирует)
   | 'process.present' // предъявить к освидетельствованию
@@ -88,7 +89,10 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     'kpi.view',
   ],
   snab: ['zayavka.normalize', 'zayavka.purchase'],
-  sklad: ['material.accept', 'material.issue'],
+  // Остатки ведутся в системе, а не в 1С, поэтому завсклад обязан иметь
+  // право исправить число после пересчёта. Иначе система расходится
+  // с реальным складом навсегда и перестаёт быть источником истины.
+  sklad: ['material.accept', 'material.issue', 'material.adjust'],
   tech: ['tech.dispatch'],
 };
 

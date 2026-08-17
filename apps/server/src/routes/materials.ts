@@ -8,6 +8,7 @@ import { parseJson, prisma } from '../db.js';
 import { notify } from '../notify.js';
 import { resolveObjectFilter } from '../scope.js';
 import { actorOf, auditChanges, emit } from '../audit.js';
+import { fail } from '../http.js';
 import { withETag } from '../http.js';
 
 export async function materialRoutes(app: FastifyInstance) {
@@ -138,6 +139,82 @@ export async function materialRoutes(app: FastifyInstance) {
 
     return { ok: true, overspend };
   });
+
+  /**
+   * Коррекция остатка по инвентаризации.
+   *
+   * Остатки ведутся в этой системе, а не в 1С, значит расхождение с
+   * реальным складом исправлять некому, кроме завсклада. Без такой ручки
+   * ошибка приёмки или выдачи остаётся в числе навсегда, и через месяц
+   * остаткам перестают верить — а тогда и заявки перестают опираться
+   * на них.
+   *
+   * Причина обязательна и попадает в журнал вместе с прежним и новым
+   * значением: правка остатка задним числом должна быть объяснима, иначе
+   * она ничем не отличается от подгонки под факт.
+   */
+  app.post(
+    '/api/stock/adjust',
+    { preHandler: [app.requirePermission('material.adjust')] },
+    async (req, reply) => {
+      const body = z
+        .object({
+          objectId: z.string(),
+          catalogItemId: z.string(),
+          /** Пересчитанное количество, а не поправка: так считают на складе. */
+          qty: z.number().min(0),
+          reason: z.string().trim().min(5),
+          hasPassport: z.boolean().optional(),
+        })
+        .parse(req.body);
+
+      const balance = await prisma.stockBalance.findUnique({
+        where: {
+          objectId_catalogItemId: { objectId: body.objectId, catalogItemId: body.catalogItemId },
+        },
+        include: { catalogItem: true },
+      });
+      if (!balance) {
+        return fail(reply, 404, 'not_found', 'Позиции нет на складе объекта');
+      }
+
+      const before = Number(balance.qty);
+      if (before === body.qty && body.hasPassport === undefined) {
+        return fail(reply, 422, 'no_change', 'Количество не изменилось — коррекция не нужна');
+      }
+
+      await prisma.stockBalance.update({
+        where: { id: balance.id },
+        data: {
+          qty: body.qty,
+          ...(body.hasPassport === undefined ? {} : { hasPassport: body.hasPassport }),
+        },
+      });
+
+      const actor = await prisma.user.findUniqueOrThrow({ where: { id: req.currentUser.id } });
+      await auditChanges(
+        actorOf(req.currentUser, actor.fullName),
+        'stockBalance',
+        balance.id,
+        { qty: before, hasPassport: balance.hasPassport },
+        { qty: body.qty, hasPassport: body.hasPassport ?? balance.hasPassport },
+        body.reason,
+      );
+
+      // Событие отдельное от выдачи: расход и пересчёт — разные причины
+      // изменения остатка, и в отчётах их нельзя складывать.
+      await emit('StockAdjusted', 'stockBalance', balance.id, {
+        catalogItemId: body.catalogItemId,
+        material: balance.catalogItem.name,
+        before,
+        after: body.qty,
+        delta: Number((body.qty - before).toFixed(3)),
+        reason: body.reason,
+      });
+
+      return { ok: true, before, after: body.qty };
+    },
+  );
 
   app.get('/api/issues', async (req) => {
     const query = z.object({ objectId: z.string().optional() }).parse(req.query ?? {});
