@@ -14,7 +14,7 @@ import { useAction, useQuery } from '../../api/hooks';
 import { api } from '../../api/client';
 import type { ContractorDto } from '../../api/types';
 import { useApp } from '../../store/app';
-import { DataState } from '../../design/DataState';
+import { DataState, ScreenState } from '../../design/DataState';
 import { DataRows, type Column } from '../../design/DataRows';
 
 function ratingColor(rating: number): string {
@@ -108,7 +108,7 @@ export function ContractorCardScreen() {
   const me = useApp((s) => s.me);
   const [showBreakdown, setShowBreakdown] = useState(false);
 
-  const { data } = useQuery<ContractorDto[]>('/contractors');
+  const { data, loading, error, reload } = useQuery<ContractorDto[]>('/contractors');
   const contractor = data?.find((c) => c.id === params.contractorId);
 
   const prescribe = useAction(async () => {
@@ -126,7 +126,17 @@ export function ContractorCardScreen() {
     );
   });
 
-  if (!contractor) return <ScreenBody style={{ padding: 20, color: color.muted }}>Загружаем…</ScreenBody>;
+  if (loading || error || !contractor) {
+    return (
+      <ScreenState
+        loading={loading}
+        error={error}
+        missing={!contractor}
+        missingText="Подрядчик не найден"
+        onRetry={reload}
+      />
+    );
+  }
 
   const auto = contractor.breakdown.auto;
   const manual = contractor.breakdown.manual;

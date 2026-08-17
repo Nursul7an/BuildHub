@@ -609,10 +609,20 @@ export function PtoObjectScreen() {
   const back = useApp((s) => s.back);
   const go = useApp((s) => s.go);
   const { data: objects } = useQuery<ObjectDto[]>('/objects');
-  const { data: sections } = useQuery<SectionDto[]>('/sections');
+  const { data: sections, loading, error, reload } = useQuery<SectionDto[]>('/sections');
   const object = objects?.find((o) => o.id === params.objectId);
 
-  if (!object) return <ScreenBody style={{ padding: 20, color: color.muted }}>Загружаем…</ScreenBody>;
+  if (loading || error || !object) {
+    return (
+      <ScreenState
+        loading={loading}
+        error={error}
+        missing={!object}
+        missingText="Объект не найден"
+        onRetry={reload}
+      />
+    );
+  }
 
   return (
     <ScreenBody>
@@ -659,7 +669,7 @@ export function PtoChainSetupScreen() {
   const back = useApp((s) => s.back);
   const notify = useApp((s) => s.notify);
 
-  const { data: sections, reload } = useQuery<SectionDto[]>('/sections');
+  const { data: sections, reload, loading, error } = useQuery<SectionDto[]>('/sections');
   const section = sections?.find((s) => s.id === params.sectionId);
 
   const [rows, setRows] = useState<SectionDto['processes'] | null>(null);
@@ -681,7 +691,17 @@ export function PtoChainSetupScreen() {
     reload();
   });
 
-  if (!section) return <ScreenBody style={{ padding: 20, color: color.muted }}>Загружаем…</ScreenBody>;
+  if (loading || error || !section) {
+    return (
+      <ScreenState
+        loading={loading}
+        error={error}
+        missing={!section}
+        missingText="Раздел не найден"
+        onRetry={reload}
+      />
+    );
+  }
 
   function update(id: string, patch: Partial<SectionDto['processes'][number]>) {
     setRows(current.map((r) => (r.id === id ? { ...r, ...patch } : r)));

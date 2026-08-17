@@ -766,7 +766,7 @@ export function AcceptanceScreen() {
   const go = useApp((s) => s.go);
   const notify = useApp((s) => s.notify);
 
-  const { data: zayavka } = useQuery<ZayavkaDto>(params.zayavkaId ? `/zayavki/${params.zayavkaId}` : null);
+  const { data: zayavka, loading, error, reload } = useQuery<ZayavkaDto>(params.zayavkaId ? `/zayavki/${params.zayavkaId}` : null);
 
   const [qty, setQty] = useState('');
   const [passportOk, setPassportOk] = useState<boolean | null>(null);
@@ -795,7 +795,17 @@ export function AcceptanceScreen() {
     go('zayavki');
   });
 
-  if (!zayavka || !item) return <ScreenBody style={{ padding: 20, color: color.muted }}>Загружаем…</ScreenBody>;
+  if (loading || error || !zayavka || !item) {
+    return (
+      <ScreenState
+        loading={loading}
+        error={error}
+        missing={!zayavka}
+        missingText="Позиция заявки не найдена"
+        onRetry={reload}
+      />
+    );
+  }
 
   const blocker =
     qtyNum <= 0

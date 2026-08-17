@@ -516,7 +516,7 @@ export function BossObjectScreen() {
   const back = useApp((s) => s.back);
   const me = useApp((s) => s.me);
   const { data } = useQuery<DigestDto>('/boss/digest');
-  const { data: tasks } = useQuery<TaskDto[]>(
+  const { data: tasks, loading, error, reload } = useQuery<TaskDto[]>(
     params.objectId ? `/boss/tasks?objectId=${params.objectId}` : null,
   );
 
@@ -524,7 +524,17 @@ export function BossObjectScreen() {
   const finance = data?.finance.find((f) => f.objectId === params.objectId);
   const incidents = (data?.incidents ?? []).filter((i) => i.objectId === params.objectId);
 
-  if (!object) return <ScreenBody style={{ padding: 20, color: color.muted }}>Загружаем…</ScreenBody>;
+  if (loading || error || !object) {
+    return (
+      <ScreenState
+        loading={loading}
+        error={error}
+        missing={!object}
+        missingText="Объект не найден"
+        onRetry={reload}
+      />
+    );
+  }
 
   return (
     <ScreenBody>
@@ -628,9 +638,19 @@ function Fact({ label, value, tone }: { label: string; value: string; tone?: str
 
 export function BossFinanceScreen() {
   const go = useApp((s) => s.go);
-  const { data } = useQuery<FinanceDto>('/boss/finance');
+  const { data, loading, error, reload } = useQuery<FinanceDto>('/boss/finance');
 
-  if (!data) return <ScreenBody style={{ padding: 20, color: color.muted }}>Загружаем финансы…</ScreenBody>;
+  if (loading || error || !data) {
+    return (
+      <ScreenState
+        loading={loading}
+        error={error}
+        missing={!data}
+        missingText="Финансы не заведены"
+        onRetry={reload}
+      />
+    );
+  }
 
   const totals = data.objects.reduce(
     (a, o) => ({
@@ -902,7 +922,7 @@ export function BossWeekScreen() {
 export function BossQualityScreen() {
   const notify = useApp((s) => s.notify);
   const { data } = useQuery<QualityDto>('/boss/quality');
-  const { data: digest } = useQuery<DigestDto>('/boss/digest');
+  const { data: digest, loading, error, reload } = useQuery<DigestDto>('/boss/digest');
   const [stopping, setStopping] = useState(false);
   const [reason, setReason] = useState('');
   const [objectId, setObjectId] = useState<string | null>(null);
@@ -914,7 +934,17 @@ export function BossQualityScreen() {
     setReason('');
   });
 
-  if (!data) return <ScreenBody style={{ padding: 20, color: color.muted }}>Загружаем…</ScreenBody>;
+  if (loading || error || !data) {
+    return (
+      <ScreenState
+        loading={loading}
+        error={error}
+        missing={!data}
+        missingText="Данные не найдены"
+        onRetry={reload}
+      />
+    );
+  }
 
   return (
     <ScreenBody>

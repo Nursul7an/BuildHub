@@ -369,9 +369,19 @@ export function ReturnedScreen() {
   const back = useApp((s) => s.back);
   const startTimer = useApp((s) => s.startTimer);
 
-  const { data: report } = useQuery<ReportDto>(params.reportId ? `/report/${params.reportId}` : null);
+  const { data: report, loading, error, reload } = useQuery<ReportDto>(params.reportId ? `/report/${params.reportId}` : null);
 
-  if (!report) return <ScreenBody style={{ padding: 20, color: color.muted }}>Загружаем…</ScreenBody>;
+  if (loading || error || !report) {
+    return (
+      <ScreenState
+        loading={loading}
+        error={error}
+        missing={!report}
+        missingText="Отчёт не найден"
+        onRetry={reload}
+      />
+    );
+  }
 
   const disputed = new Set(report.returnedFields);
   const firstDisputed = report.entries.find((e) => disputed.has(e.id)) ?? report.entries[0];
