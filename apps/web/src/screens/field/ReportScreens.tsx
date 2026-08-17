@@ -21,6 +21,7 @@ import { useAction, useQuery } from '../../api/hooks';
 import { api } from '../../api/client';
 import type { ReportDto, TodayDto } from '../../api/types';
 import { formatElapsed, useApp } from '../../store/app';
+import { ScreenState } from '../../design/DataState';
 
 const MONTH_FULL = [
   'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
@@ -42,7 +43,7 @@ export function PreviewScreen() {
   const formStartedAt = useApp((s) => s.formStartedAt);
   const notify = useApp((s) => s.notify);
 
-  const { data } = useQuery<TodayDto>('/today');
+  const { data, loading, error, reload } = useQuery<TodayDto>('/today');
   const report = data?.report ?? null;
 
   const send = useAction(async () => {
@@ -54,7 +55,17 @@ export function PreviewScreen() {
     go('status', { reportId: report.id });
   });
 
-  if (!data) return <ScreenBody style={{ padding: 20, color: color.muted }}>Загружаем…</ScreenBody>;
+  if (loading || error || !data) {
+    return (
+      <ScreenState
+        loading={loading}
+        error={error}
+        missing={!data}
+        missingText="Отчёт не найден"
+        onRetry={reload}
+      />
+    );
+  }
 
   const entries = report?.entries ?? [];
   const notFilled = data.processes.filter(
@@ -168,9 +179,19 @@ export function StatusScreen() {
   const formStartedAt = useApp((s) => s.formStartedAt);
   const formFinishedAt = useApp((s) => s.formFinishedAt);
 
-  const { data: report } = useQuery<ReportDto>(params.reportId ? `/report/${params.reportId}` : null);
+  const { data: report, loading, error, reload } = useQuery<ReportDto>(params.reportId ? `/report/${params.reportId}` : null);
 
-  if (!report) return <ScreenBody style={{ padding: 20, color: color.muted }}>Загружаем…</ScreenBody>;
+  if (loading || error || !report) {
+    return (
+      <ScreenState
+        loading={loading}
+        error={error}
+        missing={!report}
+        missingText="Отчёт не найден"
+        onRetry={reload}
+      />
+    );
+  }
 
   const isMaster = me?.role === 'master';
   const elapsed =

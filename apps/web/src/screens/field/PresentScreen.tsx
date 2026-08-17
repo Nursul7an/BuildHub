@@ -14,6 +14,7 @@ import { useAction, useQuery } from '../../api/hooks';
 import { api } from '../../api/client';
 import type { ProcessDetail } from '../../api/types';
 import { useApp } from '../../store/app';
+import { ScreenState } from '../../design/DataState';
 
 const CHECKLIST = [
   { key: 'complete', label: 'Работа завершена полностью на захватке' },
@@ -47,7 +48,7 @@ export function PresentScreen() {
   const go = useApp((s) => s.go);
   const notify = useApp((s) => s.notify);
 
-  const { data: process } = useQuery<ProcessDetail>(
+  const { data: process, loading, error, reload } = useQuery<ProcessDetail>(
     params.processStateId ? `/process/${params.processStateId}` : null,
   );
 
@@ -80,7 +81,17 @@ export function PresentScreen() {
     });
   });
 
-  if (!process) return <ScreenBody style={{ padding: 20, color: color.muted }}>Загружаем…</ScreenBody>;
+  if (loading || error || !process) {
+    return (
+      <ScreenState
+        loading={loading}
+        error={error}
+        missing={!process}
+        missingText="Процесс не найден"
+        onRetry={reload}
+      />
+    );
+  }
 
   const unchecked = CHECKLIST.filter((c) => !checked[c.key]);
 

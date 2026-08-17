@@ -32,7 +32,7 @@ import type {
 } from '../../api/types';
 import { ROLE_TITLE, ROLES, type Role } from '@build-hub/shared';
 import { useApp } from '../../store/app';
-import { DataState } from '../../design/DataState';
+import { DataState, ScreenState } from '../../design/DataState';
 import { DataRows, type Column } from '../../design/DataRows';
 
 /* ───────────────────────────── T1 · Сегодня ───────────────────────────── */
@@ -219,7 +219,7 @@ export function PtoCheckScreen() {
   const go = useApp((s) => s.go);
   const notify = useApp((s) => s.notify);
 
-  const { data: report } = useQuery<ReportDto>(params.reportId ? `/report/${params.reportId}` : null);
+  const { data: report, loading, error, reload } = useQuery<ReportDto>(params.reportId ? `/report/${params.reportId}` : null);
 
   const [adjusting, setAdjusting] = useState<string | null>(null);
   const [newValue, setNewValue] = useState('');
@@ -240,7 +240,17 @@ export function PtoCheckScreen() {
     go('pto-queue');
   });
 
-  if (!report) return <ScreenBody style={{ padding: 20, color: color.muted }}>Загружаем отчёт…</ScreenBody>;
+  if (loading || error || !report) {
+    return (
+      <ScreenState
+        loading={loading}
+        error={error}
+        missing={!report}
+        missingText="Отчёт не найден"
+        onRetry={reload}
+      />
+    );
+  }
 
   return (
     <ScreenBody>

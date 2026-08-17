@@ -12,6 +12,7 @@
  */
 import type { ReactNode } from 'react';
 import { color, radius } from './tokens';
+import { ScreenBody } from '../shell/PhoneFrame';
 
 export function Skeleton({ height = 64 }: { height?: number }) {
   return (
@@ -116,4 +117,43 @@ export function DataState({
   }
 
   return <>{children}</>;
+}
+
+/**
+ * Состояние экрана, показывающего одну запись, а не список.
+ *
+ * Заменяет `if (!data) return «Загружаем…»`. Тот приём не отличает «ещё
+ * не пришло» от «пришло, но пусто» и от «не пришло совсем»: при отказе
+ * сервера data остаётся null, и человек смотрит на «Загружаем…» столько,
+ * сколько хватит терпения. Ровно так экономика объекта без заведённого
+ * бюджета висела вечно.
+ */
+export function ScreenState({
+  loading,
+  error,
+  missing,
+  missingText = 'Запись не найдена',
+  onRetry,
+}: {
+  loading: boolean;
+  error: string | null;
+  /** Загрузка кончилась, а записи нет: удалили или не существует. */
+  missing: boolean;
+  missingText?: string;
+  onRetry?: () => void;
+}) {
+  return (
+    <ScreenBody style={{ padding: 20 }}>
+      <DataState
+        loading={loading}
+        error={error}
+        empty={missing}
+        emptyText={missingText}
+        onRetry={onRetry}
+        skeletonRows={3}
+      >
+        {null}
+      </DataState>
+    </ScreenBody>
+  );
 }

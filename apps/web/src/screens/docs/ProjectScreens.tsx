@@ -14,7 +14,7 @@ import { useAction, useQuery } from '../../api/hooks';
 import { api } from '../../api/client';
 import type { DocumentDto, DrawingSetDto, ProtocolDto, RfiDto, SheetDetailDto, SheetDto } from '../../api/types';
 import { useApp } from '../../store/app';
-import { DataState } from '../../design/DataState';
+import { DataState, ScreenState } from '../../design/DataState';
 import { DataRows, type Column } from '../../design/DataRows';
 
 /* ───────────────────────────── PR1 · Марки комплектов ───────────────────────────── */
@@ -95,10 +95,20 @@ export function ProjectSetScreen() {
   const params = useApp((s) => s.params);
   const back = useApp((s) => s.back);
   const go = useApp((s) => s.go);
-  const { data } = useQuery<DrawingSetDto[]>('/v1/doc-sets');
+  const { data, loading, error, reload } = useQuery<DrawingSetDto[]>('/v1/doc-sets');
   const set = data?.find((s) => s.id === params.setId);
 
-  if (!set) return <ScreenBody style={{ padding: 20, color: color.muted }}>Загружаем…</ScreenBody>;
+  if (loading || error || !set) {
+    return (
+      <ScreenState
+        loading={loading}
+        error={error}
+        missing={!set}
+        missingText="Комплект не найден"
+        onRetry={reload}
+      />
+    );
+  }
 
   return (
     <ScreenBody>
@@ -173,11 +183,21 @@ export function SheetScreen() {
   const params = useApp((s) => s.params);
   const back = useApp((s) => s.back);
   const go = useApp((s) => s.go);
-  const { data: sheet } = useQuery<SheetDetailDto>(
+  const { data: sheet, loading, error, reload } = useQuery<SheetDetailDto>(
     params.sheetId ? `/v1/sheets/${params.sheetId}` : null,
   );
 
-  if (!sheet) return <ScreenBody style={{ padding: 20, color: color.muted }}>Загружаем лист…</ScreenBody>;
+  if (loading || error || !sheet) {
+    return (
+      <ScreenState
+        loading={loading}
+        error={error}
+        missing={!sheet}
+        missingText="Лист не найден"
+        onRetry={reload}
+      />
+    );
+  }
 
   return (
     <ScreenBody>

@@ -26,6 +26,7 @@ import { useAction, useQuery } from '../../api/hooks';
 import { api } from '../../api/client';
 import type { ProcessDetail } from '../../api/types';
 import { useApp } from '../../store/app';
+import { ScreenState } from '../../design/DataState';
 import { dueStyle, dueText } from './TodayScreen';
 import { STATUS_LABEL } from './WorksScreen';
 
@@ -47,11 +48,21 @@ export function ProcessScreen() {
   const startTimer = useApp((s) => s.startTimer);
   const [commentOpen, setCommentOpen] = useState(false);
 
-  const { data: process, reload } = useQuery<ProcessDetail>(
+  const { data: process, reload, loading, error } = useQuery<ProcessDetail>(
     params.processStateId ? `/process/${params.processStateId}` : null,
   );
 
-  if (!process) return <ScreenBody style={{ padding: 20, color: color.muted }}>Загружаем процесс…</ScreenBody>;
+  if (loading || error || !process) {
+    return (
+      <ScreenState
+        loading={loading}
+        error={error}
+        missing={!process}
+        missingText="Процесс не найден"
+        onRetry={reload}
+      />
+    );
+  }
 
   const canPresent = process.presentBlockedBy === null;
 

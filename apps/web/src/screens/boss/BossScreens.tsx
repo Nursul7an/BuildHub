@@ -35,7 +35,7 @@ import type {
   UserDto,
 } from '../../api/types';
 import { useApp } from '../../store/app';
-import { DataState } from '../../design/DataState';
+import { DataState, ScreenState } from '../../design/DataState';
 import { DataRows, type Column } from '../../design/DataRows';
 
 /** Крупные суммы — в миллионах сомов, как их называют вслух. */
@@ -136,9 +136,19 @@ function BossHeaderRight() {
 export function BossDigestScreen() {
   const go = useApp((s) => s.go);
   const me = useApp((s) => s.me);
-  const { data } = useQuery<DigestDto>('/boss/digest');
+  const { data, loading, error, reload } = useQuery<DigestDto>('/boss/digest');
 
-  if (!data) return <ScreenBody style={{ padding: 20, color: color.muted }}>Загружаем сводку…</ScreenBody>;
+  if (loading || error || !data) {
+    return (
+      <ScreenState
+        loading={loading}
+        error={error}
+        missing={!data}
+        missingText="Данные не найдены"
+        onRetry={reload}
+      />
+    );
+  }
 
   const isGi = me?.role === 'gi';
   const worst = [...data.objects].sort((a, b) => a.deltaDays - b.deltaDays)[0];

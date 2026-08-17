@@ -23,7 +23,7 @@ import { useAction, useQuery } from '../../api/hooks';
 import { api } from '../../api/client';
 import type { CatalogItemDto, ProcessDetail, StockDto, ZayavkaDto } from '../../api/types';
 import { useApp } from '../../store/app';
-import { DataState } from '../../design/DataState';
+import { DataState, ScreenState } from '../../design/DataState';
 import { ZAYAVKA_STATUS } from '../field/TodayScreen';
 
 /** Порядок статусов в таймлайне карточки. */
@@ -236,7 +236,7 @@ export function ZayavkaCardScreen() {
   const notify = useApp((s) => s.notify);
   const me = useApp((s) => s.me);
 
-  const { data: zayavka, reload } = useQuery<ZayavkaDto>(
+  const { data: zayavka, reload, loading, error } = useQuery<ZayavkaDto>(
     params.zayavkaId ? `/zayavki/${params.zayavkaId}` : null,
   );
 
@@ -246,7 +246,17 @@ export function ZayavkaCardScreen() {
     reload();
   });
 
-  if (!zayavka) return <ScreenBody style={{ padding: 20, color: color.muted }}>Загружаем…</ScreenBody>;
+  if (loading || error || !zayavka) {
+    return (
+      <ScreenState
+        loading={loading}
+        error={error}
+        missing={!zayavka}
+        missingText="Заявка не найдена"
+        onRetry={reload}
+      />
+    );
+  }
 
   const currentIndex = FLOW.findIndex((f) => f.status === zayavka.status);
   const item = zayavka.items[0];

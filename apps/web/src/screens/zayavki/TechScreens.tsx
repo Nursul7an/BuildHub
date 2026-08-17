@@ -14,7 +14,7 @@ import { useAction, useQuery } from '../../api/hooks';
 import { api } from '../../api/client';
 import type { MachineDto, ZayavkaDto } from '../../api/types';
 import { useApp } from '../../store/app';
-import { DataState } from '../../design/DataState';
+import { DataState, ScreenState } from '../../design/DataState';
 import { DataRows, type Column } from '../../design/DataRows';
 
 const MACHINE_TYPES = ['Кран', 'Экскаватор', 'Автобетононасос', 'Самосвал', 'Погрузчик'];
@@ -141,7 +141,7 @@ export function TechReportScreen() {
   const go = useApp((s) => s.go);
   const notify = useApp((s) => s.notify);
 
-  const { data: zayavka } = useQuery<ZayavkaDto>(params.zayavkaId ? `/zayavki/${params.zayavkaId}` : null);
+  const { data: zayavka, loading, error, reload } = useQuery<ZayavkaDto>(params.zayavkaId ? `/zayavki/${params.zayavkaId}` : null);
 
   const [actual, setActual] = useState('');
   const [idle, setIdle] = useState('0');
@@ -165,7 +165,17 @@ export function TechReportScreen() {
     go('tech-queue');
   });
 
-  if (!zayavka?.tech) return <ScreenBody style={{ padding: 20, color: color.muted }}>Загружаем…</ScreenBody>;
+  if (loading || error || !zayavka?.tech) {
+    return (
+      <ScreenState
+        loading={loading}
+        error={error}
+        missing={!zayavka?.tech}
+        missingText="Заявка на технику не найдена"
+        onRetry={reload}
+      />
+    );
+  }
 
   const blocker =
     !actual

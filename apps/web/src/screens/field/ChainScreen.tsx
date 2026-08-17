@@ -13,6 +13,7 @@ import { ScreenBody } from '../../shell/PhoneFrame';
 import { useQuery } from '../../api/hooks';
 import type { ChainDto } from '../../api/types';
 import { useApp } from '../../store/app';
+import { ScreenState } from '../../design/DataState';
 
 const STATUS_STYLE: Record<
   ChainDto['rows'][number]['status'],
@@ -34,9 +35,19 @@ export function ChainScreen() {
     params.sectionId && params.blockId && params.floor !== undefined
       ? `/chain?sectionId=${params.sectionId}&blockId=${params.blockId}&floor=${params.floor}`
       : null;
-  const { data } = useQuery<ChainDto>(path);
+  const { data, loading, error, reload } = useQuery<ChainDto>(path);
 
-  if (!data) return <ScreenBody style={{ padding: 20, color: color.muted }}>Загружаем цепочку…</ScreenBody>;
+  if (loading || error || !data) {
+    return (
+      <ScreenState
+        loading={loading}
+        error={error}
+        missing={!data}
+        missingText="Цепочка не найдена"
+        onRetry={reload}
+      />
+    );
+  }
 
   let lastSubcycle: string | null | undefined;
 
