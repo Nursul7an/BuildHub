@@ -72,12 +72,15 @@ function BossHeaderRight() {
       ? ([
           { label: '🏗 Объекты компании', screen: 'boss-company-objects' },
           { label: '🗓 Задачи и сроки прорабам', screen: 'boss-assign' },
-          { label: '👥 Пользователи и доступы', screen: 'pto-users' },
         ] as const)
       : ([
           { label: '⚖ Лимиты автономности', screen: 'boss-limits' },
           { label: '🖥 Режим планёрки', screen: 'boss-planerka' },
         ] as const)),
+    // Людей в работе заводит ПТО, но первым в пустую систему входит
+    // директор — и завести самого ПТО, кроме него, некому. Право у обеих
+    // ролей есть; без пункта в меню оно недостижимо.
+    { label: '👥 Пользователи и доступы', screen: 'pto-users' },
     { label: '👤 Профиль', screen: 'profile' },
   ];
 
