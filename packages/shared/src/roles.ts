@@ -75,7 +75,17 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     'contractor.prescription',
   ],
   pto: ['report.check', 'process.chainEdit', 'aosr.draft', 'users.manage', 'objects.manage'],
-  dir: ['finance.view', 'finance.approvePayment', 'limits.manage', 'tasks.issue', 'kpi.view'],
+  dir: [
+    'finance.view',
+    'finance.approvePayment',
+    'limits.manage',
+    'tasks.issue',
+    'kpi.view',
+    // Учётные записи в работе выдаёт ПТО, но первым в пустую систему входит
+    // директор — и завести самого ПТО, кроме него, некому. Без этого права
+    // регистрация ведёт в тупик: система есть, добавить в неё людей нельзя.
+    'users.manage',
+  ],
   gi: [
     'finance.view',
     // Проводит платежи в пределах своего лимита автономности; выше — уходит директору.

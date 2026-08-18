@@ -164,6 +164,33 @@ describe('Регистрация в пустой системе', () => {
     }
   });
 
+  it('зарегистрировавшийся руководитель может завести ПТО', async () => {
+    // Иначе регистрация ведёт в тупик: система есть, а добавить в неё
+    // людей нельзя — учётные записи в работе выдаёт ПТО, но самого ПТО
+    // завести некому.
+    const res = await api(null, 'POST', '/api/auth/register', REGISTRATION);
+    assert.equal(res.status, 200);
+
+    const created = await api(res.body.token, 'POST', '/api/users', {
+      fullName: 'Садыкова Гульмира',
+      phone: '+996 555 300 300',
+      role: 'pto',
+    });
+
+    assert.equal(created.status, 201, 'первый руководитель обязан заводить людей');
+    assert.ok(created.body.temporaryPassword, 'временный пароль выдан');
+
+    // Логин сервер составляет сам из фамилии и инициала — берём из ответа,
+    // а не выдумываем: диктовать его человеку будет тот же ПТО.
+    const entered = await api(null, 'POST', '/api/auth/login', {
+      login: created.body.user.login,
+      password: created.body.temporaryPassword,
+      client: 'mobile',
+    });
+    assert.equal(entered.status, 200);
+    assert.equal(entered.body.mustChangePassword, true, 'временный пароль меняется при входе');
+  });
+
   it('регистрация записывается в журнал действий', async () => {
     const res = await api(null, 'POST', '/api/auth/register', REGISTRATION);
     const entry = await prisma.auditLog.findFirst({
